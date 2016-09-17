@@ -78,7 +78,7 @@ int compactWithScan(int n, int *odata, const int *idata)
         }
     }
 
-    return olength;
+    return static_cast<int>(olength);
 }
 
 }
