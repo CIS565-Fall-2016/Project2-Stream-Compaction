@@ -11,3 +11,4 @@ CUDA Stream Compaction
 Include analysis, etc. (Remember, this is public, so don't put
 anything here that you don't want to share with the world.)
 
+In CPU compact scan part, I reused output buffer as a temp buffer to save space without having trouble of (imagined) access violation.
