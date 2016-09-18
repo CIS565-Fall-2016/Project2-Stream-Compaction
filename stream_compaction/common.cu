@@ -23,7 +23,7 @@ namespace Common {
  * which map to 0 will be removed, and elements which map to 1 will be kept.
  */
 __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
-    // TODO
+	
 }
 
 /**
@@ -32,7 +32,7 @@ __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
  */
 __global__ void kernScatter(int n, int *odata,
         const int *idata, const int *bools, const int *indices) {
-    // TODO
+	
 }
 
 }

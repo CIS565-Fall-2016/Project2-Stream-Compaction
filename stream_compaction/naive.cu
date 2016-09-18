@@ -14,6 +14,7 @@ namespace Naive {
 void scan(int n, int *odata, const int *idata) {
     // TODO
     printf("TODO\n");
+
 }
 
 }
