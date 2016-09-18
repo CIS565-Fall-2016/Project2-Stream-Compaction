@@ -25,11 +25,24 @@ inline int ilog2ceil(int x) {
 }
 
 
+template<typename T>
+int calculateBlockSizeForDeviceFunction(T func)
+{
+    int block_size;
+    int min_grid_size;
+    cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, func);
+    return block_size;
+}
+
+
 namespace StreamCompaction {
 namespace Common {
     __global__ void kernMapToBoolean(int n, int *bools, const int *idata);
 
     __global__ void kernScatter(int n, int *odata,
             const int *idata, const int *bools, const int *indices);
+
+
 }
 }
+
