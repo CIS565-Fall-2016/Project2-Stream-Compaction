@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <vector>
+#include <algorithm>
 
 namespace StreamCompaction {
 namespace CPU {
@@ -79,6 +80,14 @@ int compactWithScan(int n, int *odata, const int *idata)
     }
 
     return static_cast<int>(olength);
+}
+
+/**
+* This just calls std::sort
+*/
+void stdSort(int* start, int* end)
+{
+    std::sort(start, end);
 }
 
 }

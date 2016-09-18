@@ -7,5 +7,7 @@ namespace CPU {
     int compactWithoutScan(int n, int *odata, const int *idata);
 
     int compactWithScan(int n, int *odata, const int *idata);
+
+    void stdSort(int* start, int* end);
 }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <cstdio>
 
 template<typename T>
 int cmpArrays(int n, T *a, T *b) {
@@ -42,8 +43,16 @@ void zeroArray(int n, int *a) {
 void genArray(int n, int *a, int maxval) {
     srand(0);
 
-    for (int i = 0; i < n; i++) {
-        a[i] = rand() % maxval;
+    for (int i = 0; i < n; i++) 
+    {
+        if (maxval == 0)
+        {
+            a[i] = 0;
+        }
+        else
+        {
+            a[i] = rand() % maxval;
+        }
     }
 }
 
