@@ -72,11 +72,19 @@ int getDownSweepMaxPotentialBlockSize()
     return block_size;
 }
 
-/**
- * Performs prefix-sum (aka scan) on idata, storing the result into odata.
- */
-void scan(int n, int *odata, const int *idata) 
+enum class ScanDataLocation {host, device};
+
+void scan_implementaion(int n, int *odata, const int *idata, ScanDataLocation data_location)
 {
+    auto copy_direction_from_idata = cudaMemcpyHostToDevice;
+    auto copy_direction_to_odata = cudaMemcpyDeviceToHost;
+    // for reusing in compact(), it can accept data from device
+    if (data_location == ScanDataLocation::device)
+    {
+        copy_direction_from_idata = cudaMemcpyDeviceToDevice;
+        copy_direction_to_odata = cudaMemcpyDeviceToDevice;
+    }
+
     if (n <= 0) { return; }
     if (n == 1) { odata[0] = idata[0]; return; }
 
@@ -87,9 +95,9 @@ void scan(int n, int *odata, const int *idata)
 
     // DONE
     // round n up to power of two
-    auto extended_n = std::size_t(1) << ilog2ceil(n); 
+    auto extended_n = std::size_t(1) << ilog2ceil(n);
     // plus one for 
-    auto extended_n_plus_1 = extended_n + 1; 
+    auto extended_n_plus_1 = extended_n + 1;
 
     int* dev_buffer;
     cudaMalloc((void**)&dev_buffer, extended_n_plus_1 * sizeof(*dev_buffer));
@@ -97,7 +105,7 @@ void scan(int n, int *odata, const int *idata)
 
     // fill zero and copy to device buffer
     cudaMemset(dev_buffer, 0, extended_n_plus_1 * sizeof(*idata));
-    cudaMemcpy(dev_buffer, idata, n * sizeof(*idata), cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_buffer, idata, n * sizeof(*idata), copy_direction_from_idata);
 
     // up sweep
     auto pass_count = ilog2ceil(extended_n) - 1;
@@ -107,7 +115,7 @@ void scan(int n, int *odata, const int *idata)
     }
 
     // swap the last element of up sweep result and the real last element (0)
-    kernSwap <<<1, 1>>>(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
+    kernSwap <<<1, 1 >>>(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
 
     // down sweep
     for (int d = pass_count; d >= 0; d--)
@@ -116,9 +124,18 @@ void scan(int n, int *odata, const int *idata)
     }
 
     // copy with offset to make it an inclusive scan
-    cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), cudaMemcpyDeviceToHost);
+    cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), copy_direction_to_odata);
 
     cudaFree(dev_buffer);
+}
+
+/**
+ * Performs prefix-sum (aka scan) on idata, storing the result into odata.
+ * This just call scan_implementaion
+ */
+void scan(int n, int *odata, const int *idata) 
+{
+    scan_implementaion(n, odata, idata, ScanDataLocation::host);
 }
 
 /**
