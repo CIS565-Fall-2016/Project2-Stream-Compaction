@@ -9,6 +9,12 @@
 namespace StreamCompaction {
 namespace Efficient {
 
+using StreamCompaction::Common::PerformanceTimer;
+PerformanceTimer& timer()
+{
+     static PerformanceTimer timer;
+     return timer;
+}
 
 // DONE: __global__
 __global__ void kernScanUpSweepPass(int N, int add_distance, int* buffer)
@@ -138,6 +144,8 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
     auto block_size_down = getDownSweepBlockSize();
     auto full_blocks_per_grid_down = fullBlocksPerGrid(extended_n, block_size_down);
 
+    timer().startGpuTimer();
+
     // up sweep
     auto pass_count = ilog2ceil(extended_n) - 1;
     for (int d = 0; d <= pass_count; d++)
@@ -161,6 +169,8 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
     {
         kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
     }
+
+    timer().endGpuTimer();
 
     if (scan_type == ScanType::inclusive)
     {
@@ -222,6 +232,8 @@ int compact(int n, int *odata, const int *idata) {
     auto block_size_scatter = Common::getScatterBlocksize();
     auto full_blocks_per_grid_scatter = fullBlocksPerGrid(n, block_size_scatter);
 
+    timer().startGpuTimer();
+
     // map to boolean
     Common::kernMapToBoolean <<<full_blocks_per_grid_booleanize, block_size_booleanize >>>(n, dev_bools, dev_idata);
 
@@ -230,6 +242,7 @@ int compact(int n, int *odata, const int *idata) {
 
     // scatter
     Common::kernScatter <<<full_blocks_per_grid_scatter, block_size_scatter >>>(n, dev_odata, dev_idata, dev_indices);
+    timer().endGpuTimer();
 
     // calculate compacted length
     using dev_indices_t = std::remove_reference<decltype(*dev_indices)>::type;

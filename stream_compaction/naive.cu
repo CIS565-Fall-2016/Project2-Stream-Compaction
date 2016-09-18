@@ -8,6 +8,13 @@
 namespace StreamCompaction {
 namespace Naive {
 
+    using StreamCompaction::Common::PerformanceTimer;
+    PerformanceTimer& timer()
+    {
+        static PerformanceTimer timer;
+        return timer;
+    }
+
 // DONE: __global__
 __global__ void kernNaiveScanPass(int N, int offset, int* in_buffer, int* out_buffer)
 {
@@ -56,6 +63,8 @@ void scan(int n, int *odata, const int *idata)
 
     cudaMemcpy(dev_in_buffer, idata, n * sizeof(*idata), cudaMemcpyHostToDevice);
     
+    timer().startGpuTimer();
+
     auto cap = ilog2ceil(n);
     int offset;
     for (int d = 1; d <= cap; d++)
@@ -65,6 +74,8 @@ void scan(int n, int *odata, const int *idata)
         std::swap(dev_in_buffer, dev_out_buffer);
     }
     std::swap(dev_in_buffer, dev_out_buffer);
+
+    timer().endGpuTimer();
 
     // defered copy because of exclusive scan
     cudaMemcpy(odata + 1, dev_out_buffer, (n - 1) * sizeof(*odata), cudaMemcpyDeviceToHost);

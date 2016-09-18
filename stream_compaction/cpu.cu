@@ -1,5 +1,7 @@
 #include "cpu.h"
 
+#include "common.h"
+
 #include <cstdio>
 #include <vector>
 #include <algorithm>
@@ -7,14 +9,17 @@
 namespace StreamCompaction {
 namespace CPU {
 
-/**
- * CPU scan (prefix sum).
- */
-void scan(int n, int *odata, const int *idata) 
+using StreamCompaction::Common::PerformanceTimer;
+PerformanceTimer& timer()
 {
-    // DONE
+    static PerformanceTimer timer;
+    return timer;
+}
+
+void scan_implementation(int n, int *odata, const int *idata)
+{
     if (n <= 0) { return; }
-    
+
     odata[0] = 0;
 
     using std::size_t;
@@ -25,6 +30,19 @@ void scan(int n, int *odata, const int *idata)
 }
 
 /**
+ * CPU scan (prefix sum).
+ */
+void scan(int n, int *odata, const int *idata) 
+{
+    // DONE
+    timer().startCpuTimer();
+
+    scan_implementation(n, odata, idata);
+
+    timer().endCpuTimer();
+}
+
+/**
  * CPU stream compaction without using the scan function.
  *
  * @returns the number of elements remaining after compaction.
@@ -32,6 +50,8 @@ void scan(int n, int *odata, const int *idata)
 int compactWithoutScan(int n, int *odata, const int *idata) 
 {
     //DONE
+    timer().startCpuTimer();
+
     using std::size_t;
     size_t olength = 0;
     for (size_t i = 0; i < n; i++)
@@ -42,6 +62,8 @@ int compactWithoutScan(int n, int *odata, const int *idata)
             olength++;
         }
     }
+
+    timer().endCpuTimer();
     
     return static_cast<int>(olength);
 }
@@ -57,6 +79,8 @@ int compactWithScan(int n, int *odata, const int *idata)
     // Run CPU scan
     using std::size_t;
     std::vector<int> scan_result(n, 0);
+
+    timer().startCpuTimer();
     
     for (size_t i = 0; i < n; i++)
     {
@@ -67,7 +91,7 @@ int compactWithScan(int n, int *odata, const int *idata)
         }
     }
 
-    scan(n, scan_result.data(), odata);
+    scan_implementation(n, scan_result.data(), odata);
 
     size_t olength = 0;
     for (size_t i = 0; i < n; i++)
@@ -79,6 +103,8 @@ int compactWithScan(int n, int *odata, const int *idata)
         }
     }
 
+    timer().endCpuTimer();
+
     return static_cast<int>(olength);
 }
 
@@ -87,7 +113,9 @@ int compactWithScan(int n, int *odata, const int *idata)
 */
 void stdSort(int* start, int* end)
 {
+    timer().startCpuTimer();
     std::sort(start, end);
+    timer().endCpuTimer();
 }
 
 }

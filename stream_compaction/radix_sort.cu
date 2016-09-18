@@ -8,6 +8,16 @@
 
 namespace StreamCompaction {
 namespace RadixSort {
+
+
+using StreamCompaction::Common::PerformanceTimer;
+PerformanceTimer& timer()
+{
+    static PerformanceTimer timer;
+    return timer;
+}
+
+
 __global__ void kernComputeBArray(int N, int bit_mask, bool *b, const int *idata)
 {
     auto index = threadIdx.x + blockIdx.x * blockDim.x;
@@ -137,6 +147,7 @@ void radixSort(int* start, int* end, int max_value)
     cudaMalloc((void**)&dev_d, n * sizeof(*dev_d));
     checkCUDAError("cudaMalloc dev_d failed!");
 
+    timer().startGpuTimer();
     // input betweem [0, max_value)
     // auto lsb_offset = 0;
     auto msb_offset = ilog2ceil(max_value);
@@ -154,6 +165,7 @@ void radixSort(int* start, int* end, int max_value)
         std::swap(dev_temp, dev_array);
         
     }
+    timer().endGpuTimer();
 
     cudaMemcpy(start, dev_array, n * sizeof(*start), cudaMemcpyDeviceToHost);
 
