@@ -106,7 +106,7 @@ void scan(int n, int *odata, const int *idata)
         kernScanUpSweepPass <<<full_blocks_per_grid_up, block_size_up >>>(extended_n, 1 << d, dev_buffer);
     }
 
-    // set swap between last element of up sweep and the real last element (0)
+    // swap the last element of up sweep result and the real last element (0)
     kernSwap <<<1, 1>>>(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
 
     // down sweep
