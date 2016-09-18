@@ -192,7 +192,6 @@ int compact(int n, int *odata, const int *idata) {
     cudaMalloc((void**)&dev_odata, n * sizeof(*dev_odata));
     checkCUDAError("cudaMalloc dev_odata failed!");
 
-
     auto block_size_booleanize = Common::getMapToBooleanBlockSize();
     auto full_blocks_per_grid_booleanize = fullBlocksPerGrid(n, block_size_booleanize);
     auto block_size_up = getUpSweepBlockSize();
@@ -204,7 +203,6 @@ int compact(int n, int *odata, const int *idata) {
 
     // map to boolean
     Common::kernMapToBoolean <<<full_blocks_per_grid_booleanize, block_size_booleanize >>>(n, dev_bools, dev_idata);
-
 
     // exclusively scan the dev_bools buffer
     {
@@ -223,7 +221,6 @@ int compact(int n, int *odata, const int *idata) {
             kernScanDownSweepPass <<<full_blocks_per_grid_down, block_size_down >>>(extended_n, 1 << d, dev_bools);
         }
     }
-
 
     // scatter
     Common::kernScatter <<<full_blocks_per_grid_scatter, block_size_scatter >>>(n, dev_odata, dev_idata, dev_indices);
