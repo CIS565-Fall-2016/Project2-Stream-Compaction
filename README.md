@@ -15,4 +15,6 @@ In CPU compact scan part, I reused output buffer as a temp buffer to save space 
 
 I wrote an invlusive version of work-efficient scan - because i misunderstood the requirement at first
 
-I added files (radix_sort.h and radix_sort.cu) for radix sort
+I finished the algorithm or radix sort (assume inputs are between [0, a_given_maximum) )
+
+I added files (radix_sort.h and radix_sort.cu) for radix sort.

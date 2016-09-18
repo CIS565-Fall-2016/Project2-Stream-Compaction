@@ -89,6 +89,31 @@ int getDownSweepBlockSize()
 
 enum class ScanType{inclusive, exclusive};
 
+void scanInPlaceDevice(int extended_n, int* dev_buffer)
+{
+    auto block_size_up = getUpSweepBlockSize();
+    auto full_blocks_per_grid_up = fullBlocksPerGrid(extended_n, block_size_up);
+    auto block_size_down = getDownSweepBlockSize();
+    auto full_blocks_per_grid_down = fullBlocksPerGrid(extended_n, block_size_down);
+
+    // up sweep
+    auto pass_count = ilog2ceil(extended_n) - 1;
+    for (int d = 0; d <= pass_count; d++)
+    {
+        kernScanUpSweepPass <<<full_blocks_per_grid_up, block_size_up >>>(extended_n, 1 << d, dev_buffer);
+    }
+
+    // set the last element to zero
+    kernSetZero <<<1, 1 >>>(extended_n - 1, dev_buffer);
+
+
+    // down sweep
+    for (int d = pass_count; d >= 0; d--)
+    {
+        kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
+    }
+}
+
 void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
 {
     if (n <= 0) { return; }
@@ -194,10 +219,6 @@ int compact(int n, int *odata, const int *idata) {
 
     auto block_size_booleanize = Common::getMapToBooleanBlockSize();
     auto full_blocks_per_grid_booleanize = fullBlocksPerGrid(n, block_size_booleanize);
-    auto block_size_up = getUpSweepBlockSize();
-    auto full_blocks_per_grid_up = fullBlocksPerGrid(extended_n, block_size_up);
-    auto block_size_down = getDownSweepBlockSize();
-    auto full_blocks_per_grid_down = fullBlocksPerGrid(extended_n, block_size_down);
     auto block_size_scatter = Common::getScatterBlocksize();
     auto full_blocks_per_grid_scatter = fullBlocksPerGrid(n, block_size_scatter);
 
@@ -205,22 +226,7 @@ int compact(int n, int *odata, const int *idata) {
     Common::kernMapToBoolean <<<full_blocks_per_grid_booleanize, block_size_booleanize >>>(n, dev_bools, dev_idata);
 
     // exclusively scan the dev_bools buffer
-    {
-        auto pass_count = ilog2ceil(extended_n) - 1;
-        for (int d = 0; d <= pass_count; d++)
-        {
-            kernScanUpSweepPass <<<full_blocks_per_grid_up, block_size_up >>>(extended_n, 1 << d, dev_bools);
-        }
-
-        // set the last element to zero
-        kernSetZero <<<1, 1 >>>(extended_n - 1, dev_bools);
-        
-        // down sweep
-        for (int d = pass_count; d >= 0; d--)
-        {
-            kernScanDownSweepPass <<<full_blocks_per_grid_down, block_size_down >>>(extended_n, 1 << d, dev_bools);
-        }
-    }
+    scanInPlaceDevice(extended_n, dev_bools);
 
     // scatter
     Common::kernScatter <<<full_blocks_per_grid_scatter, block_size_scatter >>>(n, dev_odata, dev_idata, dev_indices);
