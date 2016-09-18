@@ -8,7 +8,7 @@ namespace StreamCompaction {
 namespace Efficient {
 
 
-// TODO: __global__
+// DONE: __global__
 __global__ void kernScanUpSweepPass(int N, int add_distance, int* buffer)
 {
     // TODO: use less threads?
@@ -85,7 +85,7 @@ void scan(int n, int *odata, const int *idata)
     auto block_size_down = getDownSweepMaxPotentialBlockSize();
     auto full_blocks_per_grid_down = (n + block_size_down - 1) / block_size_down;
 
-    // TODO
+    // DONE
     // round n up to power of two
     auto extended_n = std::size_t(1) << ilog2ceil(n); 
     // plus one for 
