@@ -72,18 +72,14 @@ int getDownSweepMaxPotentialBlockSize()
     return block_size;
 }
 
-enum class ScanDataLocation {host, device};
-
-void scan_implementaion(int n, int *odata, const int *idata, ScanDataLocation data_location)
+/**
+ * Performs prefix-sum (aka scan) on idata, storing the result into odata.
+ * This just call scan_implementaion
+ */
+void scan(int n, int *odata, const int *idata) 
 {
     auto copy_direction_from_idata = cudaMemcpyHostToDevice;
     auto copy_direction_to_odata = cudaMemcpyDeviceToHost;
-    // for reusing in compact(), it can accept data from device
-    if (data_location == ScanDataLocation::device)
-    {
-        copy_direction_from_idata = cudaMemcpyDeviceToDevice;
-        copy_direction_to_odata = cudaMemcpyDeviceToDevice;
-    }
 
     if (n <= 0) { return; }
     if (n == 1) { odata[0] = idata[0]; return; }
@@ -111,31 +107,22 @@ void scan_implementaion(int n, int *odata, const int *idata, ScanDataLocation da
     auto pass_count = ilog2ceil(extended_n) - 1;
     for (int d = 0; d <= pass_count; d++)
     {
-        kernScanUpSweepPass <<<full_blocks_per_grid_up, block_size_up >>>(extended_n, 1 << d, dev_buffer);
+        kernScanUpSweepPass << <full_blocks_per_grid_up, block_size_up >> >(extended_n, 1 << d, dev_buffer);
     }
 
     // swap the last element of up sweep result and the real last element (0)
-    kernSwap <<<1, 1 >>>(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
+    kernSwap << <1, 1 >> >(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
 
     // down sweep
     for (int d = pass_count; d >= 0; d--)
     {
-        kernScanDownSweepPass <<<full_blocks_per_grid_down, block_size_down >>>(extended_n, 1 << d, dev_buffer);
+        kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
     }
 
     // copy with offset to make it an inclusive scan
     cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), copy_direction_to_odata);
 
     cudaFree(dev_buffer);
-}
-
-/**
- * Performs prefix-sum (aka scan) on idata, storing the result into odata.
- * This just call scan_implementaion
- */
-void scan(int n, int *odata, const int *idata) 
-{
-    scan_implementaion(n, odata, idata, ScanDataLocation::host);
 }
 
 /**
