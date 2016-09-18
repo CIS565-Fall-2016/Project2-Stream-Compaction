@@ -4,6 +4,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#include <type_traits>
+
 namespace StreamCompaction {
 namespace Efficient {
 
@@ -142,7 +144,6 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
     }
     else
     {
-        // copy with offset to make it an inclusive scan
         cudaMemcpy(odata, dev_buffer, n * sizeof(*odata), cudaMemcpyDeviceToHost);
     }
 
@@ -169,7 +170,6 @@ void scan(int n, int *odata, const int *idata)
  */
 int compact(int n, int *odata, const int *idata) {
     if (n <= 0) { return 0; }
-    return -1;
 
     // TODO
 
@@ -179,11 +179,20 @@ int compact(int n, int *odata, const int *idata) {
     cudaMemcpy(dev_idata, idata, n * sizeof(*idata), cudaMemcpyHostToDevice);
 
     auto extended_n = std::size_t(1) << ilog2ceil(n); // round up to power of two for scanning
-    int* dev_bools;
+        
+    int* dev_bools; // TODO: I could use size_t* (but which will result in a lot of rewrite for the kernel functions) 
     cudaMalloc((void**)&dev_bools, extended_n * sizeof(*dev_bools));
-    checkCUDAError("cudaMalloc dev_buffer failed!");
+    checkCUDAError("cudaMalloc dev_bools failed!");
     // fill zero and copy to boolean buffer
-    cudaMemset(dev_bools, 0, extended_n * sizeof(*idata));
+    cudaMemset(dev_bools, 0, extended_n * sizeof(*dev_bools));
+    
+    // reuse bool buffer as indices buffer
+    auto dev_indices = dev_bools; 
+
+    int* dev_odata;
+    cudaMalloc((void**)&dev_odata, n * sizeof(*dev_odata));
+    checkCUDAError("cudaMalloc dev_odata failed!");
+
 
     auto block_size_booleanize = Common::getMapToBooleanBlockSize();
     auto full_blocks_per_grid_booleanize = fullBlocksPerGrid(n, block_size_booleanize);
@@ -194,29 +203,49 @@ int compact(int n, int *odata, const int *idata) {
     auto block_size_scatter = Common::getScatterBlocksize();
     auto full_blocks_per_grid_scatter = fullBlocksPerGrid(n, block_size_scatter);
 
-    //// map to boolean
-    //Common::kernMapToBoolean<<<full_blocks_per_grid_booleanize, block_size_booleanize >>>(n, );
+    // map to boolean
+    Common::kernMapToBoolean <<<full_blocks_per_grid_booleanize, block_size_booleanize >>>(n, dev_bools, dev_idata);
 
-    //// up sweep
-    //auto pass_count = ilog2ceil(extended_n) - 1;
-    //for (int d = 0; d <= pass_count; d++)
-    //{
-    //    kernScanUpSweepPass << <full_blocks_per_grid_up, block_size_up >> >(extended_n, 1 << d, dev_buffer);
-    //}
 
-    //// swap the last element of up sweep result and the real last element (0)
-    //kernSwap << <1, 1 >> >(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
+    // exclusively scan the dev_bools buffer
+    {
+        auto pass_count = ilog2ceil(extended_n) - 1;
+        for (int d = 0; d <= pass_count; d++)
+        {
+            kernScanUpSweepPass <<<full_blocks_per_grid_up, block_size_up >>>(extended_n, 1 << d, dev_bools);
+        }
 
-    //// down sweep
-    //for (int d = pass_count; d >= 0; d--)
-    //{
-    //    kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
-    //}
+        // set the last element to zero
+        kernSetZero <<<1, 1 >>>(extended_n - 1, dev_bools);
+        
+        // down sweep
+        for (int d = pass_count; d >= 0; d--)
+        {
+            kernScanDownSweepPass <<<full_blocks_per_grid_down, block_size_down >>>(extended_n, 1 << d, dev_bools);
+        }
+    }
 
-    //// copy with offset to make it an inclusive scan
-    //cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), copy_direction_to_odata);
 
-    //cudaFree(dev_buffer);
+    // scatter
+    Common::kernScatter <<<full_blocks_per_grid_scatter, block_size_scatter >>>(n, dev_odata, dev_idata, dev_indices);
+
+    // calculate compacted length
+    using dev_indices_t = std::remove_reference<decltype(*dev_indices)>::type;
+    dev_indices_t result_length;
+    cudaMemcpy(&result_length, dev_indices + n - 1, sizeof(result_length), cudaMemcpyDeviceToHost);
+    if (idata[n - 1])
+    {
+        result_length += 1;
+    }
+
+    // get compacted result
+    cudaMemcpy(odata, dev_odata, result_length * sizeof(*odata), cudaMemcpyDeviceToHost);
+
+    cudaFree(dev_idata);
+    cudaFree(dev_bools); // the same buffer as dev_indices
+    cudaFree(dev_odata);
+    
+    return result_length;
 }
 
 }
