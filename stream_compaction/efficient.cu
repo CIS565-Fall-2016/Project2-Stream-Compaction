@@ -12,8 +12,9 @@ namespace Efficient {
 using StreamCompaction::Common::PerformanceTimer;
 PerformanceTimer& timer()
 {
-     static PerformanceTimer timer;
-     return timer;
+    // not thread-safe
+    static PerformanceTimer timer;
+    return timer;
 }
 
 // DONE: __global__

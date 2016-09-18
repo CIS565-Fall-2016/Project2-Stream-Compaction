@@ -15,13 +15,14 @@
 #include "testing_helpers.hpp"
 #include <iterator>
 #include <algorithm>
+#include <iostream>
 
-const int SIZE = 1 << 25;
+const int SIZE = 1 << 26;
 const int NPOT = SIZE - 3;
 const int SCAN_MAX = 50;
 const int COMPACTION_MAX = 4;
 
-const int SORT_SIZE = 1 << 22;
+const int SORT_SIZE = 1 << 26;
 const int SORT_NPOT = SORT_SIZE - 3;
 const int SORT_MAX = 100;
 
@@ -30,11 +31,26 @@ int a[SIZE], b[SIZE], c[SIZE], d[SORT_SIZE], e[SORT_SIZE], f[SORT_SIZE];
 int main(int argc, char* argv[]) {
 
     // Scan tests
+    
+    std::cout << "CIS-565 HW2 CUDA Stream Compaction Test (Ruoyu Fan)";
+    std::cout << std::endl;
+    std::cout << "    Block size for naive scan: " << StreamCompaction::Naive::getNaiveScanBlockSize() << std::endl;
+    std::cout << "    Block size for up-sweep: " << StreamCompaction::Efficient::getUpSweepBlockSize() << std::endl;
+    std::cout << "    Block size for down-sweep: " << StreamCompaction::Efficient::getDownSweepBlockSize() << std::endl;
+    std::cout << "    Block size for boolean mapping: " << StreamCompaction::Common::getMapToBooleanBlockSize() << std::endl;
+    std::cout << "    Block size for scattering: " << StreamCompaction::Common::getScatterBlocksize() << std::endl;
+    std::cout << "    Block sizes for radix sort: " 
+        << StreamCompaction::RadixSort::getComputeBArrayBlockSize() << " "
+        << StreamCompaction::RadixSort::getComputeDArrayBlockSize() << " "
+        << StreamCompaction::RadixSort::getComputeEArrayBlockSize() << " "
+        << StreamCompaction::RadixSort::getReshuffleBlockSize() << std::endl;
 
     printf("\n");
     printf("****************\n");
     printf("** SCAN TESTS **\n");
     printf("****************\n");
+    std::cout << "Array size (power of two): " << SIZE << std::endl;
+    std::cout << "Array size (non-power of two): " << NPOT << std::endl;
 
     genArray(SIZE - 1, a, SCAN_MAX);  // result for edge case of 0 looks fine
     a[SIZE - 1] = 0;
@@ -101,7 +117,8 @@ int main(int argc, char* argv[]) {
     printf("*****************************\n");
     printf("** STREAM COMPACTION TESTS **\n");
     printf("*****************************\n");
-
+    std::cout << "Array size (power of two): " << SIZE << std::endl;
+    std::cout << "Array size (non-power of two): " << NPOT << std::endl;
     // Compaction tests
 
     genArray(SIZE - 1, a, COMPACTION_MAX);  // result for edge case of 0 looks fine
@@ -151,37 +168,60 @@ int main(int argc, char* argv[]) {
     printf("*****************************\n");
     printf("** RADIX SORT TESTS **\n");
     printf("*****************************\n");
+    std::cout << "Array size (power of two): " << SORT_SIZE << std::endl;
+    std::cout << "Array size (non-power of two): " << SORT_NPOT << std::endl;
+    std::cout << "Max value: " << SORT_MAX << std::endl;
 
     genArray(SORT_SIZE - 1, d, SORT_MAX);
     d[SORT_SIZE - 1] = 0;
     printArray(SORT_SIZE, d, true);
 
-    printDesc("std::sort");
+    printDesc("std::sort, power-of-two");
     std::copy(std::begin(d), std::end(d), std::begin(e));
     StreamCompaction::CPU::stdSort(std::begin(e), std::end(e));
     printArray(SORT_SIZE, e, true);
     printElapsedTime(StreamCompaction::CPU::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
 
-    printDesc("thrust unstable sort");
+    printDesc("std::sort, power-of-two");
+    std::copy(std::begin(d), std::end(d), std::begin(e));
+    StreamCompaction::CPU::stdSort(std::begin(e), std::end(e));
+    printArray(SORT_SIZE, e, true);
+    printElapsedTime(StreamCompaction::CPU::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
+
+    printDesc("thrust unstable sort, power-of-two");
     std::copy(std::begin(d), std::end(d), std::begin(f));
     StreamCompaction::Thrust::unstableSort(std::begin(f), std::end(f));
+    printArray(SORT_SIZE, f, true);
     printElapsedTime(StreamCompaction::Thrust::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
     printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
-    printArray(SORT_SIZE, f, true);
     printCmpResult(SORT_SIZE, e, f);
 
-    printDesc("thrust stable sort");
+    printDesc("thrust stable sort, power-of-two");
     std::copy(std::begin(d), std::end(d), std::begin(f));
     StreamCompaction::Thrust::stableSort(std::begin(f), std::end(f));
+    printArray(SORT_SIZE, f, true);
     printElapsedTime(StreamCompaction::Thrust::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
     printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
-    printArray(SORT_SIZE, f, true);
     printCmpResult(SORT_SIZE, e, f);
 
-    printDesc("radix sort");
+    printDesc("radix sort, power-of-two");
     std::copy(std::begin(d), std::end(d), std::begin(f));
     StreamCompaction::RadixSort::radixSort(std::begin(f), std::end(f), SORT_MAX);
-    printElapsedTime(StreamCompaction::RadixSort::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     printArray(SORT_SIZE, f, true);
+    printElapsedTime(StreamCompaction::RadixSort::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     printCmpResult(SORT_SIZE, e, f);
+
+    // must be after all power-of-two sorts since it is standard value
+    printDesc("std::sort, non power-of-two");
+    std::copy(std::begin(d), std::end(d), std::begin(e));
+    StreamCompaction::CPU::stdSort(std::begin(e), std::begin(e) + SORT_NPOT);
+    printArray(SORT_NPOT, e, true);
+    printElapsedTime(StreamCompaction::CPU::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
+
+    printDesc("radix sort, non power-of-two");
+    std::copy(std::begin(d), std::end(d), std::begin(f));
+    StreamCompaction::RadixSort::radixSort(std::begin(f), std::begin(f) + SORT_NPOT, SORT_MAX);
+    printArray(SORT_NPOT, f, true);
+    printElapsedTime(StreamCompaction::RadixSort::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+    printCmpResult(SORT_NPOT, e, f);
 }
