@@ -171,8 +171,7 @@ void scan(int n, int *odata, const int *idata)
 int compact(int n, int *odata, const int *idata) {
     if (n <= 0) { return 0; }
 
-    // TODO
-
+    // DONE
     int* dev_idata;
     cudaMalloc((void**)&dev_idata, n * sizeof(*dev_idata));
     checkCUDAError("cudaMalloc dev_idata failed!");
