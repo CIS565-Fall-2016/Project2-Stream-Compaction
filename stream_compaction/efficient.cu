@@ -23,6 +23,7 @@ __global__ void kernScanUpSweepPass(int N, int add_distance, int* buffer)
 
 /**
 * Swap value of two array members
+* Used for inclusive scan as I misunderstood the requirement
 */
 __global__ void kernSwap(int index1, int index2, int* buffer)
 {
@@ -32,6 +33,18 @@ __global__ void kernSwap(int index1, int index2, int* buffer)
         buffer[index1] ^= buffer[index2];
         buffer[index2] ^= buffer[index1];
         buffer[index1] ^= buffer[index2];
+    }
+}
+
+/**
+* Set value of an array member to zero
+*/
+__global__ void kernSetZero(int index, int* buffer)
+{
+    auto thread_index = threadIdx.x + blockIdx.x * blockDim.x;
+    if (thread_index == 0)
+    {
+        buffer[index] = 0;
     }
 }
 
@@ -82,14 +95,15 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
     // round n up to power of two
     auto extended_n = std::size_t(1) << ilog2ceil(n);
     // plus one for 
-    auto extended_n_plus_1 = extended_n + 1;
+    auto final_buffer_length = 
+        (scan_type == ScanType::inclusive) ? extended_n + 1: extended_n;
 
     int* dev_buffer;
-    cudaMalloc((void**)&dev_buffer, extended_n_plus_1 * sizeof(*dev_buffer));
+    cudaMalloc((void**)&dev_buffer, final_buffer_length * sizeof(*dev_buffer));
     checkCUDAError("cudaMalloc dev_buffer failed!");
 
     // fill zero and copy to device buffer
-    cudaMemset(dev_buffer, 0, extended_n_plus_1 * sizeof(*idata));
+    cudaMemset(dev_buffer, 0, final_buffer_length * sizeof(*idata));
     cudaMemcpy(dev_buffer, idata, n * sizeof(*idata), cudaMemcpyHostToDevice);
 
     auto block_size_up = getUpSweepBlockSize();
@@ -104,8 +118,16 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
         kernScanUpSweepPass << <full_blocks_per_grid_up, block_size_up >> >(extended_n, 1 << d, dev_buffer);
     }
 
-    // swap the last element of up sweep result and the real last element (0)
-    kernSwap << <1, 1 >> >(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
+    if (scan_type == ScanType::inclusive)
+    {
+        // swap the last element of up sweep result and the real last element (0)
+        kernSwap <<<1, 1>>>(extended_n - 1, final_buffer_length - 1, dev_buffer);
+    }
+    else
+    {
+        // set the last element to zero
+        kernSetZero <<<1, 1>>>(extended_n - 1, dev_buffer);
+    }
 
     // down sweep
     for (int d = pass_count; d >= 0; d--)
@@ -113,8 +135,16 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
         kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
     }
 
-    // copy with offset to make it an inclusive scan
-    cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), cudaMemcpyDeviceToHost);
+    if (scan_type == ScanType::inclusive)
+    {
+        // copy with offset to make it an inclusive scan
+        cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), cudaMemcpyDeviceToHost);
+    }
+    else
+    {
+        // copy with offset to make it an inclusive scan
+        cudaMemcpy(odata, dev_buffer, n * sizeof(*odata), cudaMemcpyDeviceToHost);
+    }
 
     cudaFree(dev_buffer);
 }
@@ -125,7 +155,7 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
  */
 void scan(int n, int *odata, const int *idata) 
 {
-    scan_implemention(n, odata, idata, ScanType::inclusive);
+    scan_implemention(n, odata, idata, ScanType::exclusive);
 }
 
 /**
