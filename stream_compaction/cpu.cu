@@ -14,12 +14,12 @@ void scan(int n, int *odata, const int *idata)
     // DONE
     if (n <= 0) { return; }
     
-    odata[0] = idata[0];
+    odata[0] = 0;
 
     using std::size_t;
     for (size_t i = 1; i < n; i++)
     {
-        odata[i] = odata[i - 1] + idata[i];
+        odata[i] = odata[i - 1] + idata[i - 1];
     }
 }
 
@@ -73,7 +73,7 @@ int compactWithScan(int n, int *odata, const int *idata)
     {
         if (idata[i])
         {
-            odata[scan_result[i] - 1] = idata[i];
+            odata[scan_result[i]] = idata[i];
             olength++;
         }
     }

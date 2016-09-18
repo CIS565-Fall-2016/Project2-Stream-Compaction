@@ -27,16 +27,59 @@ namespace Common {
  */
 __global__ void kernMapToBoolean(int n, int *bools, const int *idata) 
 {
-    
+    auto index = threadIdx.x + blockIdx.x * blockDim.x;
+    if (index >= n) { return; }
+
+    if (idata[index])
+    {
+        bools[index] = 1;
+    }
+    else
+    {
+        bools[index] = 0;
+    }
 }
 
+
+//__global__ void kernScatter(int n, int *odata,
+//        const int *idata, const int *bools, const int *indices) 
+
 /**
- * Performs scatter on an array. That is, for each element in idata,
- * if bools[idx] == 1, it copies idata[idx] to odata[indices[idx]].
- */
+* Performs scatter on an array. That is, for each element in idata,
+* if bools[idx] == 1, it copies idata[idx] to odata[indices[idx]].
+*/
 __global__ void kernScatter(int n, int *odata,
-        const int *idata, const int *bools, const int *indices) {
-    // TODO
+            const int *idata, const int *indices) 
+{
+    // use one less buffer to save space
+    auto index = threadIdx.x + blockIdx.x * blockDim.x;
+    if (index >= n) { return; }
+
+    if (idata[index])
+    {
+        odata[indices[index]] = idata[index];
+    }
+}
+
+int getMapToBooleanBlockSize()
+{
+    // not thread-safe
+    static int block_size = -1;
+    if (block_size == -1)
+    {
+        block_size = calculateBlockSizeForDeviceFunction(kernMapToBoolean);
+    }
+    return block_size;
+}
+int getScatterBlocksize()
+{
+    // not thread-safe
+    static int block_size = -1;
+    if (block_size == -1)
+    {
+        block_size = calculateBlockSizeForDeviceFunction(kernScatter);
+    }
+    return block_size;
 }
 
 }

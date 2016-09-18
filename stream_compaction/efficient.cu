@@ -50,7 +50,7 @@ __global__ void kernScanDownSweepPass(int N, int distance, int* buffer)
 }
 
 
-int getUpSweepMaxPotentialBlockSize()
+int getUpSweepBlockSize()
 {
     // not thread-safe
     static int block_size = -1;
@@ -61,7 +61,7 @@ int getUpSweepMaxPotentialBlockSize()
     return block_size;
 }
 
-int getDownSweepMaxPotentialBlockSize()
+int getDownSweepBlockSize()
 {
     // not thread-safe
     static int block_size = -1;
@@ -72,22 +72,11 @@ int getDownSweepMaxPotentialBlockSize()
     return block_size;
 }
 
-/**
- * Performs prefix-sum (aka scan) on idata, storing the result into odata.
- * This just call scan_implementaion
- */
-void scan(int n, int *odata, const int *idata) 
+enum class ScanType{inclusive, exclusive};
+
+void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
 {
-    auto copy_direction_from_idata = cudaMemcpyHostToDevice;
-    auto copy_direction_to_odata = cudaMemcpyDeviceToHost;
-
     if (n <= 0) { return; }
-    if (n == 1) { odata[0] = idata[0]; return; }
-
-    auto block_size_up = getUpSweepMaxPotentialBlockSize();
-    auto full_blocks_per_grid_up = (n + block_size_up - 1) / block_size_up;
-    auto block_size_down = getDownSweepMaxPotentialBlockSize();
-    auto full_blocks_per_grid_down = (n + block_size_down - 1) / block_size_down;
 
     // DONE
     // round n up to power of two
@@ -101,7 +90,12 @@ void scan(int n, int *odata, const int *idata)
 
     // fill zero and copy to device buffer
     cudaMemset(dev_buffer, 0, extended_n_plus_1 * sizeof(*idata));
-    cudaMemcpy(dev_buffer, idata, n * sizeof(*idata), copy_direction_from_idata);
+    cudaMemcpy(dev_buffer, idata, n * sizeof(*idata), cudaMemcpyHostToDevice);
+
+    auto block_size_up = getUpSweepBlockSize();
+    auto full_blocks_per_grid_up = fullBlocksPerGrid(extended_n, block_size_up);
+    auto block_size_down = getDownSweepBlockSize();
+    auto full_blocks_per_grid_down = fullBlocksPerGrid(extended_n, block_size_down);
 
     // up sweep
     auto pass_count = ilog2ceil(extended_n) - 1;
@@ -120,9 +114,18 @@ void scan(int n, int *odata, const int *idata)
     }
 
     // copy with offset to make it an inclusive scan
-    cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), copy_direction_to_odata);
+    cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), cudaMemcpyDeviceToHost);
 
     cudaFree(dev_buffer);
+}
+
+/**
+ * Performs prefix-sum (aka scan) on idata, storing the result into odata.
+ * This just call scan_implementaion
+ */
+void scan(int n, int *odata, const int *idata) 
+{
+    scan_implemention(n, odata, idata, ScanType::inclusive);
 }
 
 /**
@@ -135,8 +138,55 @@ void scan(int n, int *odata, const int *idata)
  * @returns      The number of elements remaining after compaction.
  */
 int compact(int n, int *odata, const int *idata) {
-    // TODO
+    if (n <= 0) { return 0; }
     return -1;
+
+    // TODO
+
+    int* dev_idata;
+    cudaMalloc((void**)&dev_idata, n * sizeof(*dev_idata));
+    checkCUDAError("cudaMalloc dev_idata failed!");
+    cudaMemcpy(dev_idata, idata, n * sizeof(*idata), cudaMemcpyHostToDevice);
+
+    auto extended_n = std::size_t(1) << ilog2ceil(n); // round up to power of two for scanning
+    int* dev_bools;
+    cudaMalloc((void**)&dev_bools, extended_n * sizeof(*dev_bools));
+    checkCUDAError("cudaMalloc dev_buffer failed!");
+    // fill zero and copy to boolean buffer
+    cudaMemset(dev_bools, 0, extended_n * sizeof(*idata));
+
+    auto block_size_booleanize = Common::getMapToBooleanBlockSize();
+    auto full_blocks_per_grid_booleanize = fullBlocksPerGrid(n, block_size_booleanize);
+    auto block_size_up = getUpSweepBlockSize();
+    auto full_blocks_per_grid_up = fullBlocksPerGrid(extended_n, block_size_up);
+    auto block_size_down = getDownSweepBlockSize();
+    auto full_blocks_per_grid_down = fullBlocksPerGrid(extended_n, block_size_down);
+    auto block_size_scatter = Common::getScatterBlocksize();
+    auto full_blocks_per_grid_scatter = fullBlocksPerGrid(n, block_size_scatter);
+
+    //// map to boolean
+    //Common::kernMapToBoolean<<<full_blocks_per_grid_booleanize, block_size_booleanize >>>(n, );
+
+    //// up sweep
+    //auto pass_count = ilog2ceil(extended_n) - 1;
+    //for (int d = 0; d <= pass_count; d++)
+    //{
+    //    kernScanUpSweepPass << <full_blocks_per_grid_up, block_size_up >> >(extended_n, 1 << d, dev_buffer);
+    //}
+
+    //// swap the last element of up sweep result and the real last element (0)
+    //kernSwap << <1, 1 >> >(extended_n - 1, extended_n_plus_1 - 1, dev_buffer);
+
+    //// down sweep
+    //for (int d = pass_count; d >= 0; d--)
+    //{
+    //    kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
+    //}
+
+    //// copy with offset to make it an inclusive scan
+    //cudaMemcpy(odata, dev_buffer + 1, n * sizeof(*odata), copy_direction_to_odata);
+
+    //cudaFree(dev_buffer);
 }
 
 }

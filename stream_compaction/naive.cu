@@ -24,7 +24,7 @@ __global__ void kernNaiveScanPass(int N, int offset, int* in_buffer, int* out_bu
     }
 }
 
-int getNaiveScanMaxPotentialBlockSize()
+int getNaiveScanBlockSize()
 {
     // not thread-safe
     static int block_size = -1;
@@ -42,9 +42,8 @@ int getNaiveScanMaxPotentialBlockSize()
 void scan(int n, int *odata, const int *idata) 
 {
     if (n <= 0) { return; }
-    if (n == 1) { odata[0] = idata[0]; return; }
 
-    auto block_size = getNaiveScanMaxPotentialBlockSize();
+    auto block_size = getNaiveScanBlockSize();
     auto full_blocks_per_grid = (n + block_size - 1) / block_size;
 
     // DONE
@@ -67,7 +66,9 @@ void scan(int n, int *odata, const int *idata)
     }
     std::swap(dev_in_buffer, dev_out_buffer);
 
-    cudaMemcpy(odata, dev_out_buffer, n * sizeof(*odata), cudaMemcpyDeviceToHost);
+    // defered copy because of exclusive scan
+    cudaMemcpy(odata + 1, dev_out_buffer, (n - 1) * sizeof(*odata), cudaMemcpyDeviceToHost);
+    odata[0] = 0;
 
     cudaFree(dev_in_buffer);
     cudaFree(dev_out_buffer);
