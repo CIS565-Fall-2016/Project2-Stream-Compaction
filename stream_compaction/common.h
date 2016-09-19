@@ -35,20 +35,34 @@ inline int fullBlocksPerGrid(int n, int block_size)
     return (n + block_size - 1) / block_size;
 }
 
+// use fixed block size or block size from cudaOccupancyMaxPotentialBlockSize
+const int FIXED_BLOCK_SIZE = -1;
+//const int FIXED_BLOCK_SIZE = 128;
+
 template<typename T>
 int calculateBlockSizeForDeviceFunction(T func)
 {
-    int block_size;
-    int min_grid_size;
-    cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, func);
-    return block_size;
+    if (FIXED_BLOCK_SIZE <= 0)
+    {
+        int block_size;
+        int min_grid_size;
+        cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, func);
+        return block_size;
+    }
+    else
+    {
+        return FIXED_BLOCK_SIZE;
+    }
 }
+
+#undef IS_FIXED_BLOCK_SIZE
+#undef FIXED_BLOCK_SIZE
 
 
 namespace StreamCompaction {
 namespace Common {
     __global__ void kernMapToBoolean(int n, int *bools, const int *idata);
-
+    
     //__global__ void kernScatter(int n, int *odata,
     //        const int *idata, const int *bools, const int *indices);
     __global__ void kernScatter(int n, int *odata,

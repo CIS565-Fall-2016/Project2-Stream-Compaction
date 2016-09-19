@@ -26,6 +26,7 @@ const int SORT_SIZE = 1 << 26;
 const int SORT_NPOT = SORT_SIZE - 3;
 const int SORT_MAX = 100;
 
+
 int a[SIZE], b[SIZE], c[SIZE], d[SORT_SIZE], e[SORT_SIZE], f[SORT_SIZE];
 
 int main(int argc, char* argv[]) {
@@ -175,12 +176,6 @@ int main(int argc, char* argv[]) {
     genArray(SORT_SIZE - 1, d, SORT_MAX);
     d[SORT_SIZE - 1] = 0;
     printArray(SORT_SIZE, d, true);
-
-    printDesc("std::sort, power-of-two");
-    std::copy(std::begin(d), std::end(d), std::begin(e));
-    StreamCompaction::CPU::stdSort(std::begin(e), std::end(e));
-    printArray(SORT_SIZE, e, true);
-    printElapsedTime(StreamCompaction::CPU::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
 
     printDesc("std::sort, power-of-two");
     std::copy(std::begin(d), std::end(d), std::begin(e));

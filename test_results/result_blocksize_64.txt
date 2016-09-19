@@ -1,0 +1,106 @@
+CIS-565 HW2 CUDA Stream Compaction Test (Ruoyu Fan)
+    Block size for naive scan: 64
+    Block size for up-sweep: 64
+    Block size for down-sweep: 64
+    Block size for boolean mapping: 64
+    Block size for scattering: 64
+    Block sizes for radix sort: 64 64 64 64
+
+****************
+** SCAN TESTS **
+****************
+Array size (power of two): 67108864
+Array size (non-power of two): 67108861
+    [  30  36  13   2   8  41  42  35  42  40  47  44  18 ...  49   0 ]
+==== cpu scan, power-of-two ====
+   elapesd time: 118.412ms    (std::chrono Measured)
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522704 1643522753 ]
+==== cpu scan, non-power-of-two ====
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522605 1643522641 ]
+   elapesd time: 94.2541ms    (std::chrono Measured)
+    passed 
+==== naive scan, power-of-two ====
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522704 1643522753 ]
+   elapesd time: 114.7ms    (CUDA Measured)
+    passed 
+==== naive scan, non-power-of-two ====
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522605 1643522641 ]
+   elapesd time: 113.626ms    (CUDA Measured)
+    passed 
+==== work-efficient scan, power-of-two ====
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522704 1643522753 ]
+   elapesd time: 44.7172ms    (CUDA Measured)
+    passed 
+==== work-efficient scan, non-power-of-two ====
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522605 1643522641 ]
+   elapesd time: 44.5198ms    (CUDA Measured)
+    passed 
+==== thrust scan, power-of-two ====
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522704 1643522753 ]
+   elapesd time: 7.42698ms    (CUDA Measured)
+   elapesd time: 15.6355ms    (std::chrono Measured)
+    passed 
+==== thrust scan, non-power-of-two ====
+    [   0  30  66  79  81  89 130 172 207 249 289 336 380 ... 1643522605 1643522641 ]
+   elapesd time: 7.6359ms    (CUDA Measured)
+   elapesd time: 15.6267ms    (std::chrono Measured)
+    passed 
+
+*****************************
+** STREAM COMPACTION TESTS **
+*****************************
+Array size (power of two): 67108864
+Array size (non-power of two): 67108861
+    [   3   3   0   3   1   2   3   2   1   1   1   3   0 ...   0   0 ]
+==== cpu compact without scan, power-of-two ====
+    [   3   3   3   1   2   3   2   1   1   1   3   1   1 ...   1   2 ]
+   elapesd time: 162.432ms    (std::chrono Measured)
+    passed 
+==== cpu compact without scan, non-power-of-two ====
+    [   3   3   3   1   2   3   2   1   1   1   3   1   1 ...   1   2 ]
+   elapesd time: 162.447ms    (std::chrono Measured)
+    passed 
+==== cpu compact with scan ====
+    [   3   3   3   1   2   3   2   1   1   1   3   1   1 ...   1   2 ]
+   elapesd time: 409.609ms    (std::chrono Measured)
+    passed 
+==== work-efficient compact, power-of-two ====
+    [   3   3   3   1   2   3   2   1   1   1   3   1   1 ...   1   2 ]
+   elapesd time: 53.5306ms    (CUDA Measured)
+    passed 
+==== work-efficient compact, non-power-of-two ====
+    [   3   3   3   1   2   3   2   1   1   1   3   1   1 ...   1   2 ]
+   elapesd time: 53.686ms    (CUDA Measured)
+    passed 
+
+*****************************
+** RADIX SORT TESTS **
+*****************************
+Array size (power of two): 67108864
+Array size (non-power of two): 67108861
+Max value: 100
+    [  50  40  76  42  10  83  16  71   8  69   9  59  29 ...  30   0 ]
+==== std::sort, power-of-two ====
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
+   elapesd time: 1528.95ms    (std::chrono Measured)
+==== thrust unstable sort, power-of-two ====
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
+   elapesd time: 425.366ms    (std::chrono Measured)
+   elapesd time: 0.001088ms    (CUDA Measured)
+    passed 
+==== thrust stable sort, power-of-two ====
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
+   elapesd time: 426.134ms    (std::chrono Measured)
+   elapesd time: 0.00112ms    (CUDA Measured)
+    passed 
+==== radix sort, power-of-two ====
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
+   elapesd time: 418.522ms    (CUDA Measured)
+    passed 
+==== std::sort, non power-of-two ====
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
+   elapesd time: 1516.8ms    (std::chrono Measured)
+==== radix sort, non power-of-two ====
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
+   elapesd time: 418.378ms    (CUDA Measured)
+    passed 

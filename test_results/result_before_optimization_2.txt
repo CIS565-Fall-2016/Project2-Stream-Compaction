@@ -83,9 +83,6 @@ Max value: 100
 ==== std::sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
    elapesd time: 1515.05ms    (std::chrono Measured)
-==== std::sort, power-of-two ====
-    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapesd time: 1498.99ms    (std::chrono Measured)
 ==== thrust unstable sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
    elapesd time: 415.197ms    (std::chrono Measured)

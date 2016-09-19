@@ -18,30 +18,6 @@ PerformanceTimer& timer()
 }
 
 // DONE: __global__
-// // This old functions launch the same number of threads for all passes, which is unnecessary
-//__global__ void kernScanUpSweepPass(int N, int add_distance, int* buffer)
-//{
-//    auto index = threadIdx.x + blockIdx.x * blockDim.x;
-//    if (index >= N) { return; }
-//
-//    if ((index + 1) % (add_distance * 2) == 0)
-//    {
-//        buffer[index] = buffer[index] + buffer[index - add_distance];
-//    }
-//}
-//
-//__global__ void kernScanDownSweepPass(int N, int distance, int* buffer)
-//{
-//    auto index = threadIdx.x + blockIdx.x * blockDim.x;
-//    if (index >= N) { return; }
-//
-//    if ((index + 1) % (distance * 2) == 0)
-//    {
-//        auto temp = buffer[index - distance];
-//        buffer[index - distance] = buffer[index];
-//        buffer[index] = temp + buffer[index];
-//    }
-//}
 
 // optimized: only launch necessary amount of threads in host code
 __global__ void kernScanUpSweepPass(int max_thread_index, int add_distance, int* buffer)
@@ -69,6 +45,31 @@ __global__ void kernScanDownSweepPass(int max_thread_index, int distance, int* b
     buffer[index - distance] = buffer[index];
     buffer[index] = temp + buffer[index];
 }
+
+// // This old functions launch the same number of threads for all passes, which is unnecessary
+//__global__ void kernScanUpSweepPass(int N, int add_distance, int* buffer)
+//{
+//    auto index = threadIdx.x + blockIdx.x * blockDim.x;
+//    if (index >= N) { return; }
+//
+//    if ((index + 1) % (add_distance * 2) == 0)
+//    {
+//        buffer[index] = buffer[index] + buffer[index - add_distance];
+//    }
+//}
+//
+//__global__ void kernScanDownSweepPass(int N, int distance, int* buffer)
+//{
+//    auto index = threadIdx.x + blockIdx.x * blockDim.x;
+//    if (index >= N) { return; }
+//
+//    if ((index + 1) % (distance * 2) == 0)
+//    {
+//        auto temp = buffer[index - distance];
+//        buffer[index - distance] = buffer[index];
+//        buffer[index] = temp + buffer[index];
+//    }
+//}
 
 /**
 * Swap value of two array members
