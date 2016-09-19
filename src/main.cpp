@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
     StreamCompaction::Naive::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+    //printArray(SIZE, c, false);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
