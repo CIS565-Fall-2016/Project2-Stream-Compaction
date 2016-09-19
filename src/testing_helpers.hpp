@@ -49,7 +49,8 @@ void zeroArray(int n, int *a) {
 }
 
 void genArray(int n, int *a, int maxval) {
-    srand(0);
+    //srand(0);
+    srand(time(nullptr));
 
     for (int i = 0; i < n; i++) 
     {

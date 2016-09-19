@@ -18,16 +18,56 @@ PerformanceTimer& timer()
 }
 
 // DONE: __global__
-__global__ void kernScanUpSweepPass(int N, int add_distance, int* buffer)
-{
-    // TODO: use less threads?
-    auto index = threadIdx.x + blockIdx.x * blockDim.x;
-    if (index >= N) { return; }
+// // This old functions launch the same number of threads for all passes, which is unnecessary
+//__global__ void kernScanUpSweepPass(int N, int add_distance, int* buffer)
+//{
+//    auto index = threadIdx.x + blockIdx.x * blockDim.x;
+//    if (index >= N) { return; }
+//
+//    if ((index + 1) % (add_distance * 2) == 0)
+//    {
+//        buffer[index] = buffer[index] + buffer[index - add_distance];
+//    }
+//}
+//
+//__global__ void kernScanDownSweepPass(int N, int distance, int* buffer)
+//{
+//    auto index = threadIdx.x + blockIdx.x * blockDim.x;
+//    if (index >= N) { return; }
+//
+//    if ((index + 1) % (distance * 2) == 0)
+//    {
+//        auto temp = buffer[index - distance];
+//        buffer[index - distance] = buffer[index];
+//        buffer[index] = temp + buffer[index];
+//    }
+//}
 
-    if ((index + 1) % (add_distance * 2) == 0)
-    {
-        buffer[index] = buffer[index] + buffer[index - add_distance];
-    }
+// optimized: only launch necessary amount of threads in host code
+__global__ void kernScanUpSweepPass(int max_thread_index, int add_distance, int* buffer)
+{
+    auto tindex = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tindex >= max_thread_index) { return; }
+
+    // I encountered overflow problem with index < N here so I changed to tindex < max_thread_index
+    size_t index = (add_distance * 2) * (1 + tindex) - 1;
+
+    buffer[index] = buffer[index] + buffer[index - add_distance];
+}
+
+// optimized: only launch necessary amount of threads in host code
+__global__ void kernScanDownSweepPass(int max_thread_index, int distance, int* buffer)
+{
+    auto tindex = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tindex >= max_thread_index) { return; }
+
+    size_t index = (distance * 2) * (1 + tindex) - 1;  
+
+    auto temp = buffer[index - distance];
+    buffer[index - distance] = buffer[index];
+    buffer[index] = temp + buffer[index];
 }
 
 /**
@@ -54,20 +94,6 @@ __global__ void kernSetZero(int index, int* buffer)
     if (thread_index == 0)
     {
         buffer[index] = 0;
-    }
-}
-
-__global__ void kernScanDownSweepPass(int N, int distance, int* buffer)
-{
-    // TODO: use less threads?
-    auto index = threadIdx.x + blockIdx.x * blockDim.x;
-    if (index >= N) { return; }
-
-    if ((index + 1) % (distance * 2) == 0)
-    {
-        auto temp = buffer[index - distance];
-        buffer[index - distance] = buffer[index];
-        buffer[index] = temp + buffer[index];
     }
 }
 
@@ -105,9 +131,12 @@ void scanInPlaceDevice(int extended_n, int* dev_buffer)
 
     // up sweep
     auto pass_count = ilog2ceil(extended_n) - 1;
+    auto max_thread_index = extended_n;
     for (int d = 0; d <= pass_count; d++)
     {
-        kernScanUpSweepPass <<<full_blocks_per_grid_up, block_size_up >>>(extended_n, 1 << d, dev_buffer);
+        max_thread_index = extended_n >> (d + 1);
+        full_blocks_per_grid_up = fullBlocksPerGrid(max_thread_index, block_size_up); // only launch needed threads
+        kernScanUpSweepPass << <full_blocks_per_grid_up, block_size_up >> >(max_thread_index, 1 << d, dev_buffer);
     }
 
     // set the last element to zero
@@ -117,7 +146,9 @@ void scanInPlaceDevice(int extended_n, int* dev_buffer)
     // down sweep
     for (int d = pass_count; d >= 0; d--)
     {
-        kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
+        max_thread_index = extended_n >> (d + 1);
+        full_blocks_per_grid_down = fullBlocksPerGrid(max_thread_index, block_size_down); // only launch needed threads
+        kernScanDownSweepPass <<<full_blocks_per_grid_down, block_size_down >>>(max_thread_index, 1 << d, dev_buffer);
     }
 }
 
@@ -149,9 +180,12 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
 
     // up sweep
     auto pass_count = ilog2ceil(extended_n) - 1;
+    auto max_thread_index = extended_n;
     for (int d = 0; d <= pass_count; d++)
     {
-        kernScanUpSweepPass << <full_blocks_per_grid_up, block_size_up >> >(extended_n, 1 << d, dev_buffer);
+        max_thread_index = extended_n >> (d + 1);
+        full_blocks_per_grid_up = fullBlocksPerGrid(max_thread_index, block_size_up); // only launch needed threads
+        kernScanUpSweepPass << <full_blocks_per_grid_up, block_size_up >> >(max_thread_index, 1 << d, dev_buffer);
     }
 
     if (scan_type == ScanType::inclusive)
@@ -168,7 +202,9 @@ void scan_implemention(int n, int *odata, const int *idata, ScanType scan_type)
     // down sweep
     for (int d = pass_count; d >= 0; d--)
     {
-        kernScanDownSweepPass << <full_blocks_per_grid_down, block_size_down >> >(extended_n, 1 << d, dev_buffer);
+        max_thread_index = extended_n >> (d + 1);
+        full_blocks_per_grid_down = fullBlocksPerGrid(max_thread_index, block_size_down); // only launch needed threads
+        kernScanDownSweepPass <<<full_blocks_per_grid_down, block_size_down >>>(max_thread_index, 1 << d, dev_buffer);
     }
 
     timer().endGpuTimer();
