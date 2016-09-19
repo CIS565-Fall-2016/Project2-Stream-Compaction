@@ -20,7 +20,54 @@ CUDA Stream Compaction
 
 * __Radix sort__ assumes inputs are between [0, a_given_maximum) . I compared my radix sort with std::sort and thrust's unstable and stable sort.
 
-* I added a helper class __PerformanceTimer__ in common.h which is used to do performance measurement.
+* I added a helper class `PerformanceTimer` in common.h which is used to do performance measurement.
+
+
+#### Original Question
+```
+* Roughly optimize the block sizes of each of your implementations for minimal
+  run time on your GPU.
+  * (You shouldn't compare unoptimized implementations to each other!)
+
+* Compare all of these GPU Scan implementations (Naive, Work-Efficient, and
+  Thrust) to the serial CPU version of Scan. Plot a graph of the comparison
+  (with array size on the independent axis).
+  * You should use CUDA events for timing GPU code. Be sure **not** to include
+    any *initial/final* memory operations (`cudaMalloc`, `cudaMemcpy`) in your
+    performance measurements, for comparability. Note that CUDA events cannot
+    time CPU code.
+  * You can use the C++11 `std::chrono` API for timing CPU code. See this
+    [Stack Overflow answer](http://stackoverflow.com/a/23000049) for an example.
+    Note that `std::chrono` may not provide high-precision timing. If it does
+    not, you can either use it to time many iterations, or use another method.
+  * To guess at what might be happening inside the Thrust implementation (e.g.
+    allocation, memory copy), take a look at the Nsight timeline for its
+    execution. Your analysis here doesn't have to be detailed, since you aren't
+    even looking at the code for the implementation.
+```
+
+* Please refer to __Performance__ section.
+
+```
+* Write a brief explanation of the phenomena you see here.
+  * Can you find the performance bottlenecks? Is it memory I/O? Computation? Is
+    it different for each implementation?
+```
+
+
+```
+* Paste the output of the test program into a triple-backtick block in your
+  README.
+  * If you add your own tests (e.g. for radix sort or to test additional corner
+    cases), be sure to mention it explicitly.
+
+These questions should help guide you in performance analysis on future
+assignments, as well.
+```
+
+* The tests are done with arrays of lengths `2^26` (67108864) and `2^26-3` (67108861). The array generation uses current time as random seed.
+
+* I added tests for __radix sort__, which compares with `std::sort` as well as thrust's stable and unstable sorts
 
 
 #### Sample Output
@@ -134,6 +181,14 @@ Max value: 100
     passed 
 ```
 
+#### Performance
+
+##### Blocksize
+
+When block size is smaller than 16, my application suffers from performance drop, which is recorded in `test_results` folder. I decided to just use `cudaOccupancyMaxPotentialBlockSize` for each device functions, which is almost 1024 on my computer.
+
+
+
 #### Optimization
 
 ##### Run less threads for work-efficient scan
@@ -204,11 +259,11 @@ __global__ void kernScanDownSweepPass(int max_thread_index, int distance, int* b
 
 And I calculated the number of threads needed as well as the maximum thread index for every up-sweep and down-sweep pass.
 
-Originally I was still using length of buffer as first parameter, but when I was calculating indices for a thread by using the condition of __(distance * 2) * (1 + tindex) - 1 > N__. There can come some weird result because of the multiplication result is out of bound (even for size_t - it took me 2 hours to debug that). So lessons learned, and I'll use more __n > b/a__ instead of __a*n > b__ as condition in the future.
+Originally I was still using length of buffer as first parameter, but when I was calculating indices for a thread by using the condition of `(distance * 2) * (1 + tindex) - 1 > N`. There can come some weird result because of the multiplication result is out of bound (even for `size_t` - it took me 2 hours to debug that). So lessons learned, and I'll use more `n > b/a` instead of `a*n > b` as condition in the future.
 
 ##### Helper class for performance measurement
 
-I create a RAII __PerformanceTimer__ class for performance measurement. Which is like:
+I create a RAII `PerformanceTimer` class for performance measurement. Which is like:
 
 ```c++
 /**
