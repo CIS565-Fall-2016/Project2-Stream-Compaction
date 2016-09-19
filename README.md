@@ -5,6 +5,7 @@ CUDA Stream Compaction
 
 * Ruoyu Fan
 * Tested on: Windows 10 x64, i7-6700K @ 4.00GHz 16GB, GTX 970 4096MB (girlfriend's machine)
+  * compiled with Visual Studio 2013 and CUDA 7.5
 
 ![preview](/screenshots/preview_optimized.gif)
 
@@ -56,6 +57,8 @@ CUDA Stream Compaction
 
 * I notice that I couldn't get a good measurement for scan and sort of __Thrust__. I have trouble measuring `thrust::exclusive` with std::chrono, while I can use `std::chrono` to measure `thrust::scan` but the results from CUDA events seems off.
 
+* With max possible value increased (so does MSB), besides the run time of radix sort, that of std::sort also increased significantly, which is unexpected. Does bit length also affect the time for read/write or other operations? or the implementation of std::sort<int> use bit level information?
+
 * I think the bottleneck for blocksize is the warp size inside GPU.
 
 * My original work-efficient scan implementation was slower than CPU scan, that was because I wasted too many of my threads, please refer to __Optimization__ section below.
@@ -73,6 +76,70 @@ assignments, as well.
 * The tests are done with arrays of lengths `2^26` (67108864) and `2^26-3` (67108861). The array generation uses current time as random seed.
 
 * I added tests for __radix sort__, which compares with `std::sort` as well as __Thrust__'s stable and unstable sorts
+
+
+#### Performance
+
+##### Blocksize
+
+When block size is smaller than 16, my application suffers from performance drop, which is recorded in `test_results` folder. I decided to just use `cudaOccupancyMaxPotentialBlockSize` for each device functions, which is almost 1024 on my computer.
+
+| Block size | Naïve Scan(ms) | Work-efficient Scan (ms) | Reference CPU Scan (ms) |
+|------------|----------------|--------------------------|-------------------------|
+| 4          | 755.433        | 76.5717                  | 134.408                 |
+| 8          | 379.897        | 52.1942                  | 134.408                 |
+| 16         | 212.542        | 44.3224                  | 134.408                 |
+| 32         | 133.116        | 43.4925                  | 134.408                 |
+| 64         | 114.7          | 44.7172                  | 134.408                 |
+| 128        | 113.802        | 44.7841                  | 134.408                 |
+| 256        | 114.575        | 45.3902                  | 134.408                 |
+| 512        | 114.593        | 44.3084                  | 134.408                 |
+| 1024       | 113.867        | 44.2941                  | 134.408                 |
+
+##### Array length
+
+All the test are done with block size of 1024. The possible max value for sorting is 100.
+
+__Scan__ : this work-efficient scan implementation is faster than cpu scan on large input but slower than Thrust's
+
+| Input array length power of 2 | CPU Scan (ms) | Naïve Scan (ms) | Work-efficient scan (ms) | Thrust scan (ms) (CUDA event) |
+|-------------------------------|---------------|-----------------|--------------------------|-------------------------------|
+| 12                            | 0             | 0.047872        | 0.110784                 | 0.028192                      |
+| 16                            | 0             | 0.09216         | 0.180064                 | 0.166432                      |
+| 20                            | 0             | 1.29402         | 0.818528                 | 0.30768                       |
+| 24                            | 23.5625       | 25.7094         | 11.3379                  | 2.00646                       |
+| 26                            | 159.925       | 133.61          | 44.4511                  | 7.7283                        |
+
+__Compaction__ : this work-efficient compaction implementation is faster than cpu's
+
+| Input array length power of 2 | CPU compact (ms) | CPU scan compact  (ms) | Work-efficient compact (ms) |
+|-------------------------------|------------------|------------------------|-----------------------------|
+| 12                            | 0                | 0                      | 0.118368                    |
+| 16                            | 0                | 0                      | 0.193408                    |
+| 20                            | 0                | 0                      | 0.966944                    |
+| 24                            | 39.0743          | 38.6241                | 13.3034                     |
+| 26                            | 155.406          | 422.524                | 53.2659                     |
+
+__Sort__ : radix sort on GPU is faster than std::sort for `int`s while roughly the same as Thrust's implementations
+
+| Input array length power of 2 | std::sort (ms) | Radix sort (ms) | Thrust unstable sort (std::chrono) | Thrust stable sort (std::chrono) |
+|-------------------------------|----------------|-----------------|------------------------------------|----------------------------------|
+| 12                            | 0              | 0.883328        | 0                                  | 0                                |
+| 16                            | 0              | 1.44288         | 0                                  | 0                                |
+| 20                            | 22.1649        | 7.61686         | 0                                  | 0                                |
+| 24                            | 378.025        | 105.222         | 109.329                            | 100.279                          |
+| 26                            | 1481.8         | 419.345         | 434.399                            | 423.933                          |
+
+##### Data maximum value and radix sort
+
+All the test are done with block size of 1024; array length is 67108864.
+
+| max value | std::sort (ms) | Radix sort (ms) | Thrust unstable sort (std::chrono) | Thrust stable sort (std::chrono) |
+|-----------|----------------|-----------------|------------------------------------|----------------------------------|
+| 100       | 1481.8         | 419.345         | 434.399                            | 423.933                          |
+| 10000     | 3564.1         | 1023.97         | 580.816                            | 587.524                          |
+
+With max possible value increased, besides the run time of radix sort, that of std::sort and thrust sorts also increased, unexpectedly.
 
 
 #### Sample Output
@@ -186,11 +253,6 @@ Max value: 100
     passed 
 ```
 
-#### Performance
-
-##### Blocksize
-
-When block size is smaller than 16, my application suffers from performance drop, which is recorded in `test_results` folder. I decided to just use `cudaOccupancyMaxPotentialBlockSize` for each device functions, which is almost 1024 on my computer.
 
 #### Optimization
 
