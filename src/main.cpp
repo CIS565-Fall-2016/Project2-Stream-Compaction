@@ -17,12 +17,17 @@
 #include <algorithm>
 #include <iostream>
 
-const int SIZE = 1 << 26;
+// size of 1 << 26 could on a 970 desktop 
+//   but crashed on my laptop (970m) so I reduced array size
+// change the array size if there is still problem
+// const int SIZE = 1 << 26;
+const int SIZE = 1 << 24;
 const int NPOT = SIZE - 3;
 const int SCAN_MAX = 50;
 const int COMPACTION_MAX = 4;
 
-const int SORT_SIZE = 1 << 26;
+// const int SORT_SIZE = 1 << 26; 
+const int SORT_SIZE = 1 << 24;
 const int SORT_NPOT = SORT_SIZE - 3;
 const int SORT_MAX = 100;
 

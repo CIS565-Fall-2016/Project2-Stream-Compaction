@@ -130,24 +130,23 @@ namespace Common {
             gpu_timer_started = false;
         }
 
-        float getCpuElapsedTimeForPreviousOperation()
+        float getCpuElapsedTimeForPreviousOperation() noexcept
         {
             return prev_elapsed_time_cpu_milliseconds;
         }
 
-        float getGpuElapsedTimeForPreviousOperation()
+        float getGpuElapsedTimeForPreviousOperation() noexcept
         {
             return prev_elapsed_time_gpu_milliseconds;
         }
 
+		// remove copy and move functions
+		PerformanceTimer(const PerformanceTimer&) = delete;
+		PerformanceTimer(PerformanceTimer&&) = delete;
+		PerformanceTimer& operator=(const PerformanceTimer&) = delete;
+		PerformanceTimer& operator=(PerformanceTimer&&) = delete;
 
     private:
-        // remove copy and move functions
-        PerformanceTimer(const PerformanceTimer&) = delete;
-        PerformanceTimer(PerformanceTimer&&) = delete;
-        PerformanceTimer& operator=(const PerformanceTimer&) = delete;
-        PerformanceTimer& operator=(PerformanceTimer&& other) = delete;
-
         cudaEvent_t event_start = nullptr;
         cudaEvent_t event_end = nullptr;
 

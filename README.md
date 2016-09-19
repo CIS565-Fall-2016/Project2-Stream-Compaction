@@ -7,6 +7,8 @@ CUDA Stream Compaction
 * Tested on: Windows 10 x64, i7-6700K @ 4.00GHz 16GB, GTX 970 4096MB (girlfriend's machine)
   * compiled with Visual Studio 2013 and CUDA 7.5
 
+NOTE: if the program crashes when entering the test for naive sort, try reducing the array sizes in `main.cpp`. (`SIZE` and `SORT_SIZE`.)
+
 ![preview](/screenshots/preview_optimized.gif)
 
 ### Description
@@ -15,7 +17,7 @@ CUDA Stream Compaction
 
 * Implemented __CPU scan and compaction__, __compaction__, __GPU naive scan__, __GPU work-efficient scan__, __GPU work-efficient compaction__, __GPU radix sort (extra)__, and compared my scan algorithms with thrust implemention
 
-* I optimized my work efficient scan, and __speed is increased to 270%__ of my original implementation. 
+* I optimized my work efficient scan, and __speed is increased to 270%__ of my original implementation.
 
 * I also wrote an __invlusive version__ of __work-efficient scan__ - because i misunderstood the requirement at first! The difference of the inclusive method is that it creates a buffer that is 1 element larger and swap the last(0) and and second last elements before downsweeping. Although I corrected my implemention to exclusive scan, the inclusive scan can still be called by passing ScanType::inclusive to scan_implenmention method in efficient.cu.
 
@@ -165,33 +167,33 @@ Array size (non-power of two): 67108861
 ==== cpu scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
    elapsed time: 149.901ms    (std::chrono Measured)
-    passed 
+    passed
 ==== naive scan, power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
    elapsed time: 113.867ms    (CUDA Measured)
-    passed 
+    passed
 ==== naive scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
    elapsed time: 113.687ms    (CUDA Measured)
-    passed 
+    passed
 ==== work-efficient scan, power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
    elapsed time: 44.2491ms    (CUDA Measured)
-    passed 
+    passed
 ==== work-efficient scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
    elapsed time: 44.3104ms    (CUDA Measured)
-    passed 
+    passed
 ==== thrust scan, power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
    elapsed time: 7.73741ms    (CUDA Measured)
    elapsed time: 0ms    (std::chrono Measured)
-    passed 
+    passed
 ==== thrust scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
    elapsed time: 7.74371ms    (CUDA Measured)
    elapsed time: 0ms    (std::chrono Measured)
-    passed 
+    passed
 
 *****************************
 ** STREAM COMPACTION TESTS **
@@ -202,23 +204,23 @@ Array size (non-power of two): 67108861
 ==== cpu compact without scan, power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
    elapsed time: 155.403ms    (std::chrono Measured)
-    passed 
+    passed
 ==== cpu compact without scan, non-power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   2 ]
    elapsed time: 154.901ms    (std::chrono Measured)
-    passed 
+    passed
 ==== cpu compact with scan ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
    elapsed time: 421.621ms    (std::chrono Measured)
-    passed 
+    passed
 ==== work-efficient compact, power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
    elapsed time: 54.2043ms    (CUDA Measured)
-    passed 
+    passed
 ==== work-efficient compact, non-power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   2 ]
    elapsed time: 54.1137ms    (CUDA Measured)
-    passed 
+    passed
 
 *****************************
 ** RADIX SORT TESTS **
@@ -234,23 +236,23 @@ Max value: 100
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
    elapsed time: 429.389ms    (std::chrono Measured)
    elapsed time: 0.001184ms    (CUDA Measured)
-    passed 
+    passed
 ==== thrust stable sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
    elapsed time: 418.915ms    (std::chrono Measured)
    elapsed time: 0.001216ms    (CUDA Measured)
-    passed 
+    passed
 ==== radix sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
    elapsed time: 419.691ms    (CUDA Measured)
-    passed 
+    passed
 ==== std::sort, non power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
    elapsed time: 1516.39ms    (std::chrono Measured)
 ==== radix sort, non power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
    elapsed time: 416.676ms    (CUDA Measured)
-    passed 
+    passed
 ```
 
 
@@ -259,8 +261,8 @@ Max value: 100
 ##### Run less threads for work-efficient scan
 
 For work-efficient scan, my original implementation was using the same of amount of threads for every up sweep and down sweeps. Then I optimized it by using only necessary amount of threads for each iteration.
-  
-The performance for scanning an array of length 67108861 using work-efficient approach boosted __from ~120.5ms to ~44.4ms__, which is __270% speed__ of my original approach. You can see the data in the files under __test_results/__ folder 
+
+The performance for scanning an array of length 67108861 using work-efficient approach boosted __from ~120.5ms to ~44.4ms__, which is __270% speed__ of my original approach. You can see the data in the files under __test_results/__ folder
 
 Original implementation:
 
@@ -363,9 +365,9 @@ public:
         time_end_cpu = std::chrono::high_resolution_clock::now();
 
         if (!cpu_timer_started) { throw std::runtime_error("CPU timer not started"); }
-        
+
         std::chrono::duration<double, std::milli> duro = time_end_cpu - time_start_cpu;
-        prev_elapsed_time_cpu_milliseconds = 
+        prev_elapsed_time_cpu_milliseconds =
             static_cast<decltype(prev_elapsed_time_cpu_milliseconds)>(duro.count());
 
         cpu_timer_started = false;
@@ -390,24 +392,23 @@ public:
         gpu_timer_started = false;
     }
 
-    float getCpuElapsedTimeForPreviousOperation()
+    float getCpuElapsedTimeForPreviousOperation() noexcept
     {
         return prev_elapsed_time_cpu_milliseconds;
     }
 
-    float getGpuElapsedTimeForPreviousOperation()
+    float getGpuElapsedTimeForPreviousOperation() noexcept
     {
         return prev_elapsed_time_gpu_milliseconds;
     }
 
-
-private:
     // remove copy and move functions
     PerformanceTimer(const PerformanceTimer&) = delete;
     PerformanceTimer(PerformanceTimer&&) = delete;
     PerformanceTimer& operator=(const PerformanceTimer&) = delete;
-    PerformanceTimer& operator=(PerformanceTimer&& other) = delete;
+    PerformanceTimer& operator=(PerformanceTimer&&) = delete;
 
+private:
     cudaEvent_t event_start = nullptr;
     cudaEvent_t event_end = nullptr;
 
@@ -435,7 +436,7 @@ PerformanceTimer& timer()
 }
 ```
 
-Therefore, I can use 
+Therefore, I can use
 
 ```c++
 void someFunc()
@@ -443,7 +444,7 @@ void someFunc()
     allocateYourBuffers()
 
     timer().startGpuTimer();
-    
+
     doYourGpuScan();
 
     timer().endGpuTimer();
@@ -452,10 +453,10 @@ void someFunc()
 }
 ```
 
-and 
+and
 
 ```c++
-timer().getGpuElapsedTimeForPreviousOperation(); 
+timer().getGpuElapsedTimeForPreviousOperation();
 ```
 
 to get the measured elapsed time for the operation.
