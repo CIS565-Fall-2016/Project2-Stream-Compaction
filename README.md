@@ -4,7 +4,7 @@ CUDA Stream Compaction
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 2**
 
 * Ruoyu Fan
-* Tested on: (TODO) Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+* Tested on: Windows 10 x64, i7-6700K @ 4.00GHz 16GB, GTX 970 4096MB (girlfriend's machine)
 
 ![preview](/screenshots/preview_optimized.gif)
 
@@ -23,7 +23,7 @@ CUDA Stream Compaction
 * I added a helper class `PerformanceTimer` in common.h which is used to do performance measurement.
 
 
-#### Original Question
+#### Original Questions
 ```
 * Roughly optimize the block sizes of each of your implementations for minimal
   run time on your GPU.
@@ -54,6 +54,11 @@ CUDA Stream Compaction
     it different for each implementation?
 ```
 
+* I notice that I couldn't get a good measurement for scan and sort of __Thrust__. I have trouble measuring `thrust::exclusive` with std::chrono, while I can use `std::chrono` to measure `thrust::scan` but the results from CUDA events seems off.
+
+* I think the bottleneck for blocksize is the warp size inside GPU.
+
+* My original work-efficient scan implementation was slower than CPU scan, that was because I wasted too many of my threads, please refer to __Optimization__ section below.
 
 ```
 * Paste the output of the test program into a triple-backtick block in your
@@ -67,7 +72,7 @@ assignments, as well.
 
 * The tests are done with arrays of lengths `2^26` (67108864) and `2^26-3` (67108861). The array generation uses current time as random seed.
 
-* I added tests for __radix sort__, which compares with `std::sort` as well as thrust's stable and unstable sorts
+* I added tests for __radix sort__, which compares with `std::sort` as well as __Thrust__'s stable and unstable sorts
 
 
 #### Sample Output
