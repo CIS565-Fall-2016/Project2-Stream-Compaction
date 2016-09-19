@@ -192,8 +192,6 @@ Max value: 100
 
 When block size is smaller than 16, my application suffers from performance drop, which is recorded in `test_results` folder. I decided to just use `cudaOccupancyMaxPotentialBlockSize` for each device functions, which is almost 1024 on my computer.
 
-
-
 #### Optimization
 
 ##### Run less threads for work-efficient scan
