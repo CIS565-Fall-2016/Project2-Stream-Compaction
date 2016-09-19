@@ -20,7 +20,7 @@ CUDA Stream Compaction
 
 * __Radix sort__ assumes inputs are between [0, a_given_maximum) . I compared my radix sort with std::sort and thrust's unstable and stable sort.
 
-* I added a helper class PerformanceTimer in common.h which is used to do performance measurement.
+* I added a helper class __PerformanceTimer__ in common.h which is used to do performance measurement.
 
 
 #### Sample Output
@@ -41,37 +41,37 @@ Array size (power of two): 67108864
 Array size (non-power of two): 67108861
     [   8  18  37  41  15  25  27   8  36  28  13  40  24 ...  35   0 ]
 ==== cpu scan, power-of-two ====
-   elapesd time: 134.408ms    (std::chrono Measured)
+   elapsed time: 134.408ms    (std::chrono Measured)
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
 ==== cpu scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapesd time: 149.901ms    (std::chrono Measured)
+   elapsed time: 149.901ms    (std::chrono Measured)
     passed 
 ==== naive scan, power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
-   elapesd time: 113.867ms    (CUDA Measured)
+   elapsed time: 113.867ms    (CUDA Measured)
     passed 
 ==== naive scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapesd time: 113.687ms    (CUDA Measured)
+   elapsed time: 113.687ms    (CUDA Measured)
     passed 
 ==== work-efficient scan, power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
-   elapesd time: 44.2491ms    (CUDA Measured)
+   elapsed time: 44.2491ms    (CUDA Measured)
     passed 
 ==== work-efficient scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapesd time: 44.3104ms    (CUDA Measured)
+   elapsed time: 44.3104ms    (CUDA Measured)
     passed 
 ==== thrust scan, power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
-   elapesd time: 7.73741ms    (CUDA Measured)
-   elapesd time: 0ms    (std::chrono Measured)
+   elapsed time: 7.73741ms    (CUDA Measured)
+   elapsed time: 0ms    (std::chrono Measured)
     passed 
 ==== thrust scan, non-power-of-two ====
     [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapesd time: 7.74371ms    (CUDA Measured)
-   elapesd time: 0ms    (std::chrono Measured)
+   elapsed time: 7.74371ms    (CUDA Measured)
+   elapsed time: 0ms    (std::chrono Measured)
     passed 
 
 *****************************
@@ -82,23 +82,23 @@ Array size (non-power of two): 67108861
     [   0   1   0   3   3   1   2   1   1   2   1   0   3 ...   3   0 ]
 ==== cpu compact without scan, power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
-   elapesd time: 155.403ms    (std::chrono Measured)
+   elapsed time: 155.403ms    (std::chrono Measured)
     passed 
 ==== cpu compact without scan, non-power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   2 ]
-   elapesd time: 154.901ms    (std::chrono Measured)
+   elapsed time: 154.901ms    (std::chrono Measured)
     passed 
 ==== cpu compact with scan ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
-   elapesd time: 421.621ms    (std::chrono Measured)
+   elapsed time: 421.621ms    (std::chrono Measured)
     passed 
 ==== work-efficient compact, power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
-   elapesd time: 54.2043ms    (CUDA Measured)
+   elapsed time: 54.2043ms    (CUDA Measured)
     passed 
 ==== work-efficient compact, non-power-of-two ====
     [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   2 ]
-   elapesd time: 54.1137ms    (CUDA Measured)
+   elapsed time: 54.1137ms    (CUDA Measured)
     passed 
 
 *****************************
@@ -110,27 +110,27 @@ Max value: 100
     [  78  22  68  49  66  85  83  63  52  58  25   5  35 ...  84   0 ]
 ==== std::sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapesd time: 1522.95ms    (std::chrono Measured)
+   elapsed time: 1522.95ms    (std::chrono Measured)
 ==== thrust unstable sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapesd time: 429.389ms    (std::chrono Measured)
-   elapesd time: 0.001184ms    (CUDA Measured)
+   elapsed time: 429.389ms    (std::chrono Measured)
+   elapsed time: 0.001184ms    (CUDA Measured)
     passed 
 ==== thrust stable sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapesd time: 418.915ms    (std::chrono Measured)
-   elapesd time: 0.001216ms    (CUDA Measured)
+   elapsed time: 418.915ms    (std::chrono Measured)
+   elapsed time: 0.001216ms    (CUDA Measured)
     passed 
 ==== radix sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapesd time: 419.691ms    (CUDA Measured)
+   elapsed time: 419.691ms    (CUDA Measured)
     passed 
 ==== std::sort, non power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapesd time: 1516.39ms    (std::chrono Measured)
+   elapsed time: 1516.39ms    (std::chrono Measured)
 ==== radix sort, non power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapesd time: 416.676ms    (CUDA Measured)
+   elapsed time: 416.676ms    (CUDA Measured)
     passed 
 ```
 
@@ -205,3 +205,137 @@ __global__ void kernScanDownSweepPass(int max_thread_index, int distance, int* b
 And I calculated the number of threads needed as well as the maximum thread index for every up-sweep and down-sweep pass.
 
 Originally I was still using length of buffer as first parameter, but when I was calculating indices for a thread by using the condition of __(distance * 2) * (1 + tindex) - 1 > N__. There can come some weird result because of the multiplication result is out of bound (even for size_t - it took me 2 hours to debug that). So lessons learned, and I'll use more __n > b/a__ instead of __a*n > b__ as condition in the future.
+
+##### Helper class for performance measurement
+
+I create a RAII __PerformanceTimer__ class for performance measurement. Which is like:
+
+```c++
+/**
+* This class is used for timing the performance
+* Uncopyable and unmovable
+*/
+class PerformanceTimer
+{
+public:
+    PerformanceTimer()
+    {
+        cudaEventCreate(&event_start);
+        cudaEventCreate(&event_end);
+    }
+
+    ~PerformanceTimer()
+    {
+        cudaEventDestroy(event_start);
+        cudaEventDestroy(event_end);
+    }
+
+    void startCpuTimer()
+    {
+        if (cpu_timer_started) { throw std::runtime_error("CPU timer already started"); }
+        cpu_timer_started = true;
+
+        time_start_cpu = std::chrono::high_resolution_clock::now();
+    }
+
+    void endCpuTimer()
+    {
+        time_end_cpu = std::chrono::high_resolution_clock::now();
+
+        if (!cpu_timer_started) { throw std::runtime_error("CPU timer not started"); }
+        
+        std::chrono::duration<double, std::milli> duro = time_end_cpu - time_start_cpu;
+        prev_elapsed_time_cpu_milliseconds = 
+            static_cast<decltype(prev_elapsed_time_cpu_milliseconds)>(duro.count());
+
+        cpu_timer_started = false;
+    }
+
+    void startGpuTimer()
+    {
+        if (gpu_timer_started) { throw std::runtime_error("GPU timer already started"); }
+        gpu_timer_started = true;
+
+        cudaEventRecord(event_start);
+    }
+
+    void endGpuTimer()
+    {
+        cudaEventRecord(event_end);
+        cudaEventSynchronize(event_end);
+
+        if (!gpu_timer_started) { throw std::runtime_error("GPU timer not started"); }
+
+        cudaEventElapsedTime(&prev_elapsed_time_gpu_milliseconds, event_start, event_end);
+        gpu_timer_started = false;
+    }
+
+    float getCpuElapsedTimeForPreviousOperation()
+    {
+        return prev_elapsed_time_cpu_milliseconds;
+    }
+
+    float getGpuElapsedTimeForPreviousOperation()
+    {
+        return prev_elapsed_time_gpu_milliseconds;
+    }
+
+
+private:
+    // remove copy and move functions
+    PerformanceTimer(const PerformanceTimer&) = delete;
+    PerformanceTimer(PerformanceTimer&&) = delete;
+    PerformanceTimer& operator=(const PerformanceTimer&) = delete;
+    PerformanceTimer& operator=(PerformanceTimer&& other) = delete;
+
+    cudaEvent_t event_start = nullptr;
+    cudaEvent_t event_end = nullptr;
+
+    using time_point_t = std::chrono::high_resolution_clock::time_point;
+    time_point_t time_start_cpu;
+    time_point_t time_end_cpu;
+
+    bool cpu_timer_started = false;
+    bool gpu_timer_started = false;
+
+    float prev_elapsed_time_cpu_milliseconds = 0.f;
+    float prev_elapsed_time_gpu_milliseconds = 0.f;
+};
+```
+
+And inside a module I have:
+
+```c++
+using StreamCompaction::Common::PerformanceTimer;
+PerformanceTimer& timer()
+{
+    // not thread-safe
+    static PerformanceTimer timer;
+    return timer;
+}
+```
+
+Therefore, I can use 
+
+```c++
+void someFunc()
+{
+    allocateYourBuffers()
+
+    timer().startGpuTimer();
+    
+    doYourGpuScan();
+
+    timer().endGpuTimer();
+
+    endYourJob();
+}
+```
+
+and 
+
+```c++
+timer().getGpuElapsedTimeForPreviousOperation(); 
+```
+
+to get the measured elapsed time for the operation.

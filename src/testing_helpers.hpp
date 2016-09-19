@@ -23,7 +23,7 @@ void printDesc(const char *desc) {
 template<typename T>
 void printElapsedTime(T time, std::string note = "")
 {
-    std::cout << "   elapesd time: " << time << "ms    " << note << std::endl;
+    std::cout << "   elapsed time: " << time << "ms    " << note << std::endl;
 }
 
 template<typename T>
