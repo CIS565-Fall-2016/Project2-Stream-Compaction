@@ -11,12 +11,18 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/sort.h>
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
     const int SIZE = 1 << 8;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
+
+	const int KEYSIZE = 10;
+	int a_sm[8] = { 0 };
+	int c_sm[8] = { 0 };
+	for (int i = 0; i < 8; i++) a_sm[i] = rand() % (1 << KEYSIZE);
 
     // Scan tests
 
@@ -37,7 +43,7 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("cpu scan, non-power-of-two");
     StreamCompaction::CPU::scan(NPOT, c, a);
-    printArray(NPOT, b, true);
+    //printArray(NPOT, b, true);
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
@@ -53,7 +59,7 @@ int main(int argc, char* argv[]) {
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
-    printDesc("work-efficient scan, power-of-two");
+	printDesc("work-efficient scan, power-of-two");
     StreamCompaction::Efficient::scan(SIZE, c, a);
     //printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
@@ -67,7 +73,7 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("thrust scan, power-of-two");
     StreamCompaction::Thrust::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
@@ -120,4 +126,17 @@ int main(int argc, char* argv[]) {
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+	printf("\n");
+	printf("**********************\n");
+	printf("** RADIX SORT TESTS **\n");
+	printf("**********************\n");
+
+
+	zeroArray(8, c_sm);
+	printArray(8, a_sm, true);
+	printDesc("radix sort, power-of-two");
+	StreamCompaction::Sort::radix(8, KEYSIZE, c_sm, a_sm);
+	printArray(8, c_sm, true);
+	//printCmpLenResult(count, expectedNPOT, b, c);
 }
