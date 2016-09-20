@@ -3,20 +3,6 @@
 #include "common.h"
 #include "naive.h"
 
-#define DEBUG 0
-
-void printArray2(int n, int *a, bool abridged = true) {
-	printf("    [ ");
-	for (int i = 0; i < n; i++) {
-		if (abridged && i + 2 == 15 && n > 16) {
-			i = n - 2;
-			printf("... ");
-		}
-		printf("%3d ", a[i]);
-	}
-	printf("]\n");
-}
-
 namespace StreamCompaction {
 namespace Naive {
 
@@ -54,19 +40,8 @@ void scan(int n, int *odata, const int *idata) {
 	//for d = 1 to lg(n) do
 	for (int depth = 1; depth <= ilog2ceil(n); ++depth)
 	{
-#if DEBUG
-		printf("--------------before scan %d-------------------\n", depth);
-		cudaMemcpy(odata, dev_beforeScan, sizeof(int) * n, cudaMemcpyDeviceToHost);
-		printArray2(n, odata);
-#endif
 		parallelAdd << <numBlocks, blocksize >> >(n, depth, dev_afterScan, dev_beforeScan);
 
-#if DEBUG
-		printf("--------------after scan %d-------------------\n", depth);
-		cudaMemcpy(odata, dev_afterScan, sizeof(int) * n, cudaMemcpyDeviceToHost);
-		printArray2(n, odata);
-		printf("-----------------------------------------------\n", depth);
-#endif
 		//ping-pong buffers
 		int * temp = dev_afterScan;
 		dev_afterScan = dev_beforeScan;

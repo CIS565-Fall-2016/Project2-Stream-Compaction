@@ -88,47 +88,18 @@ void scan(int n, int *odata, const int *idata) {
 	//up sweep
 	for (int depth = 0; depth < ilog2ceil(n); ++depth)
 	{
-#if DEBUG
-		printf("--------------before upsweep %d-------------------\n", depth);
-		cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
-		printArray3(n, odata);
-#endif
 		upSweep << <numBlocks, blocksize >> >(rounded_n, depth, dev_data);
 		checkCUDAError("upSweep Kernel failed!");
-#if DEBUG
-		printf("--------------after upsweep %d-------------------\n", depth);
-		cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
-		printArray3(n, odata);
-		printf("-----------------------------------------------\n", depth);
-#endif
 	}
 
+	// place 0 at end of array
+	cudaMemset(&dev_data[n-1], 0, sizeof(int) * (rounded_n - n + 1)); 
+	
 	//down-sweep
-	cudaMemset(&dev_data[n-1], 0, sizeof(int) * (rounded_n - n + 1)); //pretty questionable
-#if DEBUG
-	int * testZeroes = (int *)malloc(sizeof (int) * rounded_n);
-	printf("--------------test zeros-------------------\n");
-	cudaMemcpy(testZeroes, dev_data, sizeof(int) * rounded_n, cudaMemcpyDeviceToHost);
-	printArray3(rounded_n, testZeroes, false);
-	free(testZeroes);
-#endif
-
-	printf("whats going on here? rounded_n = %d, n = %d\n", rounded_n, n);
 	for (int depth = ilog2ceil(n) - 1; depth >= 0; --depth)
 	{
-#if DEBUG
-		printf("--------------before downsweep %d-------------------\n", depth);
-		cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
-		printArray3(n, odata);
-#endif
 		downSweep << <numBlocks, blocksize >> >(rounded_n, depth, dev_data);
 		checkCUDAError("downSweep Kernel failed!");
-#if DEBUG
-		printf("--------------after downsweep %d-------------------\n", depth);
-		cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
-		printArray3(n, odata);
-		printf("-----------------------------------------------\n", depth);
-#endif
 	}
 
 
