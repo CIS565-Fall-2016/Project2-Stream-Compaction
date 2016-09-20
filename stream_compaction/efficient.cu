@@ -3,20 +3,6 @@
 #include "common.h"
 #include "efficient.h"
 
-#define DEBUG 1
-
-void printArray3(int n, int *a, bool abridged = true) {
-	printf("    [ ");
-	for (int i = 0; i < n; i++) {
-		if (abridged && i + 2 == 15 && n > 16) {
-			i = n - 2;
-			printf("... ");
-		}
-		printf("%3d ", a[i]);
-	}
-	printf("]\n");
-}
-
 namespace StreamCompaction {
 namespace Efficient {
 
@@ -84,7 +70,7 @@ void scan(int n, int *odata, const int *idata) {
 	// Not sure this matters actually matters, so long as the correct
 	// data range is copied back at the end
 	cudaMemset(&dev_data[n], 0, sizeof(int) * (rounded_n - n));
-	checkCUDAError("cudaMemset dev_data failed!");
+	checkCUDAError("cudaMemset dev_data 1 failed!");
 
 	//up sweep
 	for (int depth = 0; depth < ilog2ceil(n); ++depth)
@@ -95,6 +81,7 @@ void scan(int n, int *odata, const int *idata) {
 
 	// place 0 at end of array
 	cudaMemset(&dev_data[n-1], 0, sizeof(int) * (rounded_n - n + 1)); 
+	checkCUDAError("cudaMemset dev_data 2 failed!");
 	
 	//down-sweep
 	for (int depth = ilog2ceil(n) - 1; depth >= 0; --depth)
@@ -159,9 +146,12 @@ int compact(int n, int *odata, const int *idata) {
 
 	//scatter
 	cudaMemset(dev_odata, 0, n * sizeof(int));
+	checkCUDAError("cudaMemset dev_odata failed!");
 	Common::kernScatter << < numBlocks, blocksize >> >(n, dev_odata,
 		dev_idata, dev_bools, dev_indices);
+	checkCUDAError("kernScatter failed!");
 
+	// copy compacted array to output
 	cudaMemcpy(odata, dev_odata, n * sizeof(int), cudaMemcpyDeviceToHost);
 	checkCUDAError("cudaMemcpy dev_odata to odata failed!");
 
@@ -172,7 +162,7 @@ int compact(int n, int *odata, const int *idata) {
 	free(bools);
 	free(scanResult);
 
-	//count valid blocks. Only nonzero is valid
+	// count and return # valid blocks. Only nonzero is valid.
 	// This block of code feels really wrong and against the entire spirit of the project
 	for (int i = 0; i < n; ++i)
 	{
@@ -181,8 +171,6 @@ int compact(int n, int *odata, const int *idata) {
 	}
 
 	return n;
-
-
 
 }
 
