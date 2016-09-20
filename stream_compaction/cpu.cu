@@ -53,17 +53,10 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	int *o = new int[n];
 	scan(n, o, pre);
 
-	for (int i = 0; i < n; i++) {
-		printf("i: %i, idata[i]: %s, o[i]: %i, pre[i]: %i\n", i, idata[i], o[i], pre[i]);
-	}
 	// Scatter
-	int i2 = 0;
 	for (int i = 0; i < n; i++) {
 		if (pre[i] == 1) {
-			if (i2 == 9) {
-				//printf("pre[i]: %i, o[i]: %i, idata[o[i]]: %i", pre[i], o[i], idata[o[i]]);
-			}
-			odata[i2++] = idata[o[i]];
+			odata[o[i]] = idata[i];
 		}
 	}
 	
