@@ -51,7 +51,7 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	// Scatter 
 	int elementCount;
 	for (int i = 0; i < n; i++) {
-		if (bools[i] == 1) {
+		if (bools[i]) {
 			odata[indices[i]] = idata[i];
 			elementCount = indices[i] + 1;
 		}
