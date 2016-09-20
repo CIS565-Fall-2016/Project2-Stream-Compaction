@@ -24,8 +24,6 @@ endif()
 include_directories(.)
 add_subdirectory(stream_compaction)
 
-include_directories(.)
-
 cuda_add_executable(${CMAKE_PROJECT_NAME}
     "src/main.cpp"
     )
