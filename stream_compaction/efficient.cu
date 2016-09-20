@@ -79,21 +79,6 @@ void scan(int n, int *odata, const int *idata) {
   checkCUDAError("cudaFree dev_data failed!");
 }
 
-
-__global__ void filter(int n, int *odata, const int* idata) {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index >= n) return;
-  odata[index] = idata[index] != 0;
-}
-
-__global__ void scatter(int n, int *odata, const int* idata, const int* mask, const int* indicies) {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index >= n) return;
-  if (mask[index]) {
-    odata[indicies[index]] = idata[index];
-  }
-}
-
 /**
  * Performs stream compaction on idata, storing the result into odata.
  * All zeroes are discarded.
@@ -128,7 +113,7 @@ int compact(int n, int *odata, const int *idata) {
 
   // create mask
   nBlocks = (n + blockSize - 1) / blockSize;
-  filter << <nBlocks, blockSize >> >(n, dev_mask, dev_idata);
+  StreamCompaction::Common::kernMapToBoolean << <nBlocks, blockSize >> >(n, dev_mask, dev_idata);
   
   // save the mask here for usage later
   cudaMemcpy(dev_odata, dev_mask, sizeof(int) * n, cudaMemcpyDeviceToDevice);
@@ -166,7 +151,7 @@ int compact(int n, int *odata, const int *idata) {
 
   // scatter
   nBlocks = (n + blockSize - 1) / blockSize;
-  scatter << <nBlocks, blockSize >> >(n , dev_odata, dev_idata, dev_odata, dev_mask);
+  StreamCompaction::Common::kernScatter << <nBlocks, blockSize >> >(n, dev_odata, dev_idata, dev_odata, dev_mask);
 
   cudaMemcpy(odata, dev_odata, sizeof(int) * last, cudaMemcpyDeviceToHost);
   checkCUDAError("cudaMemcpy from dev_odata to odata failed!");
