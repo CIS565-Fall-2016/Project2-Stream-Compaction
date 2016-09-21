@@ -11,12 +11,12 @@ namespace Naive {
 	__global__ void kernRunScan(int N, int pow2d, int* odata, int* idata) {
 		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-		if (index > N) {
+		if (index > N || index < 0) {
 			return;
 		}
 		
 		if (index >= pow2d) {
-			odata[index] = idata[index - pow2d] + idata[index];
+			odata[index] = idata[index - pow2d - 1] + idata[index - 1];
 		}
 		else {
 			odata[index] = idata[index];
@@ -35,10 +35,10 @@ void scan(int n, int *odata, const int *idata) {
 	int* dev_out;
 
 	cudaMalloc((void**)&dev_in, n * sizeof(int));
-	checkCUDAError("cudaMalloc Error dev_a.");
+	checkCUDAError("cudaMalloc Error dev_in.");
 
 	cudaMalloc((void**)&dev_out, n * sizeof(int));
-	checkCUDAError("cudaMalloc Error dev_b.");
+	checkCUDAError("cudaMalloc Error dev_out.");
 
 	cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 	
@@ -47,9 +47,9 @@ void scan(int n, int *odata, const int *idata) {
 	// Loop over data 
 	for (int d = 1; d < max_d; d++) {
 
-		kernRunScan <<< fullBlocksPerGrid, threadsPerBlock >>>(n, pow(2, d - 1), dev_out, dev_in);
+		kernRunScan << < fullBlocksPerGrid, threadsPerBlock >> >(n, pow(2, d - 1), dev_out, dev_in);
 
-	}	
+	}
 
 	cudaMemcpy(odata, dev_out, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("memcpy back failed!");
