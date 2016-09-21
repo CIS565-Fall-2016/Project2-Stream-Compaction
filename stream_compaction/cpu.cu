@@ -23,7 +23,14 @@ void scan(int n, int *odata, const int *idata) {
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
     // TODO
-    return -1;
+	int m = 0;
+
+	for (int i = 0; i < n; ++i) {
+		if (idata[i] == 0) continue;
+		odata[m++] = idata[i];
+	}
+
+    return m;
 }
 
 /**
@@ -33,7 +40,24 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  */
 int compactWithScan(int n, int *odata, const int *idata) {
     // TODO
-    return -1;
+	int *nonZero = new int [n];
+	int m = 0;
+
+	for (int i = 0; i < n; ++i) {
+		nonZero[i] = idata[i] == 0 ? 0 : 1;
+	}
+
+	scan(n, odata, nonZero);
+	m = odata[n - 1];
+
+	for (int i = 0; i < n; ++i) {
+		if (nonZero[i] == 0) continue;
+		odata[odata[i]] = idata[i];
+	}
+
+	delete [] nonZero;
+
+    return m;
 }
 
 }
