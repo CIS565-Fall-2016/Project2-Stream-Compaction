@@ -15,7 +15,7 @@
 
 int main(int argc, char* argv[]) {
     const int SIZE = 1 << 16;
-    const int NPOT = SIZE - 3;
+    const int NPOT = SIZE - 17;
     int a[SIZE], b[SIZE], c[SIZE];
 
     // Scan tests

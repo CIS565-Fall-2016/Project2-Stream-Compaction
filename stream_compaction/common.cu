@@ -1,3 +1,5 @@
+#include <cuda.h>
+#include <cuda_runtime.h>
 #include "common.h"
 
 void checkCUDAErrorFn(const char *msg, const char *file, int line) {
@@ -23,7 +25,11 @@ namespace Common {
  * which map to 0 will be removed, and elements which map to 1 will be kept.
  */
 __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
-    // TODO
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= n) {
+		return;
+	}
+	bools[index] = (idata[index] == 0) ? 0 : 1;
 }
 
 /**
@@ -32,8 +38,14 @@ __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
  */
 __global__ void kernScatter(int n, int *odata,
         const int *idata, const int *bools, const int *indices) {
-    // TODO
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= n) {
+		return;
+	}
+	if (bools[index] != 0) {
+		odata[indices[index]] = idata[index];
+	}
+}
 }
 
-}
 }
