@@ -7,13 +7,78 @@ namespace StreamCompaction {
 namespace Naive {
 
 // TODO: __global__
+__global__ void accumulate(const int n, const int step, int *idata, int *odata) {
+
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= n) {
+		return;
+	}
+
+	if (index - step < 0) {
+		odata[index] = idata[index];
+	} else {
+		odata[index] = idata[index] + idata[index - step];
+	}
+}
+
+__global__ void shiftRight(const int n, int *idata, int *odata) {
+
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= n) {
+		return;
+	} else if (index == 0) {
+		odata[index] = 0;
+		return;
+	}
+
+	odata[index] = idata[index - 1];
+}
+
+// swap
+inline void swap(int &x, int &y) {
+	auto tmp = x; x = y; y = tmp;
+}
 
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
 void scan(int n, int *odata, const int *idata) {
     // TODO
-    printf("TODO\n");
+    // printf("TODO\n");
+	int *dev_data[2];
+	int input = 1;
+	int output = 0;
+
+	// device memory allocation
+	cudaMalloc((void**)&dev_data[0], sizeof(int) * n);
+	checkCUDAError("Failed to allocate dev_data[0]");
+
+	cudaMalloc((void**)&dev_data[1], sizeof(int) * n);
+	checkCUDAError("Failed to allocate dev_data[1]");
+
+	// copy input data to device
+	cudaMemcpy((void*)dev_data[input], (const void*)idata, sizeof(int) * n,
+			cudaMemcpyHostToDevice);
+
+	// do scan
+	dim3 blockCount = (n - 1) / BLOCK_SIZE + 1;
+
+	shiftRight<<<blockCount, BLOCK_SIZE>>>(n, dev_data[input], dev_data[output]);
+
+	for (int step = 1; step < n; step <<= 1) {
+		swap(input, output);
+		accumulate<<<blockCount, BLOCK_SIZE>>>(n, step, dev_data[input], dev_data[output]);
+	}
+
+	// copy result to host
+	cudaMemcpy((void*)odata, (const void*)dev_data[output], sizeof(int) * n,
+			cudaMemcpyDeviceToHost);
+
+	// free memory on device
+	cudaFree(dev_data[0]);
+	cudaFree(dev_data[1]);
 }
 
 }
