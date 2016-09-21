@@ -3,7 +3,6 @@
 #include "common.h"
 #include "naive.h"
 
-//#define DEBUG
 #define BLOCK_SIZE 128
 #define BLOCK_COUNT(n) ((n + BLOCK_SIZE - 1) / BLOCK_SIZE)
 
@@ -11,20 +10,6 @@ namespace StreamCompaction {
 namespace Naive {
 
 // TODO: __global__
-
-__global__ void inclusiveToExclusiveScan(int n, int* odata, const int* idata) {
-  int tid = threadIdx.x + (blockIdx.x * blockDim.x);
-  if (tid >= n) {
-    return;
-  }
-
-  if (tid == 0) {
-    odata[0] = 0;
-    return;
-  }
-
-  odata[tid] = idata[tid - 1];
-}
 
 __global__ void naiveScan(int n, int offset, int* odata, const int *idata) {
   int tid = threadIdx.x + (blockIdx.x * blockDim.x);
@@ -52,9 +37,6 @@ void scan(int n, int *odata, const int *idata) {
 
   cudaMemcpy(dev_odata1, idata, n * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(dev_odata2, idata, n * sizeof(int), cudaMemcpyHostToDevice);
-#ifdef DEBUG
-  int* temp = new int[5];
-#endif
 
   int height = ilog2ceil(n);
   //height = 2;
@@ -66,35 +48,15 @@ void scan(int n, int *odata, const int *idata) {
       (level % 2) == 0 ? dev_odata1 : dev_odata2, 
       (level % 2) == 0 ? dev_odata2 : dev_odata1
         );
-
-#ifdef DEBUG
-    printf("----\n");
-    cudaMemcpy(temp, dev_odata1, 5 * sizeof(int), cudaMemcpyDeviceToHost);
-    for (int j = 0; j < 5; ++j) {
-      printf("offset: %d, odata1[k]: %d\n", offset, temp[j]);
-    }
-    printf("\n");
-    cudaMemcpy(temp, dev_odata2, 5 * sizeof(int), cudaMemcpyDeviceToHost);
-    for (int j = 0; j < 5; ++j) {
-      printf("offset: %d, odata2[k]: %d\n", offset, temp[j]);
-    }
-#endif
-
   }
 
   if (height % 2 == 0) {
-    inclusiveToExclusiveScan<<<BLOCK_COUNT(n), BLOCK_SIZE>>>(n, dev_odata2, dev_odata1);
+    Common::inclusiveToExclusiveScanResult << <BLOCK_COUNT(n), BLOCK_SIZE >> >(n, dev_odata2, dev_odata1);
     cudaMemcpy(odata, dev_odata2, n * sizeof(int), cudaMemcpyDeviceToHost);
   } else {
-    inclusiveToExclusiveScan << <BLOCK_COUNT(n), BLOCK_SIZE >> >(n, dev_odata1, dev_odata2);
+    Common::inclusiveToExclusiveScanResult << <BLOCK_COUNT(n), BLOCK_SIZE >> >(n, dev_odata1, dev_odata2);
     cudaMemcpy(odata, dev_odata1, n * sizeof(int), cudaMemcpyDeviceToHost);
   }
-
-  odata[0] = 0;
-
-#ifdef DEBUG
-  delete[] temp;
-#endif
 
   cudaFree(dev_odata1);
   cudaFree(dev_odata2);
