@@ -3,9 +3,6 @@
 #include "common.h"
 #include "naive.h"
 
-#define BLOCK_SIZE 128
-#define BLOCK_COUNT(n) ((n + BLOCK_SIZE - 1) / BLOCK_SIZE)
-
 namespace StreamCompaction {
 namespace Naive {
 
