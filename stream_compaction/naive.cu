@@ -10,7 +10,7 @@ namespace Naive {
 
 	__global__ void kernRunScan(int N, int pow2d, int* odata, int* idata) {
 		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-		
+
 		if (index > N) {
 			return;
 		}
@@ -41,7 +41,6 @@ void scan(int n, int *odata, const int *idata) {
 	checkCUDAError("cudaMalloc Error dev_b.");
 
 	cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_out, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 	
 	int max_d = ilog2ceil(n);
 
