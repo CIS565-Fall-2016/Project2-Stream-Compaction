@@ -11,6 +11,7 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/radixSort.h>
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
@@ -112,12 +113,23 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, power-of-two");
     count = StreamCompaction::Efficient::compact(SIZE, c, a);
-    //printArray(count, c, true);
+    printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, non-power-of-two");
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
-    //printArray(count, c, true);
+    printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+	printf("\n");
+	printf("*****************************\n");
+	printf("***** RADIX SORT TESTS ******\n");
+	printf("*****************************\n");
+
+	int t1[10] = { 4, 1, 6, 3, 8, 9, 2, 0, 5, 7 };
+	int t2[10];
+	printDesc("Radix Sort");
+	StreamCompaction::radixSort::sort(10, t2, t1);	
+	printArray(10, t2, true);
 }
