@@ -16,13 +16,27 @@ namespace Naive {
 		}
 		
 		if (index >= pow2d) {
-			odata[index] = idata[index - pow2d - 1] + idata[index - 1];
+			odata[index] = idata[index - pow2d] + idata[index];
 		}
 		else {
 			odata[index] = idata[index];
 		}
 	}
 
+	__global__ void kernInclusiveToExclusive(int N, int* odata, int* idata) {
+		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+		if (index > N) {
+			return;
+		}
+
+		if (index == 0) {
+			odata[0] = 0;
+		}
+		else {
+			odata[index] = idata[index - 1];
+		}
+	}
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
@@ -45,11 +59,16 @@ void scan(int n, int *odata, const int *idata) {
 	int max_d = ilog2ceil(n);
 
 	// Loop over data 
-	for (int d = 1; d < max_d; d++) {
+	for (int d = 1; d <= max_d; d++) {
 
 		kernRunScan << < fullBlocksPerGrid, threadsPerBlock >> >(n, pow(2, d - 1), dev_out, dev_in);
 
+		int* swap = dev_out;
+		dev_out = dev_in;
+		dev_in = swap;
 	}
+
+	kernInclusiveToExclusive << < fullBlocksPerGrid, threadsPerBlock >> >(n, dev_out, dev_in);
 
 	cudaMemcpy(odata, dev_out, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("memcpy back failed!");
