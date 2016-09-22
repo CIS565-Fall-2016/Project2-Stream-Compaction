@@ -7,5 +7,5 @@ namespace ParallelRadixSort
 {
 	// Only work on unsigned integral types
 	template <class T>
-	void sort(uint32_t n, T *odata, const T *idata, T bitMask, bool lsb = true);
+	void sort(int n, T *odata, const T *idata, T bitMask, bool lsb = true);
 }

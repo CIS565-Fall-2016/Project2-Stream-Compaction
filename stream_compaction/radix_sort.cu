@@ -3,8 +3,23 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/scan.h>
+#include <exception>
+#include <string>
 
 #include "radix_sort.h"
+
+
+namespace std
+{
+	class InvalidArgument : public exception
+	{
+	public:
+		virtual const char *what() const throw()
+		{
+			return "One or more invalid arguments detected";
+		}
+	};
+}
 
 
 namespace ParallelRadixSort
@@ -40,8 +55,13 @@ namespace ParallelRadixSort
 	}
 
 	template <class T>
-	void sort(uint32_t n, T *odata, const T *idata, T bitMask, bool lsb)
+	void sort(int n, T *odata, const T *idata, T bitMask, bool lsb)
 	{
+		if (n <= 0 || !odata || !idata)
+		{
+			throw std::InvalidArgument();
+		}
+
 		T *idata_dev = 0;
 		T *odata_dev = 0;
 		uint32_t *noyes_bools_dev = 0;
@@ -89,5 +109,5 @@ namespace ParallelRadixSort
 	// Since template definition is not visible to users (main.obj in this case),
 	// we need to explicitly tell the compiler to generate all the template implementations
 	// that will be used later
-	template void sort<uint32_t>(uint32_t n, uint32_t *odata, const uint32_t *idata, uint32_t bitMask, bool lsb);
+	template void sort<uint32_t>(int n, uint32_t *odata, const uint32_t *idata, uint32_t bitMask, bool lsb);
 }

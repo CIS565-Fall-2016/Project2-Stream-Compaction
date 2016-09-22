@@ -20,7 +20,7 @@
 #include "testing_helpers.hpp"
 
 
-#define TEST_GROUP_SIZE 100
+#define TEST_GROUP_SIZE 1
 
 
 int main(int argc, char* argv[]) {
@@ -42,13 +42,27 @@ int main(int argc, char* argv[]) {
 
 	zeroArray(SIZE, b);
 	printDesc("parallel radix sort, power-of-two");
-	ParallelRadixSort::sort(SIZE, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+	try
+	{
+		ParallelRadixSort::sort(SIZE, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+	}
+	catch (std::exception &e)
+	{
+		std::cout << "    ParallelRadixSort::sort: Error: " << e.what() << std::endl;
+	}
 	printArray(SIZE, b, true);
 	testSorted(SIZE, b);
 
 	zeroArray(SIZE, b);
 	printDesc("parallel radix sort, non power-of-two");
-	ParallelRadixSort::sort(NPOT, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+	try
+	{
+		ParallelRadixSort::sort(NPOT, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+	}
+	catch (std::exception &e)
+	{
+		std::cout << "    ParallelRadixSort::sort: Error: " << e.what() << std::endl;
+	}
 	printArray(NPOT, b, true);
 	testSorted(NPOT, b);
 

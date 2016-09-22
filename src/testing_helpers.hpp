@@ -60,9 +60,15 @@ void printArray(int n, int *a, bool abridged = false) {
 }
 
 template <class T>
-void testSorted(uint32_t n, const T *data, bool lessThan = true)
+void testSorted(int n, const T *data, bool lessThan = true)
 {
-	for (uint32_t i = 0; i < n - 1; ++i)
+	if (n <= 0 || !data)
+	{
+		printf("    testSorted: Error: Invalid argument(s)\n");
+		return;
+	}
+
+	for (int i = 0; i < n - 1; ++i)
 	{
 		if ((lessThan && (data[i] > data[i + 1])) ||
 			(!lessThan && (data[i] < data[i + 1])))
