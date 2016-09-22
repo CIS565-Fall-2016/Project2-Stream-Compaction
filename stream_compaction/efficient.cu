@@ -58,13 +58,27 @@ void scan(int n, int *odata, const int *idata) {
 
 	dim3 numBlocks = (n + blocksize - 1) / blocksize;
 	int rounded_n = powf(2, ilog2ceil(n));
+	
 	int * dev_data;
-
 	cudaMalloc((void **)&dev_data, rounded_n * sizeof(int));
 	checkCUDAError("cudaMalloc dev_data failed!");
 
-	cudaMemcpy(dev_data, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
-	checkCUDAError("cudaMemcpy idata to dev_data failed!");
+	cudaPointerAttributes attr;
+	cudaPointerGetAttributes(&attr, idata);
+	checkCUDAError("cudaPointerGetAttributes idata failed!");
+
+	if (attr.memoryType == cudaMemoryTypeHost)
+	{
+		//copy local data to device
+		cudaMemcpy((void*) dev_data, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
+		checkCUDAError("cudaMemcpy idata to dev_data (host) failed!");
+	}
+	else 
+	{
+		//copy local data to device
+		cudaMemcpy((void*)dev_data, idata, sizeof(int) * n, cudaMemcpyDeviceToDevice);
+		checkCUDAError("cudaMemcpy idata to dev_data (device) failed!");
+	}
 
 	// Fill in remaining space with zeros. 
 	// Not sure this matters actually matters, so long as the correct
@@ -90,10 +104,18 @@ void scan(int n, int *odata, const int *idata) {
 		checkCUDAError("downSweep Kernel failed!");
 	}
 
-
-	//copy back only the relevant data
-	cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
-	checkCUDAError("cudaMemcpy dev_data to odata failed!");
+	cudaPointerGetAttributes(&attr, odata);
+	checkCUDAError("cudaPointerGetAttributes odata failed!");
+	if (attr.memoryType == cudaMemoryTypeHost)
+	{
+		cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
+		checkCUDAError("cudaMemcpy dev_data to odata (host) failed!");
+	}
+	else
+	{
+		cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToDevice);
+		checkCUDAError("cudaMemcpy dev_data to odata (device) failed!");
+	}
 
 	cudaFree(dev_data);
 }
@@ -154,7 +176,9 @@ int compact(int n, int *odata, const int *idata) {
 	// copy compacted array to output
 	cudaMemcpy(odata, dev_odata, n * sizeof(int), cudaMemcpyDeviceToHost);
 	checkCUDAError("cudaMemcpy dev_odata to odata failed!");
-
+	
+	int cnt = scanResult[n-1];
+	
 	cudaFree(dev_bools);
 	cudaFree(dev_idata);
 	cudaFree(dev_odata);
@@ -162,15 +186,8 @@ int compact(int n, int *odata, const int *idata) {
 	free(bools);
 	free(scanResult);
 
-	// count and return # valid blocks. Only nonzero is valid.
-	// This block of code feels really wrong and against the entire spirit of the project
-	for (int i = 0; i < n; ++i)
-	{
-		if (!odata[i])
-			return i;
-	}
-
-	return n;
+	// return # valid blocks
+	return cnt;
 
 }
 
