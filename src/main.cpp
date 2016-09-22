@@ -11,12 +11,19 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/common.h>
 #include "testing_helpers.hpp"
 
+static StreamCompaction::Common::Timer timer;
+const int CPU_RUNTIMES = 100;
+
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 15;
+    const int SIZE = 1 << 20;
     const int NPOT = SIZE - 3;
-    int a[SIZE], b[SIZE], c[SIZE];
+    //int a[SIZE], b[SIZE], c[SIZE];
+	int* a = new int[SIZE];
+	int* b = new int[SIZE];
+	int* c = new int[SIZE];
 
     // Scan tests
 
@@ -31,12 +38,20 @@ int main(int argc, char* argv[]) {
 
     zeroArray(SIZE, b);
     printDesc("cpu scan, power-of-two");
-    StreamCompaction::CPU::scan(SIZE, b, a);
+	timer.startCpuTimer();
+	for (int i = 0; i < CPU_RUNTIMES;++i)
+	    StreamCompaction::CPU::scan(SIZE, b, a);
+	timer.stopCpuTimer();
+	timer.printTimerInfo("Scan::CPU = ", timer.getCpuElapsedTime() / float(CPU_RUNTIMES));
     printArray(SIZE, b, true);
 
     zeroArray(SIZE, c);
     printDesc("cpu scan, non-power-of-two");
-    StreamCompaction::CPU::scan(NPOT, c, a);
+	timer.startCpuTimer();
+	for (int i = 0; i < CPU_RUNTIMES; ++i)
+		StreamCompaction::CPU::scan(NPOT, c, a);
+	timer.stopCpuTimer();
+	timer.printTimerInfo("Scan::CPU = ", timer.getCpuElapsedTime() / float(CPU_RUNTIMES));
     printArray(NPOT, b, true);
     printCmpResult(NPOT, b, c);
 
@@ -91,21 +106,33 @@ int main(int argc, char* argv[]) {
 
     zeroArray(SIZE, b);
     printDesc("cpu compact without scan, power-of-two");
-    count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
+	timer.startCpuTimer();
+	for (int i = 0; i < CPU_RUNTIMES; ++i)
+		count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
+	timer.stopCpuTimer();
+	timer.printTimerInfo("StreamCompactWithoutScan::CPU = ", timer.getCpuElapsedTime() / float(CPU_RUNTIMES));
     expectedCount = count;
     printArray(count, b, true);
     printCmpLenResult(count, expectedCount, b, b);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact without scan, non-power-of-two");
-    count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
+	timer.startCpuTimer();
+	for (int i = 0; i < CPU_RUNTIMES; ++i)
+		count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
+	timer.stopCpuTimer();
+	timer.printTimerInfo("StreamCompactWithoutScan::CPU = ", timer.getCpuElapsedTime() / float(CPU_RUNTIMES));
     expectedNPOT = count;
     printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact with scan");
-    count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+	timer.startCpuTimer();
+	for (int i = 0; i < CPU_RUNTIMES; ++i)
+		count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+	timer.stopCpuTimer();
+	timer.printTimerInfo("StreamCompactWithScan::CPU = ", timer.getCpuElapsedTime() / float(CPU_RUNTIMES));
     printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
 
@@ -120,4 +147,10 @@ int main(int argc, char* argv[]) {
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+
+	//free a,b,c
+	delete[] a;
+	delete[] b;
+	delete[] c;
 }

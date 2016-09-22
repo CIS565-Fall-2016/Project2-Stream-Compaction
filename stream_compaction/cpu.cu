@@ -1,21 +1,26 @@
 #include <cstdio>
 #include "cpu.h"
-#include <chrono>
-#include <iostream>
+#include "common.h"
 
 namespace StreamCompaction {
 namespace CPU {
+
+	//static StreamCompaction::Common::Timer timer;
 
 /**
  * CPU scan (prefix sum).
  */
 void scan(int n, int *odata, const int *idata) {
     
+	//timer.startCpuTimer();
+
 	odata[0] = 0;
 	for (int i = 1; i < n; ++i)
 		odata[i] = odata[i - 1] + idata[i - 1];
 
-    //printf("CPU::scan done\n");
+	//timer.stopCpuTimer();
+	//timer.printTimerInfo("Scan::CPU = ", timer.getCpuElapsedTime());
+
 }
 
 /**
@@ -25,7 +30,7 @@ void scan(int n, int *odata, const int *idata) {
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
 	
-	auto begin = std::chrono::high_resolution_clock::now();
+	//timer.startCpuTimer();
 
 	int index = 0;
 	for (int i = 0; i < n; ++i)
@@ -36,9 +41,8 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
 		}
 	}
 
-	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-	std::cout << "CPU::CompactWithoutScan --> Elapsed time = " << duration / 1000.f << "ms" << std::endl;
+	//timer.stopCpuTimer();
+	//timer.printTimerInfo("StreamCompactWithoutScan::CPU = ", timer.getCpuElapsedTime());
 
 	return index;
 }
@@ -53,7 +57,7 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	int* inputScan = new int[n];
 	int* outputScan = new int[n];
 
-	auto begin = std::chrono::high_resolution_clock::now();
+	//timer.startCpuTimer();
 
 	for (int i = 0; i < n; ++i)
 		inputScan[i] = (idata[i] == 0) ? 0 : 1;
@@ -70,9 +74,8 @@ int compactWithScan(int n, int *odata, const int *idata) {
 		}
 	}
 
-	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-	std::cout << "CPU::CompactWithScan --> Elapsed time = " << duration / 1000.f<< "ms" <<std::endl;
+	//timer.stopCpuTimer();
+	//timer.printTimerInfo("StreamCompactWithScan::CPU = ",timer.getCpuElapsedTime());
 
 	delete[] inputScan;
 	delete[] outputScan;
