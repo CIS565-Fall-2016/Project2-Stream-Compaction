@@ -58,7 +58,7 @@ void scan(int n, int *odata, const int *idata) {
   // scan up
   for (int pow2d = 1, int threads = sizePow2; pow2d < sizePow2 / 2; pow2d *= 2, threads /= 2) {
     nBlocks = (threads + blockSize - 1) / blockSize; // threads / blockSize, rounded up
-    scan_up << < nBlocks, threads >> >(n, pow2d, dev_data, dev_data);
+    scan_up << < nBlocks, blockSize >> >(n, pow2d, dev_data, dev_data);
   }
 
   // set last item to 0
@@ -69,7 +69,7 @@ void scan(int n, int *odata, const int *idata) {
   // scan down
   for (int pow2d = pow(2, ilog2ceil(sizePow2) - 1), int threads = 1; pow2d >= 1; pow2d /= 2, threads *= 2) {
     nBlocks = (threads + blockSize - 1) / blockSize; // threads / blockSize, rounded up
-    scan_down << < nBlocks, threads >> >(sizePow2, pow2d, dev_data, dev_data);
+    scan_down << < nBlocks, blockSize >> >(sizePow2, pow2d, dev_data, dev_data);
   }
 
   cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
@@ -128,7 +128,7 @@ int compact(int n, int *odata, const int *idata) {
   // scan up
   for (int pow2d = 1, int threads = sizePow2; pow2d < sizePow2 / 2; pow2d *= 2, threads /= 2) {
     nBlocks = (threads + blockSize - 1) / blockSize; // threads / blockSize, rounded up
-    scan_up << < nBlocks, threads >> >(n, pow2d, dev_mask, dev_mask);
+    scan_up << < nBlocks, blockSize >> >(n, pow2d, dev_mask, dev_mask);
   }
 
   // set last item to 0
@@ -139,7 +139,7 @@ int compact(int n, int *odata, const int *idata) {
   // scan down
   for (int pow2d = pow(2, ilog2ceil(sizePow2) - 1), int threads = 1; pow2d >= 1; pow2d /= 2, threads *= 2) {
     nBlocks = (threads + blockSize - 1) / blockSize; // threads / blockSize, rounded up
-    scan_down << < nBlocks, threads >> >(sizePow2, pow2d, dev_mask, dev_mask);
+    scan_down << < nBlocks, blockSize >> >(sizePow2, pow2d, dev_mask, dev_mask);
   }
 
   // copy back last val so we know how many elements
