@@ -70,7 +70,6 @@ Non-power-of-two array size will introduce some decrease of performance for GPU 
 
 ### Performance Comparison for Compaction
 ![](test_datas/arraysize_compaction.png)
-Work-efficient implementation is much faster than naive compaction. 
 
 Non-power-of-tow array size have trivial influence on both gpu and cpu.
 
@@ -91,7 +90,7 @@ For extra, I implementated Radix Sort, compared with std::sort, radix sort is ge
 
 Execution time increases almost linearly for Radix Sort.
 
-|array size|CPU-no-scan     |CPU-with-Scan|
+|array size|std::sort       |Radix sort   |
 |----      |----            |----         |
 |256       |0               |2.772        |
 |4096      |0.499           |4.067        |
@@ -104,8 +103,6 @@ Execution time increases almost linearly for Radix Sort.
 * I think the bottleneck is memory I/O. Without using shared-memory, it's very inefficient for adjacent threads accessing memory with huge physical distance. Even using work-efficient scan implementation, GPU still cannot beat CPU implemetation. For GPU scan and compaction implementations, array size of power of two can obtain better performance than non-power-of-two array size. On CPU, non-power-of-tow doesn't seem to have huge influence.
 * optimized block size of each implementation, refer to **Find an Optimized BlockSize for Each Implementation**.
 * comparison of different implementations of scan and compaction, refer to **Performance Analysis**.
-
-
 * output of test-program, refer to **Example Output**.
 
 ## Build
