@@ -54,11 +54,11 @@ SO, for the following test, BLOCK_SIZE is set to `128`.
 And for a detailed chart:
 ![](test_datas/arraysize_scan_detail.png)
 
-With the increase of array size, thrust achives the slowest increase of execution time. CPu and GPU implementations' performance will suffer from the increase the array size. 
+With the increase of array size, thrust achives the slowest increase of execution time. CPU and GPU implementations' performance will suffer from the increase of array size. 
 
-In my computer, GPU implementation is slower than CPU impelmentation. WOrk-efficient GPU implemenetation is much faster than naive GPU scan.
+In my computer, GPU implementation is slower than CPU impelmentation. Work-efficient GPU implemenetation is much faster than naive GPU scan.
 
-Non-power-of-two array size will introduce some decrease of performance for GPU implementation.
+Non-power-of-two array size will introduce some decrease of performance for GPU implementation, but very slightly.
 
 |array size|CPU     |GPU-Naive|GPU-work efficient|GPU-work efficient NPT|
 |----      |----    |----     |----              |----                  |
@@ -72,9 +72,9 @@ Non-power-of-two array size will introduce some decrease of performance for GPU 
 ![](test_datas/arraysize_compaction.png)
 Work-efficient implementation is much faster than naive compaction. 
 
-Non-power-of-tow array size have trivial imfluence on both gpu and cpu.
+Non-power-of-tow array size have trivial influence on both gpu and cpu.
 
-GPU implementation is slower than cpu without scan implementation, but much faster than cpu with scan.
+GPU implementation is slower than cpu without scan implementation, but much faster than cpu implementation with scan.
 
 |array size|CPU-no-scan     |CPU-with-Scan|GPU-work efficient|GPU-work efficient NPT|
 |----      |----            |----         |----              |----                  |
@@ -87,7 +87,7 @@ GPU implementation is slower than cpu without scan implementation, but much fast
 ### Performance Comparison for Radix Sort and Std::sort
 ![](test_datas/arraysize_radix_sort.png)
 
-For extra, I implementated Radix Sort, compared with std::sort, radix sort is slower than std::sort.
+For extra, I implementated Radix Sort, compared with std::sort, radix sort is generally slower than std::sort.
 
 Execution time increases almost linearly for Radix Sort.
 
@@ -98,6 +98,18 @@ Execution time increases almost linearly for Radix Sort.
 |65536     |4.519           |9.379        |
 |1048576   |71.374          |86.858       |
 |16777216  |1082.067        |1502.197     |
+
+## Questions
+
+* I think the bottleneck is memory I/O. Without using shared-memory, it's very inefficient for adjacent threads accessing memory with huge physical distance. Even using work-efficient scan implementation, GPU still cannot beat CPU implemetation. For GPU scan and compaction implementations, array size of power of two can obtain better performance than non-power-of-two array size. On CPU, non-power-of-tow doesn't seem to have huge influence.
+* optimized block size of each implementation, refer to **Find an Optimized BlockSize for Each Implementation**.
+* comparison of different implementations of scan and compaction, refer to **Performance Analysis**.
+
+
+* output of test-program, refer to **Example Output**.
+
+## Build
+Modified `CMakeLists.txt` for adding new files `radixsort.h` and `radixsort.cu`. 
 
 ## Example Output
 Copy and paste from one execution:
