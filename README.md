@@ -17,7 +17,7 @@ NOTE: if the program crashes when entering the test for naive sort, try reducing
 
 * Implemented __CPU scan and compaction__, __compaction__, __GPU naive scan__, __GPU work-efficient scan__, __GPU work-efficient compaction__, __GPU radix sort (extra)__, and compared my scan algorithms with thrust implemention
 
-* I optimized my work efficient scan, and __speed is increased to 270%__ of my original implementation.
+* I optimized my work efficient scan, and __speed is increased to 270%__ of my original implementation, please refer to __Optimization__ section.
 
 * I also wrote an __invlusive version__ of __work-efficient scan__ - because i misunderstood the requirement at first! The difference of the inclusive method is that it creates a buffer that is 1 element larger and swap the last(0) and and second last elements before downsweeping. Although I corrected my implemention to exclusive scan, the inclusive scan can still be called by passing ScanType::inclusive to scan_implenmention method in efficient.cu.
 
@@ -57,13 +57,13 @@ NOTE: if the program crashes when entering the test for naive sort, try reducing
     it different for each implementation?
 ```
 
-* I notice that I couldn't get a good measurement for scan and sort of __Thrust__. I have trouble measuring `thrust::exclusive` with std::chrono, while I can use `std::chrono` to measure `thrust::scan` but the results from CUDA events seems off.
+* ~~I notice that I couldn't get a good measurement for scan and sort of __Thrust__. I have trouble measuring `thrust::exclusive` with std::chrono, while I can use `std::chrono` to measure `thrust::scan` but the results from CUDA events seems off.~~ I passed a host array to thrust so in my original tests thrust is using a CPU sort algorithm, fixed and updated result in ~~result_radix_max_100.txt and result_radix_max_100000000.txt~~
 
 * With max possible value increased (so does MSB), besides the run time of radix sort, that of std::sort also increased significantly, which is unexpected. Does bit length also affect the time for read/write or other operations? or the implementation of std::sort<int> use bit level information?
 
 * I think the bottleneck for blocksize is the warp size inside GPU.
 
-* My original work-efficient scan implementation was slower than CPU scan, that was because I wasted too many of my threads, please refer to __Optimization__ section below.
+* My original work-efficient scan implementation was slower than CPU scan, and then I optimized it by __minimizing wasted threads__. and it now runs __faster than CPU scan__, please refer to __Optimization__ section below.
 
 ```
 * Paste the output of the test program into a triple-backtick block in your
@@ -77,7 +77,7 @@ assignments, as well.
 
 * The tests are done with arrays of lengths `2^26` (67108864) and `2^26-3` (67108861). The array generation uses current time as random seed.
 
-* I added tests for __radix sort__, which compares with `std::sort` as well as __Thrust__'s stable and unstable sorts
+* I added tests for __radix sort__, which compares with `std::sort` as well as __Thrust__'s `thrust::sort`
 
 
 #### Performance
@@ -122,31 +122,38 @@ __Compaction__ : this work-efficient compaction implementation is faster than cp
 | 24                            | 39.0743          | 38.6241                | 13.3034                     |
 | 26                            | 155.406          | 422.524                | 53.2659                     |
 
-__Sort__ : radix sort on GPU is faster than std::sort for `int`s while roughly the same as Thrust's implementations
+__Sort__ : radix sort on GPU is faster than std::sort
 
-| Input array length power of 2 | std::sort (ms) | Radix sort (ms) | Thrust unstable sort (std::chrono) | Thrust stable sort (std::chrono) |
-|-------------------------------|----------------|-----------------|------------------------------------|----------------------------------|
-| 12                            | 0              | 0.883328        | 0                                  | 0                                |
-| 16                            | 0              | 1.44288         | 0                                  | 0                                |
-| 20                            | 22.1649        | 7.61686         | 0                                  | 0                                |
-| 24                            | 378.025        | 105.222         | 109.329                            | 100.279                          |
-| 26                            | 1481.8         | 419.345         | 434.399                            | 423.933                          |
+| Input array length power of 2 | std::sort (ms) | Radix sort (ms) | 
+|-------------------------------|----------------|-----------------|
+| 12                            | 0              | 0.883328        |
+| 16                            | 0              | 1.44288         |
+| 20                            | 22.1649        | 7.61686         |
+| 24                            | 378.025        | 105.222         |
+| 26                            | 1481.8         | 419.345         |
 
 ##### Data maximum value and radix sort
 
-All the test are done with block size of 1024; array length is 67108864.
+__NOTE: THIS TEST RUNS ON A DIFFERENT MACHINE: Windows 7, Xeon(R) E5-1630 @ 3.70GHz 32GB, GTX 1070 8192MB (Moore 103 SigLab)__
 
-| max value | std::sort (ms) | Radix sort (ms) | Thrust unstable sort (std::chrono) | Thrust stable sort (std::chrono) |
-|-----------|----------------|-----------------|------------------------------------|----------------------------------|
-| 100       | 1481.8         | 419.345         | 434.399                            | 423.933                          |
-| 10000     | 3564.1         | 1023.97         | 580.816                            | 587.524                          |
+All the test are done with block size of 1024; array length is ~~67108864~~ 33554432.
 
-With max possible value increased, besides the run time of radix sort, that of std::sort and thrust sorts also increased, unexpectedly.
+| max value | std::sort (ms) | Radix sort (ms) | thrust::sort (ms) |
+|-----------|----------------|-----------------|-------------------|
+| 100       | 917            | 143.992         | 20.2813ms         |
+| 10000     | 2173           | 1023.97         | 20.6702ms         |
+
+With max possible value increased, besides the run time of radix sort, that of std::sort and thrust sorts also increased.
+
+__I peeked at thrust's inner function call and found thrust is using a radix sort algorithm.__
 
 
 #### Sample Output
 
 ```
+* THIS TEST RAN ON A DIFFERENT MACHINE:
+    Windows 7, Xeon(R) E5-1630 @ 3.70GHz 32GB, GTX 1070 8192MB (Moore 103 SigLab)
+
 CIS-565 HW2 CUDA Stream Compaction Test (Ruoyu Fan)
     Block size for naive scan: 1024
     Block size for up-sweep: 1024
@@ -158,101 +165,93 @@ CIS-565 HW2 CUDA Stream Compaction Test (Ruoyu Fan)
 ****************
 ** SCAN TESTS **
 ****************
-Array size (power of two): 67108864
-Array size (non-power of two): 67108861
-    [   8  18  37  41  15  25  27   8  36  28  13  40  24 ...  35   0 ]
+Array size (power of two): 33554432
+Array size (non-power of two): 33554429
+    [  13  29  47   7   2  28  44  49  35  46   2  49   9 ...  37   0 ]
 ==== cpu scan, power-of-two ====
-   elapsed time: 134.408ms    (std::chrono Measured)
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
+   elapsed time: 93ms    (std::chrono Measured)
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752752 821752789 ]
 ==== cpu scan, non-power-of-two ====
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapsed time: 149.901ms    (std::chrono Measured)
-    passed
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
+   elapsed time: 87ms    (std::chrono Measured)
+    passed 
 ==== naive scan, power-of-two ====
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
-   elapsed time: 113.867ms    (CUDA Measured)
-    passed
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752752 821752789 ]
+   elapsed time: 38.1036ms    (CUDA Measured)
+    passed 
 ==== naive scan, non-power-of-two ====
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapsed time: 113.687ms    (CUDA Measured)
-    passed
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
+   elapsed time: 38.112ms    (CUDA Measured)
+    passed 
 ==== work-efficient scan, power-of-two ====
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
-   elapsed time: 44.2491ms    (CUDA Measured)
-    passed
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752752 821752789 ]
+   elapsed time: 15.0276ms    (CUDA Measured)
+    passed 
 ==== work-efficient scan, non-power-of-two ====
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapsed time: 44.3104ms    (CUDA Measured)
-    passed
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
+   elapsed time: 15.0576ms    (CUDA Measured)
+    passed 
 ==== thrust scan, power-of-two ====
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625502 1643625537 ]
-   elapsed time: 7.73741ms    (CUDA Measured)
-   elapsed time: 0ms    (std::chrono Measured)
-    passed
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752752 821752789 ]
+   elapsed time: 8.90237ms    (CUDA Measured)
+    passed 
 ==== thrust scan, non-power-of-two ====
-    [   0   8  26  63 104 119 144 171 179 215 243 256 296 ... 1643625408 1643625440 ]
-   elapsed time: 7.74371ms    (CUDA Measured)
-   elapsed time: 0ms    (std::chrono Measured)
-    passed
+    [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
+   elapsed time: 2.74368ms    (CUDA Measured)
+    passed 
 
 *****************************
 ** STREAM COMPACTION TESTS **
 *****************************
-Array size (power of two): 67108864
-Array size (non-power of two): 67108861
-    [   0   1   0   3   3   1   2   1   1   2   1   0   3 ...   3   0 ]
+Array size (power of two): 33554432
+Array size (non-power of two): 33554429
+    [   1   1   3   1   1   3   0   2   3   2   0   1   0 ...   3   0 ]
 ==== cpu compact without scan, power-of-two ====
-    [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
-   elapsed time: 155.403ms    (std::chrono Measured)
-    passed
+    [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   2   3 ]
+   elapsed time: 83ms    (std::chrono Measured)
+    passed 
 ==== cpu compact without scan, non-power-of-two ====
-    [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   2 ]
-   elapsed time: 154.901ms    (std::chrono Measured)
-    passed
+    [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   3   2 ]
+   elapsed time: 84ms    (std::chrono Measured)
+    passed 
 ==== cpu compact with scan ====
-    [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
-   elapsed time: 421.621ms    (std::chrono Measured)
-    passed
+    [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   2   3 ]
+   elapsed time: 237ms    (std::chrono Measured)
+    passed 
 ==== work-efficient compact, power-of-two ====
-    [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   3 ]
-   elapsed time: 54.2043ms    (CUDA Measured)
-    passed
+    [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   2   3 ]
+   elapsed time: 18.2364ms    (CUDA Measured)
+    passed 
 ==== work-efficient compact, non-power-of-two ====
-    [   1   3   3   1   2   1   1   2   1   3   3   1   3 ...   2   2 ]
-   elapsed time: 54.1137ms    (CUDA Measured)
-    passed
+    [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   3   2 ]
+   elapsed time: 18.2344ms    (CUDA Measured)
+    passed 
 
 *****************************
 ** RADIX SORT TESTS **
 *****************************
-Array size (power of two): 67108864
-Array size (non-power of two): 67108861
-Max value: 100
-    [  78  22  68  49  66  85  83  63  52  58  25   5  35 ...  84   0 ]
+Array size (power of two): 33554432
+Array size (non-power of two): 33554429
+Max value: 1000000000
+    [ 21520 17257 9407 8648 31232 11282 11169 22994 15890 9350 22656 25538 29919 ... 23658   0 ]
 ==== std::sort, power-of-two ====
-    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapsed time: 1522.95ms    (std::chrono Measured)
-==== thrust unstable sort, power-of-two ====
-    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapsed time: 429.389ms    (std::chrono Measured)
-   elapsed time: 0.001184ms    (CUDA Measured)
-    passed
-==== thrust stable sort, power-of-two ====
-    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapsed time: 418.915ms    (std::chrono Measured)
-   elapsed time: 0.001216ms    (CUDA Measured)
-    passed
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
+   elapsed time: 2173ms    (std::chrono Measured)
+==== thrust::sort (which calls Thrust's radix sort), power-of-two ====
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
+   elapsed time: 20.6702ms    (CUDA Measured)
+    passed 
 ==== radix sort, power-of-two ====
-    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapsed time: 419.691ms    (CUDA Measured)
-    passed
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
+   elapsed time: 628.72ms    (CUDA Measured)
+    passed 
 ==== std::sort, non power-of-two ====
-    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapsed time: 1516.39ms    (std::chrono Measured)
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
+   elapsed time: 2153ms    (std::chrono Measured)
 ==== radix sort, non power-of-two ====
-    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ...  99  99 ]
-   elapsed time: 416.676ms    (CUDA Measured)
-    passed
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
+   elapsed time: 617.616ms    (CUDA Measured)
+    passed 
 ```
 
 
@@ -264,7 +263,7 @@ For work-efficient scan, my original implementation was using the same of amount
 
 The performance for scanning an array of length 67108861 using work-efficient approach boosted __from ~120.5ms to ~44.4ms__, which is __270% speed__ of my original approach. You can see the data in the files under __test_results/__ folder
 
-Original implementation:
+Original implementation (in which `(index + 1) % (add_distance * 2) == 0` is `false` at many threads so __these threads were wasted__):
 
 ```c++
 // running unnecessary threads

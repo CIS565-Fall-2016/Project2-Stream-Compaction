@@ -20,16 +20,16 @@
 // size of 1 << 26 could on a 970 desktop 
 //   but crashed on my laptop (970m) so I reduced array size
 // change the array size if there is still problem
-// const int SIZE = 1 << 26;
-const int SIZE = 1 << 24;
+const int SIZE = 1 << 25; //constexpr 
+//const int SIZE = 1 << 24;
 const int NPOT = SIZE - 3;
 const int SCAN_MAX = 50;
 const int COMPACTION_MAX = 4;
 
-// const int SORT_SIZE = 1 << 26; 
-const int SORT_SIZE = 1 << 24;
+const int SORT_SIZE = 1 << 25; 
+//const int SORT_SIZE = 1 << 24;
 const int SORT_NPOT = SORT_SIZE - 3;
-const int SORT_MAX = 100;
+const int SORT_MAX = 1000000000;
 
 
 int a[SIZE], b[SIZE], c[SIZE], d[SORT_SIZE], e[SORT_SIZE], f[SORT_SIZE];
@@ -108,7 +108,6 @@ int main(int argc, char* argv[]) {
     StreamCompaction::Thrust::scan(SIZE, c, a);
     printArray(SIZE, c, true);
     printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
-    printElapsedTime(StreamCompaction::Thrust::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
@@ -116,7 +115,6 @@ int main(int argc, char* argv[]) {
     StreamCompaction::Thrust::scan(NPOT, c, a);
     printArray(NPOT, c, true);
     printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
-    printElapsedTime(StreamCompaction::Thrust::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
     printCmpResult(NPOT, b, c);
 
     printf("\n");
@@ -188,21 +186,13 @@ int main(int argc, char* argv[]) {
     printArray(SORT_SIZE, e, true);
     printElapsedTime(StreamCompaction::CPU::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
 
-    printDesc("thrust unstable sort, power-of-two");
+    printDesc("thrust::sort (which calls Thrust's radix sort), power-of-two");
     std::copy(std::begin(d), std::end(d), std::begin(f));
-    StreamCompaction::Thrust::unstableSort(std::begin(f), std::end(f));
+    StreamCompaction::Thrust::sort(std::begin(f), std::end(f));
     printArray(SORT_SIZE, f, true);
-    printElapsedTime(StreamCompaction::Thrust::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
-    printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+     printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     printCmpResult(SORT_SIZE, e, f);
-
-    printDesc("thrust stable sort, power-of-two");
-    std::copy(std::begin(d), std::end(d), std::begin(f));
-    StreamCompaction::Thrust::stableSort(std::begin(f), std::end(f));
-    printArray(SORT_SIZE, f, true);
-    printElapsedTime(StreamCompaction::Thrust::timer().getCpuElapsedTimeForPreviousOperation(), "(std::chrono Measured)");
-    printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
-    printCmpResult(SORT_SIZE, e, f);
+	// I wanted to compare with thrust's unstable and stable sort, but it uses radix sort!
 
     printDesc("radix sort, power-of-two");
     std::copy(std::begin(d), std::end(d), std::begin(f));

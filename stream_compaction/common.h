@@ -130,12 +130,12 @@ namespace Common {
             gpu_timer_started = false;
         }
 
-        float getCpuElapsedTimeForPreviousOperation() noexcept
+        float getCpuElapsedTimeForPreviousOperation() //noexcept //(damn I need VS 2015
         {
             return prev_elapsed_time_cpu_milliseconds;
         }
 
-        float getGpuElapsedTimeForPreviousOperation() noexcept
+        float getGpuElapsedTimeForPreviousOperation() //noexcept
         {
             return prev_elapsed_time_gpu_milliseconds;
         }
