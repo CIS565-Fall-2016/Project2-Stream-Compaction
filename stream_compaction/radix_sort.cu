@@ -3,9 +3,12 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/scan.h>
+#include <thrust/sort.h>
 #include <exception>
 #include <string>
 
+#define MEASURE_EXEC_TIME
+#include <stream_compaction/efficient.h>
 #include "radix_sort.h"
 
 
@@ -54,13 +57,22 @@ namespace ParallelRadixSort
 		odata[idx] = idata[tid];
 	}
 
+#ifdef MEASURE_EXEC_TIME
+	template <class T>
+	float sort(int n, T *odata, const T *idata, T bitMask, bool lsb)
+#else
 	template <class T>
 	void sort(int n, T *odata, const T *idata, T bitMask, bool lsb)
+#endif
 	{
 		if (n <= 0 || !odata || !idata)
 		{
 			throw std::InvalidArgument();
 		}
+
+		int segSize = StreamCompaction::Efficient::computeSegmentSize(2 * n);
+		//const size_t kDevArraySizeInByte = ROUND_SEG_SIZE(2 * n, segSize) * sizeof(uint32_t);
+		const size_t kDevArraySizeInByte = StreamCompaction::Efficient::computeActualMemSize<T>(2 * n);
 
 		T *idata_dev = 0;
 		T *odata_dev = 0;
@@ -69,26 +81,60 @@ namespace ParallelRadixSort
 
 		cudaMalloc(&idata_dev, n * sizeof(T));
 		cudaMalloc(&odata_dev, n * sizeof(T));
-		cudaMalloc(&noyes_bools_dev, 2 * n * sizeof(uint32_t));
-		cudaMalloc(&indices_dev, 2 * n * sizeof(uint32_t));
+		cudaMalloc(&noyes_bools_dev, kDevArraySizeInByte);
+		cudaMalloc(&indices_dev, kDevArraySizeInByte);
 
 		cudaMemcpy(idata_dev, idata, n * sizeof(T), cudaMemcpyHostToDevice);
-
-		thrust::device_ptr<uint32_t> thrust_bools(noyes_bools_dev);
-		thrust::device_ptr<uint32_t> thrust_indices(indices_dev);
 
 		const int threadsPerBlock = 256;
 		int numBlocks = (n + threadsPerBlock - 1) / threadsPerBlock;
 		int numBits = 8 * sizeof(T);
 		T mask = lsb ? 1 : (1 << (numBits - 1));
 
+#ifdef MEASURE_EXEC_TIME
+		float execTime = 0.f, et;
+		cudaEvent_t start, stop;
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+
+		for (int i = 0; i < numBits; ++i)
+		{
+			if (!(bitMask & mask)) continue; // do not consider this bit
+
+			cudaEventRecord(start);
+			kernClassify << <numBlocks, threadsPerBlock >> >(n, mask, noyes_bools_dev, noyes_bools_dev + n, idata_dev);
+			cudaEventRecord(stop);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&et, start, stop);
+			execTime += et;
+
+			execTime += StreamCompaction::Efficient::scanHelper(segSize, 2 * n,
+				reinterpret_cast<int *>(indices_dev), reinterpret_cast<int *>(noyes_bools_dev));
+
+			cudaEventRecord(start);
+			kernScatter << <numBlocks, threadsPerBlock >> >(n, noyes_bools_dev, indices_dev, indices_dev + n, odata_dev, idata_dev);
+			cudaEventRecord(stop);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&et, start, stop);
+			execTime += et;
+
+			if (lsb) mask <<= 1; else mask >>= 1;
+
+			T *tmp = odata_dev;
+			odata_dev = idata_dev;
+			idata_dev = tmp;
+		}
+
+		cudaEventDestroy(start);
+		cudaEventDestroy(stop);
+#else
 		for (int i = 0; i < numBits; ++i)
 		{
 			if (!(bitMask & mask)) continue; // do not consider this bit
 
 			kernClassify << <numBlocks, threadsPerBlock >> >(n, mask, noyes_bools_dev, noyes_bools_dev + n, idata_dev);
 
-			thrust::exclusive_scan(thrust_bools, thrust_bools + 2 * n, thrust_indices);
+			StreamCompaction::Efficient::scanHelper(segSize, 2 * n, indices_dev, noyes_bools_dev);
 
 			kernScatter << <numBlocks, threadsPerBlock >> >(n, noyes_bools_dev, indices_dev, indices_dev + n, odata_dev, idata_dev);
 
@@ -98,16 +144,64 @@ namespace ParallelRadixSort
 			odata_dev = idata_dev;
 			idata_dev = tmp;
 		}
+#endif
 
 		cudaMemcpy(odata, idata_dev, n * sizeof(T), cudaMemcpyDeviceToHost);
 		cudaFree(idata_dev);
 		cudaFree(odata_dev);
 		cudaFree(noyes_bools_dev);
 		cudaFree(indices_dev);
+
+#ifdef MEASURE_EXEC_TIME
+		return execTime;
+#endif
 	}
 
 	// Since template definition is not visible to users (main.obj in this case),
 	// we need to explicitly tell the compiler to generate all the template implementations
 	// that will be used later
+#ifdef MEASURE_EXEC_TIME
+	template float sort<uint32_t>(int n, uint32_t *odata, const uint32_t *idata, uint32_t bitMask, bool lsb);
+#else
 	template void sort<uint32_t>(int n, uint32_t *odata, const uint32_t *idata, uint32_t bitMask, bool lsb);
+#endif
+
+#ifdef MEASURE_EXEC_TIME
+	template <class T>
+	float thrustSort(int n, T *odata, const T *idata)
+	{
+		if (n <= 0 || !odata || !idata)
+		{
+			throw std::InvalidArgument();
+		}
+
+		T *iodata_dev = 0;
+
+		cudaMalloc(&iodata_dev, n * sizeof(T));
+		cudaMemcpy(iodata_dev, idata, n * sizeof(T), cudaMemcpyHostToDevice);
+
+		thrust::device_ptr<T> thrust_iodata(iodata_dev);
+
+		float execTime;
+		cudaEvent_t start, stop;
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaEventRecord(start);
+
+		thrust::stable_sort(thrust_iodata, thrust_iodata + n);
+
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&execTime, start, stop);
+		cudaEventDestroy(start);
+		cudaEventDestroy(stop);
+
+		cudaMemcpy(odata, iodata_dev, n * sizeof(T), cudaMemcpyDeviceToHost);
+		cudaFree(iodata_dev);
+
+		return execTime;
+	}
+
+	template float thrustSort(int n, uint32_t *odata, const uint32_t *idata);
+#endif
 }

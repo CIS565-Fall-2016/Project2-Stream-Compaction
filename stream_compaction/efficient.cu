@@ -5,27 +5,9 @@
 #include "efficient.h"
 #include <vector>
 
-#define USING_SHARED_MEMORY
-
-#ifdef USING_SHARED_MEMORY
-#define MAX_SEGMENT_SIZE 1024
-#define NUM_SEG(x, ss) (((x) + (ss) - 1) / (ss))
-#define ROUND_SEG_SIZE(x, ss) (NUM_SEG(x, (ss)) * (ss))
-
-#define NUM_BANKS 32
-#define LOG_NUM_BANKS 5
-#define CONFLICT_FREE_OFFSET(x) ((x) >> LOG_NUM_BANKS)
-#endif
 
 namespace StreamCompaction {
 	namespace Efficient {
-
-		int nearestMultipleOfTwo(int n)
-		{
-			int result = 1;
-			while (result < n) result <<= 1;
-			return result;
-		}
 
 #ifdef USING_SHARED_MEMORY
 		__global__ void kernScan(int segSize, int * __restrict__ blockSums, int * __restrict__ odata, const int * __restrict__ idata)
@@ -109,10 +91,6 @@ namespace StreamCompaction {
 			odata[writeIdx2] += sum;
 		}
 
-		inline int computeSegmentSize(int n)
-		{
-			return n > (MAX_SEGMENT_SIZE >> 1) ? MAX_SEGMENT_SIZE : nearestMultipleOfTwo(n);
-		}
 
 #ifdef MEASURE_EXEC_TIME
 		float scanHelper(int segSize, int n, int *odata_dev, const int *idata_dev)
@@ -129,10 +107,13 @@ namespace StreamCompaction {
 			if (numBlocks > 1)
 			{
 				segSizeNextLevel = computeSegmentSize(numBlocks);
-				size_t kBlockSumsSize = ROUND_SEG_SIZE(numBlocks, segSizeNextLevel) * sizeof(int);
-				cudaMalloc(&iblockSums, kBlockSumsSize);
-				cudaMalloc(&oblockSums, kBlockSumsSize);
-				cudaMemset(iblockSums, 0, kBlockSumsSize);
+				//size_t kBlockSumsSize = ROUND_SEG_SIZE(numBlocks, segSizeNextLevel) * sizeof(int);
+				//cudaMalloc(&iblockSums, kBlockSumsSize);
+				//cudaMalloc(&oblockSums, kBlockSumsSize);
+				//cudaMemset(iblockSums, 0, kBlockSumsSize);
+				size_t offsetInDW = alignedSize(numBlocks * segSize * sizeof(int), 256) >> 2;
+				iblockSums = const_cast<int *>(idata_dev + offsetInDW);
+				oblockSums = odata_dev + offsetInDW;
 			}
 
 #ifdef MEASURE_EXEC_TIME
@@ -168,8 +149,8 @@ namespace StreamCompaction {
 				kernPerSegmentAdd << <numBlocks, threadsPerBlock >> >(segSize, odata_dev, oblockSums);
 #endif
 
-				cudaFree(iblockSums);
-				cudaFree(oblockSums);
+				//cudaFree(iblockSums);
+				//cudaFree(oblockSums);
 			}
 
 #ifdef MEASURE_EXEC_TIME
@@ -244,7 +225,8 @@ namespace StreamCompaction {
 #endif
 #ifdef USING_SHARED_MEMORY
 			int segSize = computeSegmentSize(n);
-			const size_t kDevArraySizeInByte = ROUND_SEG_SIZE(n, segSize) * sizeof(int);
+			//const size_t kDevArraySizeInByte = ROUND_SEG_SIZE(n, segSize) * sizeof(int);
+			const size_t kDevArraySizeInByte = computeActualMemSize<int>(n);
 			int *odata_dev = 0;
 			int *idata_dev = 0;
 
@@ -351,7 +333,8 @@ namespace StreamCompaction {
 			int *indices_dev = 0;
 
 			int segSize = computeSegmentSize(n);
-			const size_t kBoolsSizeInByte = ROUND_SEG_SIZE(n, segSize) * sizeof(int);
+			//const size_t kBoolsSizeInByte = ROUND_SEG_SIZE(n, segSize) * sizeof(int);
+			const size_t kBoolsSizeInByte = computeActualMemSize<int>(n);
 			const size_t kIndicesSizeInByte = kBoolsSizeInByte;
 
 			cudaMalloc(&idata_dev, n * sizeof(int));

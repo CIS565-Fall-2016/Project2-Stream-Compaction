@@ -20,7 +20,7 @@
 #include "testing_helpers.hpp"
 
 
-#define TEST_GROUP_SIZE 1
+#define TEST_GROUP_SIZE 100
 
 
 int main(int argc, char* argv[]) {
@@ -40,29 +40,77 @@ int main(int argc, char* argv[]) {
     a[SIZE - 1] = 0;
     printArray(SIZE, a, true);
 
+	float accumExecTime = 0.f;
 	zeroArray(SIZE, b);
 	printDesc("parallel radix sort, power-of-two");
 	try
 	{
-		ParallelRadixSort::sort(SIZE, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+		for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+		{
+			accumExecTime += ParallelRadixSort::sort(SIZE, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+		}
 	}
 	catch (std::exception &e)
 	{
 		std::cout << "    ParallelRadixSort::sort: Error: " << e.what() << std::endl;
 	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / TEST_GROUP_SIZE << "ms\n";
 	printArray(SIZE, b, true);
 	testSorted(SIZE, b);
 
+	accumExecTime = 0.f;
 	zeroArray(SIZE, b);
 	printDesc("parallel radix sort, non power-of-two");
 	try
 	{
-		ParallelRadixSort::sort(NPOT, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+		for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+		{
+			accumExecTime += ParallelRadixSort::sort(NPOT, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a), 0xffffffff);
+		}
 	}
 	catch (std::exception &e)
 	{
 		std::cout << "    ParallelRadixSort::sort: Error: " << e.what() << std::endl;
 	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / TEST_GROUP_SIZE << "ms\n";
+	printArray(NPOT, b, true);
+	testSorted(NPOT, b);
+
+	//system("pause");
+
+	accumExecTime = 0.f;
+	zeroArray(SIZE, b);
+	printDesc("thrust sort, power-of-two");
+	try
+	{
+		for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+		{
+			accumExecTime += ParallelRadixSort::thrustSort(SIZE, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a));
+		}
+	}
+	catch (std::exception &e)
+	{
+		std::cout << "    ParallelRadixSort::thrustSort: Error: " << e.what() << std::endl;
+	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / TEST_GROUP_SIZE << "ms\n";
+	printArray(SIZE, b, true);
+	testSorted(SIZE, b);
+
+	accumExecTime = 0.f;
+	zeroArray(SIZE, b);
+	printDesc("thrust sort, non power-of-two");
+	try
+	{
+		for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+		{
+			accumExecTime += ParallelRadixSort::thrustSort(NPOT, reinterpret_cast<uint32_t *>(b), reinterpret_cast<uint32_t *>(a));
+		}
+	}
+	catch (std::exception &e)
+	{
+		std::cout << "    ParallelRadixSort::thrustSort: Error: " << e.what() << std::endl;
+	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / TEST_GROUP_SIZE << "ms\n";
 	printArray(NPOT, b, true);
 	testSorted(NPOT, b);
 
@@ -87,7 +135,7 @@ int main(int argc, char* argv[]) {
 
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
-	float accumExecTime = 0.f;
+	accumExecTime = 0.f;
 	for (int i = 0; i < TEST_GROUP_SIZE; ++i)
 		accumExecTime += StreamCompaction::Naive::scan(SIZE, c, a);
 	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / TEST_GROUP_SIZE << "ms\n";
