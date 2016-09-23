@@ -11,9 +11,8 @@ NOTE: if the program crashes when entering the test for naive sort, try reducing
 
 ![preview](/screenshots/preview_optimized.gif)
 
-### Description
 
-#### Things I have done
+### Things I have done
 
 * Implemented __CPU scan and compaction__, __compaction__, __GPU naive scan__, __GPU work-efficient scan__, __GPU work-efficient compaction__, __GPU radix sort (extra)__, and compared my scan algorithms with thrust implemention
 
@@ -26,7 +25,7 @@ NOTE: if the program crashes when entering the test for naive sort, try reducing
 * I added a helper class `PerformanceTimer` in common.h which is used to do performance measurement.
 
 
-#### Original Questions
+### Original Questions
 ```
 * Roughly optimize the block sizes of each of your implementations for minimal
   run time on your GPU.
@@ -80,9 +79,9 @@ assignments, as well.
 * I added tests for __radix sort__, which compares with `std::sort` as well as __Thrust__'s `thrust::sort`
 
 
-#### Performance
+### Performance
 
-##### Blocksize
+#### Blocksize
 
 When block size is smaller than 16, my application suffers from performance drop, which is recorded in `test_results` folder. I decided to just use `cudaOccupancyMaxPotentialBlockSize` for each device functions, which is almost 1024 on my computer.
 
@@ -98,7 +97,7 @@ When block size is smaller than 16, my application suffers from performance drop
 | 512        | 114.593        | 44.3084                  | 134.408                 |
 | 1024       | 113.867        | 44.2941                  | 134.408                 |
 
-##### Array length
+#### Array length
 
 All the test are done with block size of 1024. The possible max value for sorting is 100.
 
@@ -132,7 +131,7 @@ __Sort__ : radix sort on GPU is faster than std::sort
 | 24                            | 378.025        | 105.222         |
 | 26                            | 1481.8         | 419.345         |
 
-##### Data maximum value and radix sort
+#### Data maximum value and radix sort
 
 __NOTE: THIS TEST RUNS ON A DIFFERENT MACHINE: Windows 7, Xeon(R) E5-1630 @ 3.70GHz 32GB, GTX 1070 8192MB (Moore 103 SigLab)__
 
@@ -148,7 +147,7 @@ With max possible value increased, besides the run time of radix sort, that of s
 __I peeked at thrust's inner function call and found thrust is using a radix sort algorithm.__
 
 
-#### Sample Output
+### Sample Output
 
 ```
 * THIS TEST RAN ON A DIFFERENT MACHINE:
@@ -255,9 +254,9 @@ Max value: 1000000000
 ```
 
 
-#### Optimization
+### Optimization
 
-##### Run less threads for work-efficient scan
+#### Run less threads for work-efficient scan
 
 For work-efficient scan, my original implementation was using the same of amount of threads for every up sweep and down sweeps. Then I optimized it by using only necessary amount of threads for each iteration.
 
@@ -327,7 +326,7 @@ And I calculated the number of threads needed as well as the maximum thread inde
 
 Originally I was still using length of buffer as first parameter, but when I was calculating indices for a thread by using the condition of `(distance * 2) * (1 + tindex) - 1 > N`. There can come some weird result because of the multiplication result is out of bound (even for `size_t` - it took me 2 hours to debug that). So lessons learned, and I'll use more `n > b/a` instead of `a*n > b` as condition in the future.
 
-##### Helper class for performance measurement
+#### Helper class for performance measurement
 
 I create a RAII `PerformanceTimer` class for performance measurement. Which is like:
 
