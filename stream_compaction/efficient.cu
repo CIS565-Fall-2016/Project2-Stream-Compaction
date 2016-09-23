@@ -6,46 +6,35 @@
 namespace StreamCompaction {
 namespace Efficient {
 
-	__global__ void kernScan(int n, int *g_odata, int*g_idata) {
+	__global__ void kernScanUp(int n, int d, int step, int *g_odata, int*g_idata) {
 		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-		int offset = 1;
+		if (index < d) {
+			int ai = step * (2 * index + 1) - 1;
+			int bi = step * (2 * index + 2) - 1;
 
-		for (int d = n - 1; d > 0; d--) { // build sum in place up the tree
-			if (index < d) {
-				int ai = offset * (2 * index + 1) - 1;
-				int bi = offset * (2 * index + 2) - 1;
+			g_idata[bi] += g_idata[ai];
+		}
+	}
 
-				g_idata[bi] += g_idata[ai];
-			}
-			offset *= 2;
+	__global__ void kernScanDown(int n, int d, int step, int *g_odata, int *g_idata) {
+		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-			// clear the last element  
-			if (index == 0) {
-				g_idata[n - 1] = 0;
-			}
+		if (index == 0) {
+			g_idata[n - 1] = 0;
 		}
 
 		// traverse down tree & build scan  
-		for (int d = 1; d < n; d *= 2) {
-			offset--;
-
-			if (index < d) {
-
-				int ai = offset*(2 * index + 1) - 1;
-				int bi = offset*(2 * index + 2) - 1;
+		if (index < d) {
+			int ai = step * (2 * index + 1) - 1;
+			int bi = step * (2 * index + 2) - 1;
 
 
-				float t = g_idata[ai];
-				g_idata[ai] = g_idata[bi];
-				g_idata[bi] += t;
-			}
+			float t = g_idata[ai];
+			g_idata[ai] = g_idata[bi];
+			g_idata[bi] += t;
 		}
-
-		g_odata[2 * index] = g_idata[2 * index];
-		g_odata[2 * index + 1] = g_idata[2 * index + 1];
 	}
-
 
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
@@ -65,7 +54,13 @@ void scan(int n, int *odata, const int *idata) {
 
 	cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 	
-	kernScan<< <fullBlocksPerGrid, threadsPerBlock >> >(n, dev_out, dev_in);
+	for (int d = 0; d < ilog2ceil(n); d++) {
+		kernScanUp << <fullBlocksPerGrid, threadsPerBlock >> >(n, d, pow(2, d+1), dev_out, dev_in);
+	}
+
+	for (int d = ilog2ceil(n); d >= 0; d--) {
+		kernScanDown << <fullBlocksPerGrid, threadsPerBlock >> >(n, d, pow(2, d + 1), dev_out, dev_in);
+	}
 		
 	cudaMemcpy(odata, dev_out, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("memcpy back failed!");
