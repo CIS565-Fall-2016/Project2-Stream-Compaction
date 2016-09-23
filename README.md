@@ -19,7 +19,7 @@ NOTE: if the program crashes when entering the test for naive sort, try reducing
 
 * I optimized my work efficient scan, and __speed is increased to 270%__ of my original implementation, please refer to __Optimization__ section.
 
-* I also wrote an __invlusive version__ of __work-efficient scan__ - because i misunderstood the requirement at first! The difference of the inclusive method is that it creates a buffer that is 1 element larger and swap the last(0) and and second last elements before downsweeping. Although I corrected my implemention to exclusive scan, the inclusive scan can still be called by passing ScanType::inclusive to scan_implenmention method in efficient.cu.
+* I also wrote an __inclusive version__ of __work-efficient scan__ - because i misunderstood the requirement at first! The difference of the inclusive method is that it creates a buffer that is 1 element larger and swap the last(0) and and second last elements before downsweeping. Although I corrected my implemention to exclusive scan, the inclusive scan can still be called by passing ScanType::inclusive to scan_implenmention method in efficient.cu.
 
 * __Radix sort__ assumes inputs are between [0, a_given_maximum) . I compared my radix sort with std::sort and thrust's unstable and stable sort.
 
@@ -57,7 +57,7 @@ NOTE: if the program crashes when entering the test for naive sort, try reducing
     it different for each implementation?
 ```
 
-* ~~I notice that I couldn't get a good measurement for scan and sort of __Thrust__. I have trouble measuring `thrust::exclusive` with std::chrono, while I can use `std::chrono` to measure `thrust::scan` but the results from CUDA events seems off.~~ I passed a host array to thrust so in my original tests thrust is using a CPU sort algorithm, fixed and updated result in ~~result_radix_max_100.txt and result_radix_max_100000000.txt~~
+* ~~I notice that I couldn't get a good measurement for scan and sort of __Thrust__. I have trouble measuring `thrust::exclusive` with std::chrono, while I can use `std::chrono` to measure `thrust::scan` but the results from CUDA events seems off.~~ I passed a host array to thrust so in my original tests thrust is using a CPU sort algorithm, fixed and updated result in `result_radix_max_100.txt` and `result_radix_max_100000000.txt`
 
 * With max possible value increased (so does MSB), besides the run time of radix sort, that of std::sort also increased significantly, which is unexpected. Does bit length also affect the time for read/write or other operations? or the implementation of std::sort<int> use bit level information?
 
@@ -138,10 +138,10 @@ __NOTE: THIS TEST RUNS ON A DIFFERENT MACHINE: Windows 7, Xeon(R) E5-1630 @ 3.70
 
 All the test are done with block size of 1024; array length is ~~67108864~~ 33554432.
 
-| max value | std::sort (ms) | Radix sort (ms) | thrust::sort (ms) |
-|-----------|----------------|-----------------|-------------------|
-| 100       | 917            | 143.992         | 20.2813ms         |
-| 10000     | 2173           | 1023.97         | 20.6702ms         |
+| max value  | std::sort (ms) | Radix sort (ms) | thrust::sort (ms) |
+|------------|----------------|-----------------|-------------------|
+| 100        | 917            | 143.992         | 20.2813ms         |
+| 1000000000 | 2173           | 1023.97         | 20.6702ms         |
 
 With max possible value increased, besides the run time of radix sort, that of std::sort and thrust sorts also increased.
 
