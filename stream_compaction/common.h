@@ -33,6 +33,9 @@ inline int ilog2ceil(int x) {
 
 namespace StreamCompaction {
 namespace Common {
+
+	const int BlockSize = 128;
+
     __global__ void kernMapToBoolean(int n, int *bools, const int *idata);
 
     __global__ void kernScatter(int n, int *odata,
@@ -72,20 +75,21 @@ namespace Common {
 		void stopGpuTimer()
 		{
 			cudaEventRecord(gpu_timer_stop);
+			cudaEventSynchronize(gpu_timer_stop);
 		}
 
 		double getGpuElapsedTime()
 		{
 			float elapsedTime;
 
-			cudaEventSynchronize(gpu_timer_stop);
+			
 			cudaEventElapsedTime(&elapsedTime, gpu_timer_start, gpu_timer_stop);
 			return elapsedTime;
 		}
 
 		void printTimerInfo(const char* s, double elapsedTime)
 		{
-			printf("<==TIMER==> %s %.3lf ms \n", s, elapsedTime);
+			printf("<==TIMER==> %s %.3lf ms <==TIMER==> \n", s, elapsedTime);
 		}
 
 	private:

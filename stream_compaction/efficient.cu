@@ -6,7 +6,7 @@
 namespace StreamCompaction {
 namespace Efficient {
 
-const int BlockSize = 128;
+const int BlockSize = StreamCompaction::Common::BlockSize;
 
 static StreamCompaction::Common::Timer timer;
 
@@ -14,7 +14,8 @@ static StreamCompaction::Common::Timer timer;
 // stride = 2^(d+1)
 __global__ void kernUpSweep(int n, int stride, int *x)
 {
-	int k = threadIdx.x + blockDim.x * blockIdx.x;
+	// overflow if using int for k
+	long long k = threadIdx.x + blockDim.x * blockIdx.x;
 	k *= stride;
 	if (k >= n)
 		return;
@@ -26,7 +27,7 @@ __global__ void kernUpSweep(int n, int stride, int *x)
 // stride = 2^(d+1)
 __global__ void kernDownSweep(int n, int stride, int *x)
 {
-	int k = threadIdx.x + blockDim.x * blockIdx.x;
+	long long k = threadIdx.x + blockDim.x * blockIdx.x;
 	k *= stride;
 	if (k >= n)
 		return;
@@ -57,6 +58,7 @@ void scan_device(int n, int *data)
 		int blockNumber = (n / stride + BlockSize - 1) / BlockSize;
 		kernUpSweep << <blockNumber, BlockSize >> >(n, stride, data);
 	}
+	checkCUDAError("1");
 
 	// set last to zero !
 	kernSetZero << <1, 1 >> >(n - 1, data);
@@ -69,7 +71,8 @@ void scan_device(int n, int *data)
 		kernDownSweep << <blockNumber, BlockSize >> >(n, stride, data);
 	}
 
-	checkCUDAError("fk");
+	checkCUDAError("2");
+
 }
 
 /**
@@ -85,14 +88,16 @@ void scan(int n, int *odata, const int *idata)
 	checkCUDAError("cudaMalloc dev failed");
 
 	cudaMemset(dev_buffer, 0, bufferSize*sizeof(int));
+
 	cudaMemcpy(dev_buffer, idata, sizeof(int)*n, cudaMemcpyHostToDevice);
+
 
 	timer.startGpuTimer();
 
 	scan_device(bufferSize, dev_buffer);
 
 	timer.stopGpuTimer();
-	timer.printTimerInfo("StreamCompact::Efficient::Scan = ", timer.getGpuElapsedTime());
+	timer.printTimerInfo("Scan::GPU::Efficient = ", timer.getGpuElapsedTime());
 
 	cudaMemcpy(odata, dev_buffer, sizeof(int)*n, cudaMemcpyDeviceToHost);
 
@@ -127,11 +132,12 @@ int compact(int n, int *odata, const int *idata) {
 	checkCUDAError("cudaMalloc dev_out failed");
 
 	cudaMemcpy(dev_input, idata, n*sizeof(int), cudaMemcpyHostToDevice);
-	
+
+	cudaMemset(dev_bools, 0, bufferSize*sizeof(int));
+
 	timer.startGpuTimer();
 
 	// map to booleans 
-	cudaMemset(dev_bools, 0, bufferSize*sizeof(int));
 	dim3 blocks((n + BlockSize - 1) / BlockSize);
 	Common::kernMapToBoolean << <blocks, BlockSize >> >(n, dev_bools, dev_input);
 
@@ -143,6 +149,9 @@ int compact(int n, int *odata, const int *idata) {
 	// scatter 
 	Common::kernScatter << <blocks, BlockSize >> >(n, dev_output, dev_input, dev_bools, dev_indices);
 
+	timer.stopGpuTimer();
+	timer.printTimerInfo("Compact::GPU::Efficient = ", timer.getGpuElapsedTime());
+
 	// get length
 	int len;
 	cudaMemcpy(&len, dev_indices + n - 1, sizeof(int), cudaMemcpyDeviceToHost);
@@ -152,12 +161,10 @@ int compact(int n, int *odata, const int *idata) {
 		len++;
 	}
 
-	timer.stopGpuTimer();
-	timer.printTimerInfo("StreamCompact::Efficient::Scan = ", timer.getGpuElapsedTime());
-
+	
 	// copy result to odata
 	cudaMemcpy(odata, dev_output, len*sizeof(int), cudaMemcpyDeviceToHost);
-	
+
 
 	// free memory
 	cudaFree(dev_input);

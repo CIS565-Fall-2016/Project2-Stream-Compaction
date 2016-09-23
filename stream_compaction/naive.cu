@@ -6,7 +6,8 @@
 namespace StreamCompaction {
 namespace Naive {
 	
-const int BlockSize = 128;
+const int BlockSize = StreamCompaction::Common::BlockSize;
+
 
 static StreamCompaction::Common::Timer timer;
 
@@ -65,7 +66,7 @@ void scan(int n, int *odata, const int *idata) {
 	dev_out = tmp;
 
 	timer.stopGpuTimer();
-	timer.printTimerInfo("StreamCompact::Naive::Scan = ", timer.getGpuElapsedTime());
+	timer.printTimerInfo("Scan::GPU::Naive = ", timer.getGpuElapsedTime());
 
 	// exclusive scan
 	cudaMemcpy(odata + 1, dev_out, (n-1)*sizeof(int), cudaMemcpyDeviceToHost);
@@ -73,6 +74,8 @@ void scan(int n, int *odata, const int *idata) {
 	
 	cudaFree(dev_in);
 	cudaFree(dev_out);
+
+	checkCUDAError("naive scan error return");
 
 }
 

@@ -20,7 +20,10 @@ void scan(int n, int *odata, const int *idata) {
     // example: for device_vectors dv_in and dv_out:
     // thrust::exclusive_scan(dv_in.begin(), dv_in.end(), dv_out.begin());
 
-	thrust::device_vector<int> dev_input(idata, idata + n);
+	thrust::host_vector<int> host_input(idata, idata + n);
+	thrust::device_vector<int> dev_input = host_input;
+
+	//thrust::host_vector<int> host_output(odata, odata + n);
 	thrust::device_vector<int> dev_output(odata, odata + n);
 
 	// what happened during thrust? GPU timer malfunctioning
@@ -30,7 +33,7 @@ void scan(int n, int *odata, const int *idata) {
 
 	timer.stopGpuTimer();
 
-	timer.printTimerInfo("StreamCompact::Thrust time = ", timer.getGpuElapsedTime());
+	timer.printTimerInfo("Scan::Thrust = ", timer.getGpuElapsedTime());
 
 	thrust::copy(dev_output.begin(), dev_output.end(), odata);
 }
