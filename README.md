@@ -7,7 +7,7 @@ CUDA Stream Compaction
 * Tested on: Windows 10, i7-4850 @ 2.3GHz 16GB, GT 750M (Personal Laptop)
 
 ## Overview 
-![]()
+![](test_datas/overview.gif)
 
 ## Features
 * Scan
