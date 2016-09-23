@@ -17,7 +17,13 @@ namespace Efficient {
 __global__ void scan_up(int n, int pow2d, int *odata, const int *idata) {
   int index = 2 * pow2d * (blockIdx.x * blockDim.x + threadIdx.x + 1) - 1;
   if (index >= n) return;
-  odata[index] = idata[index - pow2d] + idata[index];
+  
+  // set last value to 0 here to avoid cudaMemcpy
+  if (index == n - 1) {
+    odata[index] = 0;
+  } else {
+    odata[index] = idata[index - pow2d] + idata[index];
+  }
 }
 
 __global__ void scan_down(int n, int pow2d, int *odata, const int *idata) {
@@ -31,7 +37,7 @@ __global__ void scan_down(int n, int pow2d, int *odata, const int *idata) {
 
 __global__ void zero(int n, int *odata) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index < 0) return;
+  if (index >= n) return;
   odata[index] = 0;
 }
 
@@ -42,12 +48,13 @@ void scan(int n, int *odata, const int *idata) {
   int* dev_data;
   int sizePow2 = pow(2, ilog2ceil(n));
 
-  const int blockSize = 128;
+  int blockSize = 128;
   int nBlocks;
 
   cudaMalloc((void**)&dev_data, sizePow2 * sizeof(int));
   checkCUDAError("cudaMalloc dev_data failed!");
 
+  blockSize = 32;
   // fill with 0
   nBlocks = (sizePow2 + blockSize - 1) / blockSize;
   zero << <nBlocks, blockSize >> >(sizePow2, dev_data);
@@ -55,22 +62,21 @@ void scan(int n, int *odata, const int *idata) {
   cudaMemcpy(dev_data, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
   checkCUDAError("cudaMemcpy from idata to dev_data failed!");
 
+  blockSize = 128;
+  START_CUDA_TIMER()
   // scan up
   for (int pow2d = 1, int threads = sizePow2; pow2d < sizePow2 / 2; pow2d *= 2, threads /= 2) {
     nBlocks = (threads + blockSize - 1) / blockSize; // threads / blockSize, rounded up
-    scan_up << < nBlocks, blockSize >> >(n, pow2d, dev_data, dev_data);
+    scan_up << < nBlocks, blockSize >> >(sizePow2, pow2d, dev_data, dev_data);
   }
 
-  // set last item to 0
-  int zero = 0;
-  cudaMemcpy(&dev_data[sizePow2 - 1], &zero, sizeof(int), cudaMemcpyHostToDevice);
-  checkCUDAError("cudaMemcpy copy zero failed!");
-
+  blockSize = 128;
   // scan down
   for (int pow2d = pow(2, ilog2ceil(sizePow2) - 1), int threads = 1; pow2d >= 1; pow2d /= 2, threads *= 2) {
     nBlocks = (threads + blockSize - 1) / blockSize; // threads / blockSize, rounded up
     scan_down << < nBlocks, blockSize >> >(sizePow2, pow2d, dev_data, dev_data);
   }
+  STOP_CUDA_TIMER()
 
   cudaMemcpy(odata, dev_data, sizeof(int) * n, cudaMemcpyDeviceToHost);
   checkCUDAError("cudaMemcpy from dev_data to odata failed!");
@@ -110,7 +116,7 @@ int compact(int n, int *odata, const int *idata) {
   checkCUDAError("cudaMemcpy from idata to dev_data failed!");
 
   // printArr << <1, 1 >> >(n, dev_idata);
-
+  START_CUDA_TIMER()
   // create mask
   nBlocks = (n + blockSize - 1) / blockSize;
   StreamCompaction::Common::kernMapToBoolean << <nBlocks, blockSize >> >(n, dev_mask, dev_idata);
@@ -131,17 +137,13 @@ int compact(int n, int *odata, const int *idata) {
     scan_up << < nBlocks, blockSize >> >(n, pow2d, dev_mask, dev_mask);
   }
 
-  // set last item to 0
-  int last = 0;
-  cudaMemcpy(&dev_mask[sizePow2 - 1], &last, sizeof(int), cudaMemcpyHostToDevice);
-  checkCUDAError("cudaMemcpy copy zero failed!");
-
   // scan down
   for (int pow2d = pow(2, ilog2ceil(sizePow2) - 1), int threads = 1; pow2d >= 1; pow2d /= 2, threads *= 2) {
     nBlocks = (threads + blockSize - 1) / blockSize; // threads / blockSize, rounded up
     scan_down << < nBlocks, blockSize >> >(sizePow2, pow2d, dev_mask, dev_mask);
   }
 
+  int last;
   // copy back last val so we know how many elements
   cudaMemcpy(&last, &dev_mask[sizePow2 - 1], sizeof(int), cudaMemcpyDeviceToHost);
   checkCUDAError("cudaMemcpy copy last failed!");
@@ -152,6 +154,8 @@ int compact(int n, int *odata, const int *idata) {
   // scatter
   nBlocks = (n + blockSize - 1) / blockSize;
   StreamCompaction::Common::kernScatter << <nBlocks, blockSize >> >(n, dev_odata, dev_idata, dev_odata, dev_mask);
+
+  STOP_CUDA_TIMER()
 
   cudaMemcpy(odata, dev_odata, sizeof(int) * last, cudaMemcpyDeviceToHost);
   checkCUDAError("cudaMemcpy from dev_odata to odata failed!");

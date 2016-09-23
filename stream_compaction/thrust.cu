@@ -15,7 +15,9 @@ namespace Thrust {
 void scan(int n, int *odata, const int *idata) {
   thrust::device_vector<int> dv_in(idata, idata + n);
   thrust::device_vector<int> dv_out(odata, odata + n);
+  START_CUDA_TIMER()
   thrust::exclusive_scan(dv_in.begin(), dv_in.end(), dv_out.begin());
+  STOP_CUDA_TIMER()
   thrust::copy(dv_out.begin(), dv_out.end(), odata);
 }
 

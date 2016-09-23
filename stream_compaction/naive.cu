@@ -54,6 +54,8 @@ void scan(int n, int *odata, const int *idata) {
   const int blockSize = 128;
   const int nBlocks = (n + blockSize - 1) / blockSize; //  n/blockSize, rounded up
 
+  START_CUDA_TIMER()
+
   for (int pow2d = 1; pow2d < n; pow2d *= 2) {
     naiveScanIteration << < nBlocks, blockSize >> >(n, pow2d, dev_odata, dev_idata);
     std::swap(dev_idata, dev_odata);
@@ -61,6 +63,9 @@ void scan(int n, int *odata, const int *idata) {
 
   // convert to exclusive scan
   rshift << <nBlocks, blockSize >> >(n, dev_odata, dev_idata);
+
+  STOP_CUDA_TIMER()
+  
 
   // we use dev_idata here because we swapped buffers
   cudaMemcpy(odata, dev_odata, sizeof(int) * n, cudaMemcpyDeviceToHost);
