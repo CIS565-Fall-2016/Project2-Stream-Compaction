@@ -14,7 +14,7 @@
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    const size_t SIZE = 1 << 3;
+    const size_t SIZE = 1 << 16;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, power-of-two");
     StreamCompaction::Efficient::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+    //printArray(SIZE, c, false);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
