@@ -14,6 +14,34 @@ void checkCUDAErrorFn(const char *msg, const char *file, int line) {
     exit(EXIT_FAILURE);
 }
 
+/* Max reduction is really just the partial sum upsweep algorithm */
+__global__ void maxReduction(int n, int level, int* odata) {
+  int tid = threadIdx.x + (blockIdx.x * blockDim.x);
+  if (tid >= n) {
+    return;
+  }
+  
+  int twoToLevel = powf(2, level);
+  int twoToLevelPlusOne = powf(2, level + 1);
+  if (tid % twoToLevelPlusOne == 0) {
+    odata[tid + twoToLevelPlusOne - 1] = imax(odata[tid + twoToLevel - 1], odata[tid + twoToLevelPlusOne - 1]);
+  }
+}
+
+int findMaxInDeviceArray(int n, int *dev_idata) {
+
+  int height = ilog2ceil(n);
+
+
+  for (int level = 0; level < height; ++level) {
+	  maxReduction << <BLOCK_COUNT(n), BLOCK_SIZE >> >(n, level, dev_idata);
+  }
+
+  int maxValue = 0;
+  cudaMemcpy(&maxValue, dev_idata + n - 1, sizeof(int), cudaMemcpyDeviceToHost);
+
+  return maxValue;
+}
 
 namespace StreamCompaction {
 namespace Common {
@@ -43,7 +71,12 @@ __global__ void inclusiveToExclusiveScanResult(int n, int* odata, const int* ida
  * which map to 0 will be removed, and elements which map to 1 will be kept.
  */
 __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
-    // TODO
+  int tid = threadIdx.x + blockDim.x * blockIdx.x;
+  if (tid >= n) {
+    return;
+  }
+
+  bools[tid] = (bool)idata[tid];
 }
 
 /**
@@ -53,6 +86,14 @@ __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
 __global__ void kernScatter(int n, int *odata,
         const int *idata, const int *bools, const int *indices) {
     // TODO
+  int tid = threadIdx.x + blockDim.x * blockIdx.x;
+  if (tid >= n) {
+    return;
+  }
+
+  if (bools[tid] == 1) {
+    odata[indices[tid]] = idata[tid];
+  }
 }
 
 }

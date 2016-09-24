@@ -10,6 +10,7 @@
 #define BLOCK_SIZE 128
 #define BLOCK_COUNT(n) ((n + BLOCK_SIZE - 1) / BLOCK_SIZE)
 
+#define imax(a, b) (((a) > (b)) ? (a) : (b))
 
 /**
  * Check for CUDA errors; print and exit if there was a problem.
@@ -27,6 +28,8 @@ inline int ilog2(int x) {
 inline int ilog2ceil(int x) {
     return ilog2(x - 1) + 1;
 }
+
+int findMaxInDeviceArray(int n, int *idata);
 
 
 namespace StreamCompaction {
