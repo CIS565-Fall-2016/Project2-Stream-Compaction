@@ -33,6 +33,8 @@ CUDA Stream Compaction
 * Array Size vs. Execution Time (ms)
   * Exclusive scan
   
+  ![](img/scan_perf.png)
+
   | Array Size | Naive | Efficient | Thrust | CPU |
   | ---------- | ----- | --------- | ------ | --- |
   | 2^8  | 0.03 | 0.01 | 0.02 | 0.01 |
@@ -42,6 +44,8 @@ CUDA Stream Compaction
 
   * Stream compaction
   
+  ![](img/sc_perf2.png)
+
   | Array Size | Efficient | CPU (no scan) | CPU (with scan) |
   | ---        | ---       | ---           | --- |
   | 2^8  | 0.09 | 0.00 | 0.00 |
@@ -51,6 +55,8 @@ CUDA Stream Compaction
   
   * Radix sort
   
+  ![](img/rs_perf.png)
+
   | Array Size | Efficient | Thrust |
   | ---        | ---       | --- |
   | 2^8  | 0.52 | 0.58 |
