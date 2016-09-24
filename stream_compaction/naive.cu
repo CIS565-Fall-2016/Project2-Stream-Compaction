@@ -45,8 +45,11 @@ void scan(int n, int *odata, const int *idata) {
 		CudaScan<<<1, nLength>>>(i, dev_Data[nOutputIndex ^ 1], dev_Data[nOutputIndex]);
 	}
 	odata[0] = 0;
-	cudaMemcpy(odata + 1, dev_Data[nOutputIndex], sizeof(int) * (nLength - 1), cudaMemcpyDeviceToHost);
+	cudaMemcpy(odata + 1, dev_Data[nOutputIndex], sizeof(int) * (n - 1), cudaMemcpyDeviceToHost);
 	checkCUDAError("cudaMemcpy to host failed!");	
+
+	cudaFree(dev_Data[0]);
+	cudaFree(dev_Data[1]);
 }
 
 
