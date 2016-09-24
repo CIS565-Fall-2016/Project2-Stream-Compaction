@@ -18,7 +18,7 @@ PerformanceTimer& timer()
 }
 
 
-__global__ void kernComputeBArray(int N, int bit_mask, bool *b, const int *idata)
+__global__ void kernComputeBArray(const int N, int bit_mask, bool *b, const int *idata)
 {
     auto index = threadIdx.x + blockIdx.x * blockDim.x;
     if (index >= N) { return; }
@@ -26,16 +26,23 @@ __global__ void kernComputeBArray(int N, int bit_mask, bool *b, const int *idata
     b[index] = ((idata[index] & bit_mask) != 0);
 }
 
-__global__ void kernComputeEArray(int N, int* e, const bool *b)
+__global__ void kernComputeEArray(const int N, int* e, const bool *b, const int extended_n)
 {
     auto index = threadIdx.x + blockIdx.x * blockDim.x;
-    if (index >= N) { return; }
-
-    // e is int array since directly performing scan on it
-    e[index] = !b[index];
+    if (index >= extended_n) { return; }
+    else if (index >= N)
+    {
+    	// the length of e (or later f) needs to be power of 2
+    	e[index] = 0;
+    }
+    else
+    {
+        // e is int array since directly performing scan on it
+        e[index] = !b[index];
+    }
 }
 
-__global__ void kernComputeDArray(int N, int* d, const int* f, const bool* b)
+__global__ void kernComputeDArray(const int N, int* d, const int* f, const bool* b)
 {
     auto index = threadIdx.x + blockIdx.x * blockDim.x;
     if (index >= N) { return; }
@@ -53,7 +60,7 @@ __global__ void kernComputeDArray(int N, int* d, const int* f, const bool* b)
     }
 }
 
-__global__ void kernReshuffle(int N, int* to_buffer, const int* from_buffer, const int* indices)
+__global__ void kernReshuffle(const int N, int* to_buffer, const int* from_buffer, const int* indices)
 {
     auto index = threadIdx.x + blockIdx.x * blockDim.x;
     if (index >= N) { return; }
@@ -155,7 +162,7 @@ void radixSort(int* start, int* end, int max_value)
     {
         auto bit_mask = 1 << offset;
         kernComputeBArray <<<full_blocks_per_grid_compute_b, block_size_compute_b >>>(n, bit_mask, dev_b, dev_array);
-        kernComputeEArray <<<full_blocks_per_grid_compute_e, block_size_compute_e >>>(n, dev_ef, dev_b);
+        kernComputeEArray <<<full_blocks_per_grid_compute_e, block_size_compute_e >>>(n, dev_ef, dev_b, extended_n);
 
         StreamCompaction::Efficient::scanInPlaceDevice(extended_n, dev_ef);
 

@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 list(APPEND CUDA_NVCC_FLAGS_DEBUG -G -g)
 list(APPEND CUDA_NVCC_FLAGS_RELWITHDEBUGINFO -lineinfo)
+list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
 
 # Crucial magic for CUDA linking
 find_package(Threads REQUIRED)
