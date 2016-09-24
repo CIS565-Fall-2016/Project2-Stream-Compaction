@@ -7,8 +7,11 @@ namespace StreamCompaction {
 namespace Efficient {
 
 // TODO: __global__
-	__global__ void upSweep(int d, int *idata) {
+	__global__ void upSweep(int N, int d, int *idata) {
 		int n = (blockDim.x * blockIdx.x) + threadIdx.x;
+		if (n >= N) {
+			return;
+		}
 		int delta = 1 << d;
 		int doubleDelta = 1 << (d + 1);
 		if (n % doubleDelta == 0) {
@@ -16,8 +19,11 @@ namespace Efficient {
 		}
 	}
 
-	__global__ void downSweep(int d, int *idata) {
+	__global__ void downSweep(int N, int d, int *idata) {
 		int n = (blockDim.x * blockIdx.x) + threadIdx.x;
+		if (n >= N) {
+			return;
+		}
 		int delta = 1 << d;
 		int doubleDelta = 1 << (d + 1);
 		if (n % doubleDelta == 0) {
@@ -28,9 +34,9 @@ namespace Efficient {
 	}
 
 	void scanInDevice(int n, int *devData) {
-		int blocksNum = (n + blockSize - 1) / blockSize;
+		int blockNum = (n + blockSize - 1) / blockSize;
 		for (int d = 0; d < ilog2ceil(n) - 1; d++) {
-			upSweep << <blocksNum, blockSize >> >(d, devData);
+			upSweep << <blockNum, blockSize >> >(n, d, devData);
 			checkCUDAError("upSweep not correct...");
 		}
 		//set last element to zero, refer to slides!
@@ -38,7 +44,7 @@ namespace Efficient {
 		cudaMemcpy(&devData[n - 1], &counter, sizeof(int), cudaMemcpyHostToDevice);
 
 		for (int d = ilog2ceil(n) - 1; d >= 0; d--) {
-			downSweep << <blocksNum, blockSize >> >(d, devData);
+			downSweep << <blockNum, blockSize >> >(n, d, devData);
 			checkCUDAError("downSweep not correct...");
 		}
 	}

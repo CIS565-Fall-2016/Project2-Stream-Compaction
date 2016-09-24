@@ -7,14 +7,15 @@
  */
 
 #include <cstdio>
+#include <algorithm>
 #include <stream_compaction/cpu.h>
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/radix.h>
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 8;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
@@ -43,38 +44,94 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
     StreamCompaction::Naive::scan(SIZE, c, a);
- //   printArray(SIZE, c, true);
+ // printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
     printDesc("naive scan, non-power-of-two");
     StreamCompaction::Naive::scan(NPOT, c, a);
- //   printArray(SIZE, c, true);
+ // printArray(SIZE, c, true);
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, power-of-two");
     StreamCompaction::Efficient::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+ // printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, non-power-of-two");
     StreamCompaction::Efficient::scan(NPOT, c, a);
-    //printArray(NPOT, c, true);
+ // printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, power-of-two");
     StreamCompaction::Thrust::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+ // printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, non-power-of-two");
     StreamCompaction::Thrust::scan(NPOT, c, a);
-    //printArray(NPOT, c, true);
+ // printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
+
+	printf("\n");
+	printf("*****************************\n");
+	printf("******** EXTRA CREDIT *******\n");
+	printf("****** RADIX SORT TESTS *****\n");
+	printf("******** POWER-OF-TWO *******\n");
+	printf("*****************************\n");
+	
+	genArray(SIZE, a, SIZE);
+	printArray(SIZE, a, true);
+	memcpy(b, a, SIZE*sizeof(int));
+
+	printDesc("std sort for comparasion");
+	std::sort(a, a + SIZE);
+	printArray(SIZE, a, true);
+	printf("\n");
+
+	printDesc("Extra : RadixSort");
+	StreamCompaction::Radix::RadixSort(SIZE, b, SIZE);
+	printCmpResult(SIZE, b, a);
+	printArray(SIZE, b, true);
+	printf("\n");
+
+	printf("\n");
+	printf("*****************************\n");
+	printf("******** EXTRA CREDIT *******\n");
+	printf("****** RADIX SORT TESTS *****\n");
+	printf("****** NON-POWER-OF-TWO *****\n");
+	printf("*****************************\n");
+
+	//zeroArray(SIZE, c);
+	//printDesc("work-efficient scan, power-of-two");
+	//StreamCompaction::Efficient::scan(SIZE, c, a);
+	//// printArray(SIZE, c, true);
+	//printCmpResult(SIZE, b, c);
+
+	//zeroArray(SIZE, c);
+	//printDesc("work-efficient scan, non-power-of-two");
+	//StreamCompaction::Efficient::scan(NPOT, c, a);
+	//// printArray(NPOT, c, true);
+	//printCmpResult(NPOT, b, c);
+
+	genArray(SIZE, a, SIZE);
+	printArray(SIZE, a, true);
+	memcpy(b, a, NPOT * sizeof(int));
+
+	printDesc("std sort for comparasion");
+	std::sort(a, a + NPOT);
+	printArray(NPOT, a, true);
+	printf("\n");
+
+	printDesc("Extra : RadixSort");
+	StreamCompaction::Radix::RadixSort(NPOT, b, SIZE);
+	printCmpResult(NPOT, b, a);
+	printArray(NPOT, b, true);
+	printf("\n");
 
     printf("\n");
     printf("*****************************\n");

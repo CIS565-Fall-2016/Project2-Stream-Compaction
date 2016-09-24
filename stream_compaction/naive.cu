@@ -38,7 +38,7 @@ namespace StreamCompaction {
 			
 			//performance check... remember...
 
-			dim3 fulllBlocksPerGrid((n + blockSize - 1) / blockSize);
+			int blockNum = (n + blockSize - 1) / blockSize;
 			
 			//Naive Parallel Scan
 			int level = ilog2ceil(n);
@@ -47,7 +47,7 @@ namespace StreamCompaction {
 				// pow (2,d-1)
 				// refer to slides 
 				delta = (1 << (d - 1));
-				kernelNaive << < fulllBlocksPerGrid, blockSize >> >(n, delta, devIdata, devOdata);
+				kernelNaive << < blockNum, blockSize >> >(n, delta, devIdata, devOdata);
 				std::swap(devIdata, devOdata);
 			}
 			// Think twice.............
