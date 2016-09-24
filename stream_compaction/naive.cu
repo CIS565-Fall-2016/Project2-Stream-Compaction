@@ -9,12 +9,13 @@
 namespace StreamCompaction {
 	namespace Naive {
 
-		// TODO: __global__
+		// Done: __global__
 
 		__global__ void kernReduce(int offset, int n, int *in, int *out) {
 			int index = threadIdx.x + (blockDim.x * blockIdx.x);
 
-			if (index >= n) return;
+			if (index >= n) 
+				return;
 
 			if (index >= offset) {
 				out[index] = in[index] + in[index - offset];

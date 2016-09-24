@@ -41,9 +41,9 @@ void zeroArray(int n, int *a) {
 
 void genArray(int n, int *a, int maxval) {
     srand(0);
-
+	int ctr = 0;
     for (int i = 0; i < n; i++) {
-        a[i] = rand() % maxval;
+        a[i] = /*rand() % maxval*/ctr++;
     }
 }
 
