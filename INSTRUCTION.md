@@ -29,6 +29,9 @@ on the implementation of scan and stream compaction.
 * The [slides on Parallel Algorithms](https://github.com/CIS565-Fall-2016/cis565-fall-2016.github.io/blob/master/lectures/3-Parallel-Algorithms-1.pptx?raw=true)
   for Scan, Stream Compaction, and Work-Efficient Parallel Scan.
 * GPU Gems 3, Chapter 39 - [Parallel Prefix Sum (Scan) with CUDA](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).
+    - This online version contains a few small errors (in superscripting, missing braces, bad indentation, etc.)
+    - We now maintain a fix for this at [GPU Gem 3 Ch 39 Patch](#gpu-gem-3-ch-39-patch). Thanks for contributions by [@immiao](https://github.com/immiao) and [trungtle](https://github.com/trungtle). 
+    And welcome to contribute by openning a pull request.
 
 Your GPU stream compaction implementation will live inside of the
 `stream_compaction` subproject. This way, you will be able to easily copy it
@@ -152,8 +155,28 @@ To measure timing, be sure to exclude memory operations by passing
 GPU).  You can create a `thrust::device_vector` by creating a
 `thrust::host_vector` from the given pointer, then casting it.
 
+## Part 5: Why is my GPU approach so slow? (Extra Credit) (+5)
 
-## Part 5: Radix Sort (Extra Credit) (+10)
+If you implement your efficient scan version following the slides closely, there's a good chance 
+that you are getting an "efficient" gpu scan that is actually not that efficient -- it is slower than the cpu approach? 
+
+Though it is totally acceptable for this assignment, 
+In addition to explain the reason of this phenomena, you are encouraged to try to upgrade your work-efficient gpu scan. 
+
+Thinking about these may lead you to an aha moment: 
+- What is the occupancy at a deeper level in the upper/down sweep? Are most threads actually working?
+- Are you always launching the same number of blocks throughout each level of the upper/down sweep?
+- If some threads are being lazy, can we do an early termination on them? 
+- How can I compact the threads? What should I modify to keep the remaining threads still working correctly?
+
+Keep in mind this optimization won't need you change a lot of your code structures. 
+It's all about some index calculation hacks.
+
+If you don't run into the slower gpu approach. 
+Congratulations! You are way ahead and you earn this extra credit automatically. 
+
+
+## Part 6: Radix Sort (Extra Credit) (+10)
 
 Add an additional module to the `stream_compaction` subproject. Implement radix
 sort using one of your scan implementations. Add tests to check its correctness.
@@ -223,3 +246,65 @@ The template of the comment section of your pull request is attached below, you 
     * ...
 * Feedback on the project itself, if any.
 
+## GPU Gem 3 Ch 39 Patch
+
+* Example 1
+![](img/example-1.png)
+
+* Example 2
+![](img/example-2.jpg)
+
+* Figure-39-4
+![](img/figure-39-4.jpg)
+
+* Figure-39-2. This image shows an naive inclusive scan. We should convert this to an exclusive one for compaction.
+![](img/figure-39-2.jpg)
+
+## Algorithm Examples
+
+* scan: 
+  - goal: produce a prefix sum array of a given array (we only care about exclusive scan here)
+  - input
+    - [1 5 0 1 2 0 3]
+  - output
+    - [0 1 6 6 7 9 9]
+* compact: 
+  - goal: closely and neatly packed the elements != 0
+  - input
+    - [1 5 0 1 2 0 3]
+  - output
+    - [1 5 1 2 3]
+* compactWithoutScan (CPU)
+  - an implementation of compact. So the goal, input and output should all be the same as compact
+  - Simply loop through the input array, meanwhile maintain a pointer indicating which address shall we put the next non-zero element
+* compactWithScan (CPU/GPU)
+  - an implementation of compact. So the goal, input and output should all be the same as compact
+  - 3 steps
+    - map
+      + goal: map our original data array (integer, Light Ray, etc) to a bool array
+      + input
+        - [1 5 0 1 2 0 3]
+      + output
+        - [1 1 0 1 1 0 1]
+    - scan
+        + take the output of last step as input
+        + input
+          - [1 1 0 1 1 0 1]
+        + output
+          - [0 1 2 2 3 4 4]
+    - scatter
+        + preserve non-zero elements and compact them into a new array
+        + input:
+          + original array
+            - [1 5 0 1 2 0 3]
+          + mapped array
+            - [1 1 0 1 1 0 1]
+          + scanned array
+            - [0 1 2 2 3 4 4]
+        + output:
+          - [1 5 1 2 3]
+        + This can be done in parallel on GPU
+        + You can try multi-threading on CPU if you want (not required and not our focus)
+        + for each element input[i] in original array
+          - if it's non-zero (given by mapped array)
+          - then put it at output[index], where index = scanned[i]
