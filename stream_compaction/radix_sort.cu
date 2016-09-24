@@ -71,7 +71,6 @@ namespace ParallelRadixSort
 		}
 
 		int segSize = StreamCompaction::Efficient::computeSegmentSize(2 * n);
-		//const size_t kDevArraySizeInByte = ROUND_SEG_SIZE(2 * n, segSize) * sizeof(uint32_t);
 		const size_t kDevArraySizeInByte = StreamCompaction::Efficient::computeActualMemSize<T>(2 * n);
 
 		T *idata_dev = 0;
@@ -92,31 +91,23 @@ namespace ParallelRadixSort
 		T mask = lsb ? 1 : (1 << (numBits - 1));
 
 #ifdef MEASURE_EXEC_TIME
-		float execTime = 0.f, et;
+		float execTime = 0.f;
 		cudaEvent_t start, stop;
 		cudaEventCreate(&start);
 		cudaEventCreate(&stop);
+
+		cudaEventRecord(start);
 
 		for (int i = 0; i < numBits; ++i)
 		{
 			if (!(bitMask & mask)) continue; // do not consider this bit
 
-			cudaEventRecord(start);
 			kernClassify << <numBlocks, threadsPerBlock >> >(n, mask, noyes_bools_dev, noyes_bools_dev + n, idata_dev);
-			cudaEventRecord(stop);
-			cudaEventSynchronize(stop);
-			cudaEventElapsedTime(&et, start, stop);
-			execTime += et;
 
-			execTime += StreamCompaction::Efficient::scanHelper(segSize, 2 * n,
+			StreamCompaction::Efficient::scanHelper(segSize, 2 * n,
 				reinterpret_cast<int *>(indices_dev), reinterpret_cast<int *>(noyes_bools_dev));
 
-			cudaEventRecord(start);
 			kernScatter << <numBlocks, threadsPerBlock >> >(n, noyes_bools_dev, indices_dev, indices_dev + n, odata_dev, idata_dev);
-			cudaEventRecord(stop);
-			cudaEventSynchronize(stop);
-			cudaEventElapsedTime(&et, start, stop);
-			execTime += et;
 
 			if (lsb) mask <<= 1; else mask >>= 1;
 
@@ -124,6 +115,10 @@ namespace ParallelRadixSort
 			odata_dev = idata_dev;
 			idata_dev = tmp;
 		}
+
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&execTime, start, stop);
 
 		cudaEventDestroy(start);
 		cudaEventDestroy(stop);

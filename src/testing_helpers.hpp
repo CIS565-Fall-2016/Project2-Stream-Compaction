@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdlib>
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 
 template<typename T>
 int cmpArrays(int n, T *a, T *b) {
@@ -79,4 +82,14 @@ void testSorted(int n, const T *data, bool lessThan = true)
 	}
 
 	printf("    passed\n");
+}
+
+void printGPUInfo(int device)
+{
+	cudaDeviceProp deviceProp;
+
+	cudaGetDeviceProperties(&deviceProp, device);
+
+	std::cout << '\n'
+		<< deviceProp.name << " [sm_" << deviceProp.major << deviceProp.minor << "]\n";
 }

@@ -12,17 +12,21 @@
 #define CONFLICT_FREE_OFFSET(x) ((x) >> LOG_NUM_BANKS)
 #endif
 
-namespace StreamCompaction {
-	namespace Efficient {
+namespace StreamCompaction
+{
+	namespace Efficient
+	{
 #ifdef MEASURE_EXEC_TIME
 		float scan(int n, int *odata, const int *idata);
-		float scanHelper(int segSize, int n, int *odata_dev, const int *idata_dev);
+
+		int compact(int n, int *odata, const int *idata, float *pExecTime);
 #else
 		void scan(int n, int *odata, const int *idata);
-		void scanHelper(int segSize, int n, int *odata_dev, const int *idata_dev);
-#endif
 
 		int compact(int n, int *odata, const int *idata);
+#endif
+
+		void scanHelper(int segSize, int n, int *odata_dev, const int *idata_dev);
 
 		inline int nearestMultipleOfTwo(int n)
 		{
@@ -41,7 +45,17 @@ namespace StreamCompaction {
 			return (sizeInBytes + alignmentInBytes - 1) / alignmentInBytes * alignmentInBytes;
 		}
 
-		// Assuming address start at a 256-byte boundary
+		/**
+		 * When data size is large, multiple passes are necessary to compute the
+		 * final result and extra device memory is required to store intermediate
+		 * results.
+		 *
+		 * Use the result from this function to cudaMalloc the input and output
+		 * buffers passed to scanHelper which assumes that I/O device buffers have
+		 * sufficient size.
+		 *
+		 * Assuming address start at a 256-byte boundary
+		 */
 		template<class T>
 		inline size_t computeActualMemSize(int n)
 		{

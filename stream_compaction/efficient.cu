@@ -91,73 +91,29 @@ namespace StreamCompaction {
 			odata[writeIdx2] += sum;
 		}
 
-
-#ifdef MEASURE_EXEC_TIME
-		float scanHelper(int segSize, int n, int *odata_dev, const int *idata_dev)
-#else
 		void scanHelper(int segSize, int n, int *odata_dev, const int *idata_dev)
-#endif
 		{
 			// determine segment size
 			int threadsPerBlock = segSize >> 1;
-			int numBlocks = NUM_SEG(n, segSize);
+			int numBlocks = NUM_SEG(n, segSize); // also numSegs
 
 			int *iblockSums = 0, *oblockSums = 0;
 			int segSizeNextLevel;
 			if (numBlocks > 1)
 			{
 				segSizeNextLevel = computeSegmentSize(numBlocks);
-				//size_t kBlockSumsSize = ROUND_SEG_SIZE(numBlocks, segSizeNextLevel) * sizeof(int);
-				//cudaMalloc(&iblockSums, kBlockSumsSize);
-				//cudaMalloc(&oblockSums, kBlockSumsSize);
-				//cudaMemset(iblockSums, 0, kBlockSumsSize);
 				size_t offsetInDW = alignedSize(numBlocks * segSize * sizeof(int), 256) >> 2;
 				iblockSums = const_cast<int *>(idata_dev + offsetInDW);
 				oblockSums = odata_dev + offsetInDW;
 			}
 
-#ifdef MEASURE_EXEC_TIME
-			float execTime = 0.f;
-			cudaEvent_t start, stop;
-			cudaEventCreate(&start);
-			cudaEventCreate(&stop);
-			cudaEventRecord(start);
-#endif
-
 			kernScan << <numBlocks, threadsPerBlock, (segSize + CONFLICT_FREE_OFFSET(segSize - 1)) * sizeof(int) >> >(segSize, iblockSums, odata_dev, idata_dev);
-
-#ifdef MEASURE_EXEC_TIME
-			cudaEventRecord(stop);
-			cudaEventSynchronize(stop);
-			cudaEventElapsedTime(&execTime, start, stop);
-#endif
 
 			if (numBlocks > 1)
 			{
-#ifdef MEASURE_EXEC_TIME
-				execTime += scanHelper(segSizeNextLevel, numBlocks, oblockSums, iblockSums);
-
-				cudaEventRecord(start);
-				kernPerSegmentAdd << <numBlocks, threadsPerBlock >> >(segSize, odata_dev, oblockSums);
-				cudaEventRecord(stop);
-				cudaEventSynchronize(stop);
-				float et = 0.f;
-				cudaEventElapsedTime(&et, start, stop);
-				execTime += et;
-#else
 				scanHelper(segSizeNextLevel, numBlocks, oblockSums, iblockSums);
 				kernPerSegmentAdd << <numBlocks, threadsPerBlock >> >(segSize, odata_dev, oblockSums);
-#endif
-
-				//cudaFree(iblockSums);
-				//cudaFree(oblockSums);
 			}
-
-#ifdef MEASURE_EXEC_TIME
-			cudaEventDestroy(start);
-			cudaEventDestroy(stop);
-			return execTime;
-#endif
 		}
 #else
 		__global__ void kernScanUpSweepOneLevel(int offset, int numActiveThreads, int *iodata)
@@ -225,7 +181,6 @@ namespace StreamCompaction {
 #endif
 #ifdef USING_SHARED_MEMORY
 			int segSize = computeSegmentSize(n);
-			//const size_t kDevArraySizeInByte = ROUND_SEG_SIZE(n, segSize) * sizeof(int);
 			const size_t kDevArraySizeInByte = computeActualMemSize<int>(n);
 			int *odata_dev = 0;
 			int *idata_dev = 0;
@@ -236,9 +191,21 @@ namespace StreamCompaction {
 			cudaMemcpy(idata_dev, idata, n * sizeof(int), cudaMemcpyHostToDevice);
 
 #ifdef MEASURE_EXEC_TIME
-			float execTime = scanHelper(segSize, n, odata_dev, idata_dev);
-#else
+			float execTime = 0.f;
+			cudaEvent_t start, stop;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+			cudaEventRecord(start);
+#endif
+
 			scanHelper(segSize, n, odata_dev, idata_dev);
+
+#ifdef MEASURE_EXEC_TIME
+			cudaEventRecord(stop);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&execTime, start, stop);
+			cudaEventDestroy(start);
+			cudaEventDestroy(stop);
 #endif
 
 			cudaMemcpy(odata, odata_dev, n * sizeof(int), cudaMemcpyDeviceToHost);
@@ -317,7 +284,11 @@ namespace StreamCompaction {
 		 * @param idata  The array of elements to compact.
 		 * @returns      The number of elements remaining after compaction.
 		 */
+#ifdef MEASURE_EXEC_TIME
+		int compact(int n, int *odata, const int *idata, float *pExecTime)
+#else
 		int compact(int n, int *odata, const int *idata)
+#endif
 		{
 			if (n <= 0 || !odata || !idata || odata == idata)
 			{
@@ -327,13 +298,20 @@ namespace StreamCompaction {
 			using StreamCompaction::Common::kernMapToBoolean;
 			using StreamCompaction::Common::kernScatter;
 
+#ifdef MEASURE_EXEC_TIME
+			float &execTime = *pExecTime;
+
+			cudaEvent_t start, stop;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+#endif
+
 			int *idata_dev = 0;
 			int *odata_dev = 0;
 			int *bools_dev = 0;
 			int *indices_dev = 0;
 
 			int segSize = computeSegmentSize(n);
-			//const size_t kBoolsSizeInByte = ROUND_SEG_SIZE(n, segSize) * sizeof(int);
 			const size_t kBoolsSizeInByte = computeActualMemSize<int>(n);
 			const size_t kIndicesSizeInByte = kBoolsSizeInByte;
 
@@ -346,6 +324,10 @@ namespace StreamCompaction {
 
 			const int threadsPerBlock = 256;
 			int numBlocks = (n + threadsPerBlock - 1) / threadsPerBlock;
+
+#ifdef MEASURE_EXEC_TIME
+			cudaEventRecord(start);
+
 			kernMapToBoolean << <numBlocks, threadsPerBlock >> >(n, bools_dev, idata_dev);
 
 			scanHelper(segSize, n, indices_dev, bools_dev);
@@ -356,6 +338,22 @@ namespace StreamCompaction {
 			cudaMalloc(&odata_dev, numElemRemained * sizeof(int));
 
 			kernScatter<<<numBlocks, threadsPerBlock>>>(n, odata_dev, idata_dev, bools_dev, indices_dev);
+
+			cudaEventRecord(stop);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&execTime, start, stop);
+#else
+			kernMapToBoolean << <numBlocks, threadsPerBlock >> >(n, bools_dev, idata_dev);
+
+			scanHelper(segSize, n, indices_dev, bools_dev);
+
+			int numElemRemained;
+			cudaMemcpy(&numElemRemained, indices_dev + (n - 1), sizeof(int), cudaMemcpyDeviceToHost);
+			numElemRemained += idata[n - 1] ? 1 : 0;
+			cudaMalloc(&odata_dev, numElemRemained * sizeof(int));
+
+			kernScatter << <numBlocks, threadsPerBlock >> >(n, odata_dev, idata_dev, bools_dev, indices_dev);
+#endif
 
 			cudaMemcpy(odata, odata_dev, numElemRemained * sizeof(int), cudaMemcpyDeviceToHost);
 			cudaFree(idata_dev);
