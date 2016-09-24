@@ -17,7 +17,7 @@ CUDA Stream Compaction
 
 ### Performance Analysis
 
-  [](img/sc_perf1.png)
+  ![](img/sc_perf1.png)
 
 * Optimizing Block Sizes
   * 128 or 256 turn out to be the best. Unless you use non-multiple of warp size,
@@ -32,28 +32,31 @@ CUDA Stream Compaction
 
 * Array Size vs. Execution Time (ms)
   * Exclusive scan
-  Array Size | Naive | Efficient | Thrust | CPU
-  ---        | ---   | ---       | ---    | ---
-  2^8  | 0.03 | 0.01 | 0.02 | 0.01
-  2^15 | 0.19 | 0.06 | 0.52 | 0.01
-  2^20 | 5.67 | 1.38 | 0.97 | 3.50
-  2^25 | 225.00 | 43.40 | 18.14 | 89.33
+  
+  | Array Size | Naive | Efficient | Thrust | CPU |
+  | ---------- | ----- | --------- | ------ | --- |
+  | 2^8  | 0.03 | 0.01 | 0.02 | 0.01 |
+  | 2^15 | 0.19 | 0.06 | 0.52 | 0.01 |
+  | 2^20 | 5.67 | 1.38 | 0.97 | 3.50 |
+  | 2^25 | 225.00 | 43.40 | 18.14 | 89.33 |
 
   * Stream compaction
-  Array Size | Efficient | CPU (no scan) | CPU (with scan)
-  ---        | ---       | ---           | ---
-  2^8  | 0.09 | 0.00 | 0.00
-  2^15 | 0.16 | 0.09 | 0.20
-  2^20 | 3.78 | 2.70 | 6.03
-  2^25 | 107.73 | 109.55 | 194.05
+  
+  | Array Size | Efficient | CPU (no scan) | CPU (with scan) |
+  | ---        | ---       | ---           | --- |
+  | 2^8  | 0.09 | 0.00 | 0.00 |
+  | 2^15 | 0.16 | 0.09 | 0.20 |
+  | 2^20 | 3.78 | 2.70 | 6.03 |
+  | 2^25 | 107.73 | 109.55 | 194.05 |
   
   * Radix sort
-  Array Size | Efficient | Thrust
-  ---        | ---       | ---
-  2^8  | 0.52 | 0.58
-  2^15 | 4.37 | 0.34
-  2^20 | 109.27 | 5.80
-  2^25 | 3642.84 | 116.92
+  
+  | Array Size | Efficient | Thrust |
+  | ---        | ---       | --- |
+  | 2^8  | 0.52 | 0.58 |
+  | 2^15 | 4.37 | 0.34 |
+  | 2^20 | 109.27 | 5.80 |
+  | 2^25 | 3642.84 | 116.92 |
 
 * Performance Bottlenecks
   * CUDA runtime APIs for memory manipulation (e.g. cudaMalloc, cudaMemcpy, cudaFree) are super expensive
