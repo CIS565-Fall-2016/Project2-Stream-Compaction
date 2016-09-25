@@ -6,41 +6,33 @@
 namespace StreamCompaction {
 namespace Efficient {
 
-	__global__ void kernScanUp(int n, int d, int step, int *g_odata, int*g_idata) {
+	__global__ void kernScanUp(int n, int pow_2_d, int pow_2_d_one, int*g_idata) {
 		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
 		// Calculate children indices
-		int ai = step * (2 * index) - 1;
-		int bi = step * (2 * index + 1) - 1;
+		int ai = pow_2_d_one * (index + 1) - pow_2_d - 1;
+		int bi = pow_2_d_one * (index + 1) - 1;
 
-		if (ai >= n) {
-			printf("ai is too big");
+		if (ai >= n || bi >= n) {
+			return;
 		}
 
-		if (bi >= n) {
-			printf("bi is too big");
-		}
 		g_idata[bi] += g_idata[ai];
-
 	}
 
 	__global__ void kernZeroLastValue(int n, int *data) {
 		data[n - 1] = 0;
 	}
 
-	__global__ void kernScanDown(int n, int d, int step, int *g_odata, int *g_idata) {
+	__global__ void kernScanDown(int n, int pow_2_d, int pow_2_d_one, int *g_idata) {
 		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-		// traverse down tree & build scan  
-		if (index < d) {
-			int ai = step * (2 * index + 1) - 1;
-			int bi = step * (2 * index + 2) - 1;
+		int ai = pow_2_d_one * (index + 1) - pow_2_d - 1;
+		int bi = pow_2_d_one * (index + 1) - 1;
 
-
-			float t = g_idata[ai];
-			g_idata[ai] = g_idata[bi];
-			g_idata[bi] += t;
-		}
+		float t = g_idata[ai];
+		g_idata[ai] = g_idata[bi];
+		g_idata[bi] += t;
 	}
 
 
@@ -48,43 +40,44 @@ namespace Efficient {
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
 void scan(int n, int *odata, const int *idata) {
-	dim3 fullBlocksPerGrid((n + 128 - 1) / 128);
+	dim3 fullBlocksPerGrid;
 	dim3 threadsPerBlock(128);
 
 	// Allocate GPU space
 	int* dev_in;
-	int* dev_out;
 
 	cudaMalloc((void**)&dev_in, n * sizeof(int));
 	checkCUDAError("cudaMalloc Error dev_in.");
-
-	cudaMalloc((void**)&dev_out, n * sizeof(int));
-	checkCUDAError("cudaMalloc Error dev_out.");
 
 	// Copy array to device
 	cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 	
 	// Scan up
 	for (int d = 0; d < ilog2ceil(n); d++) {
+
 		int n2 = pow(2, ilog2ceil(n) - d - 1);
 		fullBlocksPerGrid = dim3((n2 + 128 - 1) / 128);
-		kernScanUp << <fullBlocksPerGrid, threadsPerBlock >> >(n, d, pow(2, d), dev_out, dev_in);
+
+		kernScanUp << <fullBlocksPerGrid, threadsPerBlock >> >(n, pow(2, d), pow(2, d + 1), dev_in);
+
 	}
 
 	// Make last value 0
-	kernZeroLastValue<<<1, 1>>>(n, dev_out);
+	kernZeroLastValue<<<1, 1>>>(n, dev_in);
 
 	// Scan down
-	for (int d = ilog2ceil(n); d >= 0; d--) {
-		kernScanDown << <fullBlocksPerGrid, threadsPerBlock >> >(n, d, pow(2, d + 1), dev_out, dev_in);
+	for (int d = ilog2ceil(n) - 1; d >= 0; d--) {
+		int n2 = pow(2, ilog2ceil(n) - d - 1);
+		fullBlocksPerGrid = dim3((n2 + 128 - 1) / 128);
+
+		kernScanDown << <fullBlocksPerGrid, threadsPerBlock >> >(n, pow(2, d), pow(2, d + 1), dev_in);
 	}
 	
 	// Copy data back to host
-	cudaMemcpy(odata, dev_out, sizeof(int) * n, cudaMemcpyDeviceToHost);
+	cudaMemcpy(odata, dev_in, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("memcpy back failed!");
 
 	cudaFree(dev_in);
-	cudaFree(dev_out);
 }
 /**
  * Performs stream compaction on idata, storing the result into odata.
