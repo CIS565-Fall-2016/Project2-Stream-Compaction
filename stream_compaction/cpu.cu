@@ -58,7 +58,7 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	//scatter 
 	int cnt=0;
 	for (int i=0;i<n;i++){
-		if (tmp2[i]){
+		if (tmp[i]){
 			odata[tmp2[i]]=idata[i];
 			cnt++;
 		}
