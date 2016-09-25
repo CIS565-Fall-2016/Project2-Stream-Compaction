@@ -40,6 +40,13 @@ namespace StreamCompaction {
 
 			int blockNum = (n + blockSize - 1) / blockSize;
 			
+
+			//Add performance analysis
+			cudaEvent_t start, end;
+			cudaEventCreate(&start);
+			cudaEventCreate(&end);
+			cudaEventRecord(start);
+
 			//Naive Parallel Scan
 			int level = ilog2ceil(n);
 			int delta;
@@ -52,6 +59,12 @@ namespace StreamCompaction {
 			}
 			// Think twice.............
 			std::swap(devIdata, devOdata);
+			//Add performance analysis
+			cudaEventRecord(end);
+			cudaEventSynchronize(end);
+			float deltaTime;
+			cudaEventElapsedTime(&deltaTime, start, end);
+			printf("GPU Naive Scan time is %f ms\n", deltaTime);
 			
 			// exclusive scan, set odata[0] = 0 seperately 
 			cudaMemcpy(odata + 1, devOdata, (n - 1) * sizeof(int), cudaMemcpyDeviceToHost);

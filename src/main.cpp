@@ -8,6 +8,8 @@
 
 #include <cstdio>
 #include <algorithm>
+#include <chrono>
+#include <iostream>
 #include <stream_compaction/cpu.h>
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
@@ -15,11 +17,11 @@
 #include <stream_compaction/radix.h>
 #include "testing_helpers.hpp"
 
-int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 12;
-    const int NPOT = SIZE - 3;
-    int a[SIZE], b[SIZE], c[SIZE];
+const int SIZE = 1 << 24;
+const int NPOT = SIZE - 3;
+int a[SIZE], b[SIZE], c[SIZE];
 
+int main(int argc, char* argv[]) {
     // Scan tests
 
     printf("\n");
@@ -33,14 +35,24 @@ int main(int argc, char* argv[]) {
 
     zeroArray(SIZE, b);
     printDesc("cpu scan, power-of-two");
+	auto startTime = std::chrono::high_resolution_clock::now();
     StreamCompaction::CPU::scan(SIZE, b, a);
+	auto endTime = std::chrono::high_resolution_clock::now();
     printArray(SIZE, b, true);
+	std::chrono::duration<double, std::milli> eclipsed = endTime - startTime;
+	double delta = eclipsed.count();
+	printf("CPU scan power-of-two number time is %f ms\n", delta);
 
     zeroArray(SIZE, c);
     printDesc("cpu scan, non-power-of-two");
+	startTime = std::chrono::high_resolution_clock::now();
     StreamCompaction::CPU::scan(NPOT, c, a);
-    printArray(NPOT, b, true);
+	endTime = std::chrono::high_resolution_clock::now();
+	eclipsed = endTime - startTime;
+	delta = eclipsed.count();
+    printArray(NPOT, b, true);	
     printCmpResult(NPOT, b, c);
+	printf("CPU scan non-power-of-two number time is %f ms\n", delta);
 
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
@@ -146,26 +158,40 @@ int main(int argc, char* argv[]) {
     printArray(SIZE, a, true);
 
     int count, expectedCount, expectedNPOT;
-
     zeroArray(SIZE, b);
     printDesc("cpu compact without scan, power-of-two");
+	startTime = std::chrono::high_resolution_clock::now();
     count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
-    expectedCount = count;
+	endTime = std::chrono::high_resolution_clock::now();
+	eclipsed = endTime - startTime;
+	delta = eclipsed.count();
+	expectedCount = count;
     printArray(count, b, true);
     printCmpLenResult(count, expectedCount, b, b);
+	printf("CPU compact without scan power-of-two number time is %f ms\n", delta);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact without scan, non-power-of-two");
+	startTime = std::chrono::high_resolution_clock::now();
     count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
+	endTime = std::chrono::high_resolution_clock::now();
+	eclipsed = endTime - startTime;
+	delta = eclipsed.count();
     expectedNPOT = count;
     printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+	printf("CPU compact without scan non-power-of-two number time is %f ms\n", delta);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact with scan");
+	startTime = std::chrono::high_resolution_clock::now();
     count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+	endTime = std::chrono::high_resolution_clock::now();
+	eclipsed = endTime - startTime;
+	delta = eclipsed.count();
     printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
+	printf("CPU compact with scan time is %f ms\n", delta);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, power-of-two");

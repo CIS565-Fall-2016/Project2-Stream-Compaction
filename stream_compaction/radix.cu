@@ -31,12 +31,12 @@ namespace Radix {
 	}
 
 	//t array
-	__global__ void kernComputeTArray(int n, const int totalFalses, int *idata, int *odata) {
+	__global__ void kernComputeTArray(int n, const int *bArray, const int *idata, int *odata) {
 		int index = threadIdx.x + blockIdx.x * blockDim.x;
 		if (index >= n) {
 			return;
 		}
-		odata[index] = index - idata[index] + totalFalses;
+		odata[index] = index - idata[index] + idata[n - 1] + !bArray[n - 1];
 	}
 
 	//d array
@@ -78,13 +78,13 @@ namespace Radix {
 		cudaMalloc((void**)&bArray, sizeof(int) * n);
 		checkCUDAError("cudaMalloc radix bArray failed");
 
-		cudaMalloc((void**)&eArray, sizeof(int) * n);
+		cudaMalloc((void**)&eArray, sizeof(int) * realN);
+		cudaMemset(eArray, sizeof(int) * realN, 0);
 		checkCUDAError("cudaMalloc radix eArray failed");
 
 		//Remember do realN here......
-		cudaMalloc((void**)&fArray, sizeof(int) * realN);
-		cudaMemset(fArray, realN, 0);
-		checkCUDAError("cudaMalloc radix fArray failed");
+		//cudaMalloc((void**)&fArray, sizeof(int) * c);
+		//checkCUDAError("cudaMalloc radix fArray failed");
 
 		cudaMalloc((void**)&tArray, sizeof(int) * n);
 		checkCUDAError("cudaMalloc radix tArray failed");
@@ -97,30 +97,37 @@ namespace Radix {
 
 		cudaMemcpy(devIdata, idata, n*sizeof(int), cudaMemcpyHostToDevice);		
 
+		//Add performance analysis
+		cudaEvent_t start, end;
+		cudaEventCreate(&start);
+		cudaEventCreate(&end);
+		cudaEventRecord(start);
+
 		for (int i = 0; i < digitNum; i++) {
 			kernTestTrueFalseOnRightKthBit << < blockNum, blockSize >> >(n, i, bArray, devIdata);
 			kernNotOperatorOnArray << < blockNum, blockSize >> >(n, eArray, bArray);
 
-			//fArray could directly use efficient scan of eArray!
-			cudaMemcpy(fArray, eArray, n*sizeof(int), cudaMemcpyDeviceToDevice);			
+			fArray = eArray;
+			//cudaMemcpy(fArray, eArray, n*sizeof(int), cudaMemcpyDeviceToDevice);			
 			StreamCompaction::Efficient::scanInDevice(realN, fArray);
 
 			//Slides....
-			int totalFalses;
-			cudaMemcpy(&totalFalses, fArray + n - 1, sizeof(int), cudaMemcpyDeviceToHost);
-			int lastElement;
-			cudaMemcpy(&lastElement, eArray + n - 1, sizeof(int), cudaMemcpyDeviceToHost);
-			totalFalses += lastElement;
-
-			kernComputeTArray << < blockNum, blockSize >> >(n, totalFalses, fArray, tArray);
+			kernComputeTArray << < blockNum, blockSize >> >(n, bArray, fArray, tArray);
 			kernComputeDArray << < blockNum, blockSize >> >(n, dArray, bArray, fArray, tArray);
 			kernReshuffle << <blockNum, blockSize >> >(n, devIdata, devOdata, dArray);
 			std::swap(devOdata, devIdata);
 		}
 
+		//Add performance analysis
+		cudaEventRecord(end);
+		cudaEventSynchronize(end);
+		float deltaTime;
+		cudaEventElapsedTime(&deltaTime, start, end);
+		printf("GPU Radix Sort time is %f ms\n", deltaTime);
+
 		cudaMemcpy(idata, devIdata, n * sizeof(int), cudaMemcpyDeviceToHost);
 		cudaFree(devIdata); cudaFree(devOdata); cudaFree(bArray); cudaFree(eArray);
-		cudaFree(fArray); cudaFree(tArray); cudaFree(dArray);
+		/*cudaFree(fArray);*/ cudaFree(tArray); cudaFree(dArray);
 
 	}
 

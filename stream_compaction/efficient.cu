@@ -84,9 +84,21 @@ void scan(int n, int *odata, const int *idata) {
 	checkCUDAError("cudaMalloc devIdata failed");
 	cudaMemcpy(devIdata, temp, arraySize, cudaMemcpyHostToDevice);
 
+	//Add performance analysis
+	cudaEvent_t start, end;
+	cudaEventCreate(&start);
+	cudaEventCreate(&end);
+	cudaEventRecord(start);
+
 	//call scanInDevice Function
 	scanInDevice(realN, devIdata);
 
+	//Add performance analysis
+	cudaEventRecord(end);
+	cudaEventSynchronize(end);
+	float deltaTime;
+	cudaEventElapsedTime(&deltaTime, start, end);
+	printf("GPU Efficient Scan time is %f ms\n", deltaTime);
 	cudaMemcpy(odata, devIdata, arraySize, cudaMemcpyDeviceToHost);
 	cudaFree(devIdata);
 	 
@@ -141,6 +153,12 @@ int compact(int n, int *odata, const int *idata) {
 	
 	cudaMemcpy(devIdata, temp, arraySize, cudaMemcpyHostToDevice);
 
+	//Add performance analysis
+	cudaEvent_t start, end;
+	cudaEventCreate(&start);
+	cudaEventCreate(&end);
+	cudaEventRecord(start);
+
 	StreamCompaction::Common::kernMapToBoolean << <blockNum, blockSize >> >(realN, devIndex, devIdata);
 	int lastElem;
 	cudaMemcpy(&lastElem, devIndex + realN - 1, sizeof(int), cudaMemcpyDeviceToHost);
@@ -150,6 +168,13 @@ int compact(int n, int *odata, const int *idata) {
 	cudaMemcpy(&size, devIndex + realN - 1, sizeof(int), cudaMemcpyDeviceToHost);
 
 	StreamCompaction::Common::kernScatter << <blockNum, blockSize >> >(realN, devOdata, devIdata, devIndex, devIndex);
+
+	//Add performance analysis
+	cudaEventRecord(end);
+	cudaEventSynchronize(end);
+	float deltaTime;
+	cudaEventElapsedTime(&deltaTime, start, end);
+	printf("GPU Efficient Compact time is %f ms\n", deltaTime);
 
 	cudaMemcpy(odata, devOdata, arraySize, cudaMemcpyDeviceToHost);
 
