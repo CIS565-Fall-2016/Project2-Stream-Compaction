@@ -120,7 +120,7 @@ int compact(int n, int *odata, const int *idata) {
 	//for (int i =0; i< n; i++){
 	//	n_remaing+=bool_buff[i];
 	//}
-
+	cudaMemcpy(&n_remaing,indices_buff+n-1,sizeof(int),cudaMemcpyDeviceToHost);
 	cudaFree(idata_buff);
 	cudaFree(odata_buff);
 	cudaFree(bool_buff);
