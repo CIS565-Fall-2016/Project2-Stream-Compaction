@@ -44,23 +44,7 @@ __global__ void downSweep(const int n, const int step, int *data) {
 	}
 }
 
-/**
- * Performs prefix-sum (aka scan) on idata, storing the result into odata.
- */
-void scan(int n, int *odata, const int *idata) {
-    // TODO
-    // printf("TODO\n");
-	int *dev_data;
-
-	// device memory allocation
-	cudaMalloc((void**)&dev_data, sizeof(int) * n);
-	checkCUDAError("Failed to allocate dev_data[0]");
-
-	// copy input data to device
-	cudaMemcpy((void*)dev_data, (const void*)idata, sizeof(int) * n,
-			cudaMemcpyHostToDevice);
-
-	// do scan
+void scanOnGPU(const int n, int *dev_data) {
 	dim3 blockCount = (n - 1) / BLOCK_SIZE + 1;
 	int step;
 
@@ -76,6 +60,26 @@ void scan(int n, int *odata, const int *idata) {
 	for (step >>= 1; step > 0; step >>= 1) {
 		downSweep<<<blockCount, BLOCK_SIZE>>>(n, step, dev_data);
 	}
+}
+
+/**
+ * Performs prefix-sum (aka scan) on idata, storing the result into odata.
+ */
+void scan(int n, int *odata, const int *idata) {
+    // TODO
+    // printf("TODO\n");
+	int *dev_data;
+
+	// device memory allocation
+	cudaMalloc((void**)&dev_data, sizeof(int) * n);
+	checkCUDAError("Failed to allocate dev_data");
+
+	// copy input data to device
+	cudaMemcpy((void*)dev_data, (const void*)idata, sizeof(int) * n,
+			cudaMemcpyHostToDevice);
+
+	// do scan
+	scanOnGPU(n, dev_data);
 
 	// copy result to host
 	cudaMemcpy((void*)odata, (const void*)dev_data, sizeof(int) * n,
@@ -96,7 +100,58 @@ void scan(int n, int *odata, const int *idata) {
  */
 int compact(int n, int *odata, const int *idata) {
     // TODO
-    return -1;
+	int count;
+	int *dev_data;
+	int *dev_dataCopy;
+	int *dev_bool;
+	int *dev_boolScan;
+
+	// device memory allocation
+	cudaMalloc((void**)&dev_data, sizeof(int) * n);
+	checkCUDAError("Failed to allocate dev_data");
+
+	cudaMalloc((void**)&dev_dataCopy, sizeof(int) * n);
+	checkCUDAError("Failed to allocate dev_dataCopy");
+
+	cudaMalloc((void**)&dev_bool, sizeof(int) * n);
+	checkCUDAError("Failed to allocate dev_bool");
+
+	cudaMalloc((void**)&dev_boolScan, sizeof(int) * n);
+	checkCUDAError("Failed to allocate dev_boolScan");
+
+	// copy input data to device
+	cudaMemcpy((void*)dev_data, (const void*)idata, sizeof(int) * n,
+			cudaMemcpyHostToDevice);
+
+	dim3 blockCount = (n - 1) / BLOCK_SIZE + 1;
+
+	// map to booleans
+	Common::kernMapToBoolean<<<blockCount, BLOCK_SIZE>>>(n, dev_bool, dev_data);
+
+	// scan booleans
+	cudaMemcpy((void*)dev_boolScan, (const void*)dev_bool, sizeof(int) * n,
+			cudaMemcpyDeviceToDevice);
+	scanOnGPU(n, dev_boolScan);
+
+	// scatter
+	cudaMemcpy((void*)dev_dataCopy, (const void*)dev_data, sizeof(int) * n,
+			cudaMemcpyDeviceToDevice);
+	Common::kernScatter<<<blockCount, BLOCK_SIZE>>>(n, dev_data, dev_dataCopy,
+			dev_bool, dev_boolScan);
+
+	// copy result to host
+	cudaMemcpy((void*)odata, (const void*)dev_data, sizeof(int) * n,
+			cudaMemcpyDeviceToHost);
+	cudaMemcpy((void*)&count, (const void*)&dev_boolScan[n - 1], sizeof(int),
+			cudaMemcpyDeviceToHost);
+
+	// free memory on device
+	cudaFree(dev_data);
+	cudaFree(dev_dataCopy);
+	cudaFree(dev_bool);
+	cudaFree(dev_boolScan);
+
+    return count;
 }
 
 }
