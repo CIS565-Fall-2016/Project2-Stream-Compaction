@@ -27,13 +27,26 @@ __global__ void kernScanDown(int n, int dPow, int *data) {
   data[k + dPow - 1] += t;
 }
 
-/**
- * Performs prefix-sum (aka scan) on idata, storing the result into odata.
- */
-void scan(int n, int *odata, const int *idata) {
-  dim3 blkDim(256);
-  dim3 blkCnt((n + blkDim.x - 1)/blkDim.x);
+// mark nonzeroes
+__global__ void kernMark(int n, int *keep, const int *data) {
+  int k = blockIdx.x * blockDim.x + threadIdx.x;
+  if (k >= n)
+    return;
 
+  keep[k] = (data[k] != 0) ? 1 : 0;
+}
+
+__global__ void kernScatter(int n, int *out, const int *keep, const int *scan, const int *data) {
+  int k = blockIdx.x * blockDim.x + threadIdx.x;
+  if (k >= n)
+    return;
+
+  if (keep[k]) {
+    out[scan[k]] = data[k];
+  }
+}
+
+static int getPot(int n) {
   unsigned int pot = n;
   pot--;
   pot |= pot >> 1;
@@ -43,10 +56,14 @@ void scan(int n, int *odata, const int *idata) {
   pot |= pot >> 16;
   pot++;
 
-  int *devData;
-  cudaMalloc((void**)&devData, pot*sizeof(int));
-  cudaMemset(devData, 0, pot*sizeof(int));
-  cudaMemcpy(devData, idata, n*sizeof(int), cudaMemcpyHostToDevice);
+  return pot;
+}
+
+static void devScanUtil(int n, int *devData) {
+  int pot  = getPot(n);
+
+  dim3 blkDim(256);
+  dim3 blkCnt((pot + blkDim.x - 1)/blkDim.x);
 
   int dPow = 2;
   while (dPow/2 < n) {
@@ -59,11 +76,22 @@ void scan(int n, int *odata, const int *idata) {
     kernScanDown<<<blkCnt,blkDim>>>(pot, dPow, devData);
     dPow /= 2;
   }
-  cudaMemcpy(odata, devData, n*sizeof(int), cudaMemcpyDeviceToHost);
-  for (int i = 0; i < 10; i++)
-    printf("%d ", odata[i]);
-  printf("\n");
+}
 
+/**
+ * Performs prefix-sum (aka scan) on idata, storing the result into odata.
+ */
+void scan(int n, int *odata, const int *idata) {
+  int pot  = getPot(n);
+
+  int *devData;
+  cudaMalloc((void**)&devData, pot*sizeof(int));
+  cudaMemset(devData, 0, pot*sizeof(int));
+  cudaMemcpy(devData, idata, n*sizeof(int), cudaMemcpyHostToDevice);
+
+  devScanUtil(n, devData);
+
+  cudaMemcpy(odata, devData, n*sizeof(int), cudaMemcpyDeviceToHost);
   cudaFree(devData);
 }
 
@@ -77,8 +105,41 @@ void scan(int n, int *odata, const int *idata) {
  * @returns      The number of elements remaining after compaction.
  */
 int compact(int n, int *odata, const int *idata) {
-    // TODO
-    return -1;
+  int pot = getPot(n);
+
+  // upload data
+  int *devData;
+  cudaMalloc((void**)&devData, n*sizeof(int));
+  cudaMemcpy(devData, idata, n*sizeof(int), cudaMemcpyHostToDevice);
+
+  dim3 blkDim(256);
+  dim3 blkCnt((n + blkDim.x - 1)/blkDim.x);
+
+  // mark values to keep
+  int *devKeep, *devScan;
+  cudaMalloc((void**)&devKeep, pot*sizeof(int));
+  cudaMemset(devKeep, 0, pot*sizeof(int));
+  kernMark<<<blkCnt,blkDim>>>(n, devKeep, devData);
+  cudaMalloc((void**)&devScan, pot*sizeof(int));
+  cudaMemcpy(devScan, devKeep, pot*sizeof(int), cudaMemcpyDeviceToDevice);
+
+  // scan boolean array
+  devScanUtil(n, devScan);
+  int nKeep;
+  cudaMemcpy(&nKeep, &devScan[pot-1], sizeof(int), cudaMemcpyDeviceToHost);
+
+  // scatter to output
+  int *devOut;
+  cudaMalloc((void**)&devOut, n*sizeof(int));
+  kernScatter<<<blkCnt,blkDim>>>(n, devOut, devKeep, devScan, devData);
+  cudaMemcpy(odata, devOut, nKeep*sizeof(int), cudaMemcpyDeviceToHost);
+
+  cudaFree(devOut);
+  cudaFree(devData);
+  cudaFree(devKeep);
+  cudaFree(devScan);
+
+  return nKeep;
 }
 
 }
