@@ -16,6 +16,7 @@
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
+    const int SIZE = 1 << 12;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
@@ -78,11 +79,11 @@ int main(int argc, char* argv[]) {
     printCmpResult(NPOT, b, c);
 
 	printf("\n");
-	printf("*****************************\n");
-	printf("******** EXTRA CREDIT *******\n");
-	printf("****** RADIX SORT TESTS *****\n");
-	printf("******** POWER-OF-TWO *******\n");
-	printf("*****************************\n");
+	printf("*********************************************\n");
+	printf("*************** EXTRA CREDIT ****************\n");
+	printf("************* RADIX SORT TESTS **************\n");
+	printf("*************** POWER-OF-TWO ****************\n");
+	printf("*********************************************\n");
 	
 	genArray(SIZE, a, SIZE);
 	printArray(SIZE, a, true);
@@ -100,11 +101,11 @@ int main(int argc, char* argv[]) {
 	printf("\n");
 
 	printf("\n");
-	printf("*****************************\n");
-	printf("******** EXTRA CREDIT *******\n");
-	printf("****** RADIX SORT TESTS *****\n");
-	printf("****** NON-POWER-OF-TWO *****\n");
-	printf("*****************************\n");
+	printf("*********************************************\n");
+	printf("*************** EXTRA CREDIT ****************\n");
+	printf("************* RADIX SORT TESTS **************\n");
+	printf("************* NON-POWER-OF-TWO **************\n");
+	printf("*********************************************\n");
 
 	//zeroArray(SIZE, c);
 	//printDesc("work-efficient scan, power-of-two");

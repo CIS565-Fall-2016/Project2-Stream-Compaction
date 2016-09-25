@@ -1,13 +1,8 @@
-CUDA Stream Compaction
-======================
+####University of Pennsylvania
+####CIS 565: GPU Programming and Architecture
 
-**University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 2**
+##Project 2 - CUDA Stream Compaction
 
-* (TODO) YOUR NAME HERE
-* Tested on: (TODO) Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
-
-### (TODO: Your README)
-
-Include analysis, etc. (Remember, this is public, so don't put
-anything here that you don't want to share with the world.)
-
+* Xueyin Wan
+* Tested on: Tested on: Windows 10 x64, i7-6700K @ 4.00GHz 16GB, GTX 970 4096MB (Personal Desktop)
+* Compiled with Visual Studio 2013 and CUDA 7.5
