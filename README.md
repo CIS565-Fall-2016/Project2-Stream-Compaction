@@ -54,6 +54,8 @@ SO, for the following test, BLOCK_SIZE is set to `128`.
 And for a detailed chart:
 ![](test_datas/arraysize_scan_detail.png)
 
+An unexpected thing about the above images are thrust(the blue line in the middle of the image) taking much more time when it's first time running. I guess that's because the implementation of THRUST, it might require some initialization operations during the first time running. And once after that, the thrust execution time become much faster than my implementation.
+
 With the increase of array size, thrust achives the slowest increase of execution time. CPU and GPU implementations' performance will suffer from the increase of array size. 
 
 In my computer, GPU implementation is slower than CPU impelmentation. Work-efficient GPU implemenetation is much faster than naive GPU scan.
@@ -100,7 +102,10 @@ Execution time increases almost linearly for Radix Sort.
 
 ## Questions
 
-* I think the bottleneck is memory I/O. Without using shared-memory, it's very inefficient for adjacent threads accessing memory with huge physical distance. Even using work-efficient scan implementation, GPU still cannot beat CPU implemetation. For GPU scan and compaction implementations, array size of power of two can obtain better performance than non-power-of-two array size. On CPU, non-power-of-tow doesn't seem to have huge influence.
+* I think the bottleneck is memory I/O. Without using shared-memory, it's very inefficient for adjacent threads accessing memory with huge physical distance. Especially when this project is all about memory I/O. Even using work-efficient scan implementation, GPU still cannot beat CPU implemetation. For GPU scan and compaction implementations, array size of power of two can obtain better performance than non-power-of-two array size. On CPU, non-power-of-tow doesn't seem to have huge influence. Following image is a profiling image captured by NSight:
+![profiling](test_datas/profiling.png)
+From above image, we can see that `cudaMemcpy` and `cudaMalloc` almost took half of the entire execution time. For this type of memory I/O-intensive computation tasks, we need some better solution about CUDA to improve the efficience of memory IO.
+
 * optimized block size of each implementation, refer to **Find an Optimized BlockSize for Each Implementation**.
 * comparison of different implementations of scan and compaction, refer to **Performance Analysis**.
 * output of test-program, refer to **Example Output**.
