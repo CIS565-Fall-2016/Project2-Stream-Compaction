@@ -3,6 +3,8 @@
 #include "common.h"
 #include "efficient.h"
 
+#define PROFILE
+
 namespace StreamCompaction {
 namespace Efficient {
 
@@ -77,12 +79,36 @@ void scan(int n, int *odata, const int *idata) {
   // Copy idata to device memory
   cudaMemcpy(dev_odata, idata, n * sizeof(int), cudaMemcpyHostToDevice);
 
-  deviceScan(n, dev_odata);
+#ifdef PROFILE
+  // CUDA events for profiling
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+#endif
 
+#ifdef  PROFILE
+  cudaEventRecord(start);
+  // -- Start code to profile
+#endif
+  deviceScan(n, dev_odata);
+#ifdef  PROFILE
+  // -- End code to profile
+  cudaEventRecord(stop);
+#endif
+
+ 
+#ifdef PROFILE
+  cudaEventSynchronize(stop);
+  float milliseconds = 0;
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  printf("Runtime: %d ns\n", (int)MS_TO_NS(milliseconds));
+#endif
   // Transfer data back to host
   cudaMemcpy(odata, dev_odata, n * sizeof(int), cudaMemcpyDeviceToHost);
 
+  // Cleanup
   cudaFree(dev_odata);
+
 }
 
 /**
@@ -108,6 +134,18 @@ int compact(int n, int *odata, const int *idata) {
   // Transfer idata from host to device
   cudaMemcpy(dev_idata, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 
+#ifdef PROFILE
+  // CUDA events for profiling
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+#endif
+	
+#ifdef PROFILE
+  // -- Start code block to profile
+  cudaEventRecord(start);
+#endif
+
   // Set all non-zeros to 1s and zeros to 0s. This is our pass condition for an element to remain/discard after compaction
   Common::kernMapToBoolean << <BLOCK_COUNT(ceilPower2), BLOCK_SIZE >> >(ceilPower2, dev_bools, dev_idata);
   
@@ -121,17 +159,29 @@ int compact(int n, int *odata, const int *idata) {
   // Move elements that are not discarded into appropriate slots based on scan result
   Common::kernScatter << <BLOCK_COUNT(ceilPower2), BLOCK_SIZE >> >(ceilPower2, dev_odata, dev_idata, dev_bools, dev_indices);
 
-  // Transfer output back to host
-  cudaMemcpy(odata, dev_odata, sizeof(int) * n, cudaMemcpyDeviceToHost);
-
   // The max value of all the valid indices for the compacted stream is the number of remaining elements
   int remainingElementsCount = findMaxInDeviceArray(ceilPower2, dev_indices);
+  
+#ifdef PROFILE
+  // -- End code block to profile
+  cudaEventRecord(stop);
+#endif
+
+  // Transfer output back to host
+  cudaMemcpy(odata, dev_odata, sizeof(int) * n, cudaMemcpyDeviceToHost);
 
   // Cleanup
   cudaFree(dev_idata);
   cudaFree(dev_indices);
   cudaFree(dev_odata);
-
+  
+#ifdef PROFILE
+  // Print runtime result
+  cudaEventSynchronize(stop);
+  float milliseconds;
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  printf("Runtime: %d ns\n", (int)MS_TO_NS(milliseconds));
+#endif
   return remainingElementsCount;
 }
 

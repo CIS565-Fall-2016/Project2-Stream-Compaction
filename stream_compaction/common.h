@@ -7,10 +7,14 @@
 #define FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define checkCUDAError(msg) checkCUDAErrorFn(msg, FILENAME, __LINE__)
 
-#define BLOCK_SIZE 128
-#define BLOCK_COUNT(n) ((n + BLOCK_SIZE - 1) / BLOCK_SIZE)
-
+#define imin(a, b) (((a) < (b)) ? (a) : (b))
 #define imax(a, b) (((a) > (b)) ? (a) : (b))
+
+#define BLOCK_SIZE 128
+#define BLOCK_COUNT(n) (((n) + BLOCK_SIZE - 1) / BLOCK_SIZE)
+
+// Milliseconds to nanoseconds
+#define MS_TO_NS(ms) ((ms) * 1000000)
 
 /**
  * Check for CUDA errors; print and exit if there was a problem.

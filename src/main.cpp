@@ -11,12 +11,21 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <iostream>
 #include "testing_helpers.hpp"
+#include <stream_compaction/profilingcommon.h>
 
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 8;
-    const int NPOT = SIZE - 3;
-    int a[SIZE], b[SIZE], c[SIZE];
+    const int SIZE = 1 << 10;
+    const int NPOT = SIZE - 5;
+	int* a = new int[SIZE];
+	int* b = new int[SIZE];
+	int* c = new int[SIZE];
+
+#ifdef PROFILE
+	printDesc("PROFILING ON");
+	printf("\n\n");
+#endif
 
     // Scan tests
 
@@ -27,17 +36,41 @@ int main(int argc, char* argv[]) {
 
     genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
-    printArray(SIZE, a, true);
+    //printArray(SIZE, a, true);
 
-    zeroArray(SIZE, b);
+    zeroArray(SIZE, b); 
     printDesc("cpu scan, power-of-two");
-    StreamCompaction::CPU::scan(SIZE, b, a);
-    printArray(SIZE, b, true);
+
+#ifdef PROFILE
+	auto begin = std::chrono::high_resolution_clock::now();
+	for (auto it = 0; it < PROFILE_ITERATIONS; ++it) {
+#endif
+
+		StreamCompaction::CPU::scan(SIZE, b, a);
+
+#ifdef PROFILE
+	}
+	auto end = std::chrono::high_resolution_clock::now();
+	std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - begin)/PROFILE_ITERATIONS).count() << " ns" << std::endl;
+#endif
+
+	//printArray(SIZE, b, true);
 
     zeroArray(SIZE, c);
     printDesc("cpu scan, non-power-of-two");
-    StreamCompaction::CPU::scan(NPOT, c, a);
-    printArray(NPOT, b, true);
+
+#ifdef PROFILE
+	begin = std::chrono::high_resolution_clock::now();
+	for (auto it = 0; it < PROFILE_ITERATIONS; ++it) {
+#endif
+		StreamCompaction::CPU::scan(NPOT, c, a);
+#ifdef PROFILE
+	}
+	end = std::chrono::high_resolution_clock::now();
+	std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - begin) / PROFILE_ITERATIONS).count() << " ns" << std::endl;
+#endif
+	
+	//printArray(NPOT, b, true);
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
@@ -66,14 +99,14 @@ int main(int argc, char* argv[]) {
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, power-of-two");
-    StreamCompaction::Thrust::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+	StreamCompaction::Thrust::scan(SIZE, c, a);
+	//printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, non-power-of-two");
-    StreamCompaction::Thrust::scan(NPOT, c, a);
-    //printArray(NPOT, c, true);
+	StreamCompaction::Thrust::scan(NPOT, c, a);
+	//printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
 
     printf("\n");
@@ -85,28 +118,55 @@ int main(int argc, char* argv[]) {
 
     genArray(SIZE - 1, a, 4);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
-    printArray(SIZE, a, true);
+    //printArray(SIZE, a, true);
 
-    int count, expectedCount, expectedNPOT;
+    int count = 0, expectedCount, expectedNPOT;
 
     zeroArray(SIZE, b);
     printDesc("cpu compact without scan, power-of-two");
-    count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
-    expectedCount = count;
-    printArray(count, b, true);
+#ifdef PROFILE
+	begin = std::chrono::high_resolution_clock::now();
+	for (auto it = 0; it < PROFILE_ITERATIONS; ++it) {
+#endif
+		count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
+#ifdef PROFILE
+	}
+	end = std::chrono::high_resolution_clock::now();
+	std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - begin) / PROFILE_ITERATIONS).count() << " ns" << std::endl;
+#endif
+	expectedCount = count;
+    //printArray(count, b, true);
     printCmpLenResult(count, expectedCount, b, b);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact without scan, non-power-of-two");
-    count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
-    expectedNPOT = count;
-    printArray(count, c, true);
+#ifdef PROFILE
+	begin = std::chrono::high_resolution_clock::now();
+	for (auto it = 0; it < PROFILE_ITERATIONS; ++it) {
+#endif
+		count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
+#ifdef PROFILE
+	}
+	end = std::chrono::high_resolution_clock::now();
+	std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - begin) / PROFILE_ITERATIONS).count() << " ns" << std::endl;
+#endif
+	expectedNPOT = count;
+    //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact with scan");
-    count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
-    printArray(count, c, true);
+#ifdef PROFILE
+	begin = std::chrono::high_resolution_clock::now();
+	for (auto it = 0; it < PROFILE_ITERATIONS; ++it) {
+#endif
+		count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+#ifdef PROFILE
+	}
+	end = std::chrono::high_resolution_clock::now();
+	std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - begin) / PROFILE_ITERATIONS).count() << " ns" << std::endl;
+#endif
+	//printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
 
     zeroArray(SIZE, c);
@@ -120,4 +180,9 @@ int main(int argc, char* argv[]) {
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+
+	delete[] a;
+	delete[] b;
+	delete[] c;
 }

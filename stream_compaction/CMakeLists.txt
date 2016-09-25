@@ -1,6 +1,7 @@
 set(SOURCE_FILES
     "common.h"
     "common.cu"
+    "profilingcommon.h"
     "cpu.h"
     "cpu.cu"
     "naive.h"
@@ -13,5 +14,5 @@ set(SOURCE_FILES
 
 cuda_add_library(stream_compaction
     ${SOURCE_FILES}
-    OPTIONS -arch=sm_20
+    OPTIONS -arch=sm_52
     )

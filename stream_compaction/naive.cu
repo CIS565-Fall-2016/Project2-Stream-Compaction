@@ -26,6 +26,10 @@ __global__ void naiveScan(int n, int offset, int* odata, const int *idata) {
 void scan(int n, int *odata, const int *idata) {
     // TODO
 
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
   int* dev_odata1;
   int* dev_odata2;
 
@@ -34,11 +38,11 @@ void scan(int n, int *odata, const int *idata) {
 
   cudaMemcpy(dev_odata1, idata, n * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(dev_odata2, idata, n * sizeof(int), cudaMemcpyHostToDevice);
-
+  
+  cudaEventRecord(start);
   int height = ilog2ceil(n);
-  //height = 2;
   for (int level = 1; level <= height; ++level) {
-    int offset = pow(2, level - 1);
+    int offset = 1 << (level - 1);
     naiveScan << <BLOCK_COUNT(n), BLOCK_SIZE >> >(
       n, 
       offset, 
@@ -49,11 +53,18 @@ void scan(int n, int *odata, const int *idata) {
 
   if (height % 2 == 0) {
     Common::inclusiveToExclusiveScanResult << <BLOCK_COUNT(n), BLOCK_SIZE >> >(n, dev_odata2, dev_odata1);
+	cudaEventRecord(stop);
     cudaMemcpy(odata, dev_odata2, n * sizeof(int), cudaMemcpyDeviceToHost);
   } else {
     Common::inclusiveToExclusiveScanResult << <BLOCK_COUNT(n), BLOCK_SIZE >> >(n, dev_odata1, dev_odata2);
-    cudaMemcpy(odata, dev_odata1, n * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaEventRecord(stop);
+	cudaMemcpy(odata, dev_odata1, n * sizeof(int), cudaMemcpyDeviceToHost);
   }
+
+  cudaEventSynchronize(stop);
+  float milliseconds = 0;
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  printf("Runtime: %d ns\n", (int)MS_TO_NS(milliseconds));
 
   cudaFree(dev_odata1);
   cudaFree(dev_odata2);
