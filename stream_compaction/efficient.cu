@@ -7,7 +7,7 @@ namespace StreamCompaction {
 namespace Efficient {
 
 // TODO: __global__
-__global__ void upSweep(const int n, const int step, int *idata, int *odata) {
+__global__ void upSweep(const int n, const int step, int *data) {
 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -20,14 +20,12 @@ __global__ void upSweep(const int n, const int step, int *idata, int *odata) {
 
 	for (int i = 1; i != step; (i <<= 1), (mask = mask << 1 | 1));
 
-	if (index - step < 0 || (rIndex & mask) != 0) {
-		odata[index] = idata[index];
-	} else {
-		odata[index] = idata[index] + idata[index - step];
+	if (index - step >= 0 && (rIndex & mask) == 0) {
+		data[index] = data[index] + data[index - step];
 	}
 }
 
-__global__ void downSweep(const int n, const int step, int *idata, int *odata) {
+__global__ void downSweep(const int n, const int step, int *data) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (index >= n) {
@@ -39,16 +37,11 @@ __global__ void downSweep(const int n, const int step, int *idata, int *odata) {
 
 	for (int i = 1; i != step; (i <<= 1), (mask = mask << 1 | 1));
 
-	if ((rIndex & mask) == 0 && index - step >= 0) {
-		odata[index] = idata[index] + idata[index - step];
-		odata[index - step] = idata[index];
-	} else if (rIndex - step < 0 || (rIndex - step & mask) != 0) {
-		odata[index] = idata[index];
+	if (index - step >= 0 && (rIndex & mask) == 0) {
+		auto tmp = data[index];
+		data[index] += data[index - step];
+		data[index - step] = tmp;
 	}
-}
-
-inline void swap(int &a, int &b) {
-	auto tmp = a; a = b; b = tmp;
 }
 
 /**
@@ -57,48 +50,39 @@ inline void swap(int &a, int &b) {
 void scan(int n, int *odata, const int *idata) {
     // TODO
     // printf("TODO\n");
-	int *dev_data[2];
-	int input = 1;
-	int output = 0;
+	int *dev_data;
 
 	// device memory allocation
-	cudaMalloc((void**)&dev_data[0], sizeof(int) * n);
+	cudaMalloc((void**)&dev_data, sizeof(int) * n);
 	checkCUDAError("Failed to allocate dev_data[0]");
 
-	cudaMalloc((void**)&dev_data[1], sizeof(int) * n);
-	checkCUDAError("Failed to allocate dev_data[1]");
-
 	// copy input data to device
-	cudaMemcpy((void*)dev_data[input], (const void*)idata, sizeof(int) * n,
+	cudaMemcpy((void*)dev_data, (const void*)idata, sizeof(int) * n,
 			cudaMemcpyHostToDevice);
 
 	// do scan
 	dim3 blockCount = (n - 1) / BLOCK_SIZE + 1;
 	int step;
 
-	swap(input, output);
 	// up-sweep
 	for (step = 1; step < n; step <<= 1) {
-		swap(input, output);
-		upSweep<<<blockCount, BLOCK_SIZE>>>(n, step, dev_data[input], dev_data[output]);
+		upSweep<<<blockCount, BLOCK_SIZE>>>(n, step, dev_data);
 	}
 
 	// set last element to 0
-	cudaMemset(&dev_data[output][n - 1], 0, sizeof(int));
+	cudaMemset(&dev_data[n - 1], 0, sizeof(int));
 
 	// down-sweep
 	for (step >>= 1; step > 0; step >>= 1) {
-		swap(input, output);
-		downSweep<<<blockCount, BLOCK_SIZE>>>(n, step, dev_data[input], dev_data[output]);
+		downSweep<<<blockCount, BLOCK_SIZE>>>(n, step, dev_data);
 	}
 
 	// copy result to host
-	cudaMemcpy((void*)odata, (const void*)dev_data[output], sizeof(int) * n,
+	cudaMemcpy((void*)odata, (const void*)dev_data, sizeof(int) * n,
 			cudaMemcpyDeviceToHost);
 
 	// free memory on device
-	cudaFree(dev_data[0]);
-	cudaFree(dev_data[1]);
+	cudaFree(dev_data);
 }
 
 /**
