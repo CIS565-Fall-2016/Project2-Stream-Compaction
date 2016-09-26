@@ -15,6 +15,7 @@
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
 #include <stream_compaction/radix.h>
+#include <fstream>
 #include "testing_helpers.hpp"
 
 const int SIZE = 1 << 24;
