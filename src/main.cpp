@@ -11,10 +11,11 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/sort.h>
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    const size_t SIZE = 1 << 8;
+    const size_t SIZE = 1 << 3;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
@@ -118,6 +119,25 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, non-power-of-two");
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
-    //printArray(count, c, true);
+    printArray(count, c, false);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+	printf("\n");
+	printf("*****************************\n");
+	printf("** RADIX SORT TESTS **\n");
+	printf("*****************************\n");
+
+	// SORT tests
+
+	genArray(SIZE, a, 7);  // Leave a 0 at the end to test that edge case
+	a[SIZE - 1] = 0;
+	printArray(SIZE, a, true);
+
+	//int count, expectedCount, expectedNPOT;
+
+	zeroArray(SIZE, b);
+	printDesc("radix sort, power-of-two");
+	StreamCompaction::Sort::sort(SIZE, b, a);
+	//printArray(count, b, true);
+	//printCmpLenResult(count, expectedCount, b, b);
 }

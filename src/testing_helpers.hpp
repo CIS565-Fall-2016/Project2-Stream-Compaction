@@ -47,6 +47,19 @@ void genArray(int n, int *a, int maxval) {
     }
 }
 
+void genArraySort(int n, int *a, int maxval) {
+	if (n == 8) {
+		a[0] = 4;
+		a[1] = 7;
+		a[2] = 2;
+		a[3] = 6;
+		a[4] = 3;
+		a[5] = 5;
+		a[6] = 1;
+		a[7] = 0;
+	}
+}
+
 void printArray(int n, int *a, bool abridged = false) {
     printf("    [ ");
     for (int i = 0; i < n; i++) {
