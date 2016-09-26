@@ -53,6 +53,7 @@ As we can see, the CPU version is outperformed by the rest. Thrust is clearly a 
 When testing with different block sizes, I found it pretty interesting that at size 128, it seems to be the most optimal. So I decided to use this block size for the rest of profiling 
 
 ![Block sizes performance](https://github.com/trungtle/Project2-Stream-Compaction/blob/master/images/BlockSizePerformanceAnalysis.png "Block sizes performance")
+
 For more details on the data collected, see [link](https://docs.google.com/spreadsheets/d/1mtohoQ4BtD_RamWI2KeV-HhkSYDMmendWos7sQgdVR8/edit?usp=sharing).
 
 To guess at what might be happening inside the Thrust implementation (e.g. allocation, memory copy), take a look at the Nsight timeline for its execution. Your analysis here doesn't have to be detailed, since you aren't even looking at the code for the implementation.
