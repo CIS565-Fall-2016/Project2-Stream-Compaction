@@ -9,8 +9,8 @@
 
 **SCREENSHOT**
 -------------
-**BlockSize : 128**
-**SIZE :  1 << 24**
+**BlockSize : 128**  
+**SIZE :  1 << 24**  
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/XueyinResultOriginal_pow(2%2C24).gif "Performance One") 
 
 
@@ -21,9 +21,7 @@
 ####Part 3: Work-Efficient GPU Scan & Stream Compaction
 ####Part 4: Thrust Exclusive Scan using Thrust library
 ####Part 5: Radix Sort (Extra Credit)
-####Part 6: Using std::chrono and CUDA events for comparing the speed of different algorithms
-
-
+####Part 6: Using std::chrono and CUDA events for comparing the speed of different algorithms      
 
 **Dive Into Block Size**
 -------------
@@ -46,8 +44,8 @@ Block Size | Naïve Scan | Efficient Scan | Thrust Sort| Radix Sort|CPU Scan
 
 
 
-**Case 2:** 
-#####Non Power of  Two number, `SIZE(NPOT)`= 1 << 24 - 3 = 16777213
+**Case 2:**
+#####Non Power of  Two number, `SIZE(NPOT)`= 1 << 24 - 3 = 16777213  
 #####All the time recorded are in `ms`.
 Block Size        | Naïve Scan   | Efficient Scan | Thrust Sort| Radix Sort|CPU Scan|
 ---|---|---|---|---|---
@@ -61,7 +59,8 @@ Block Size        | Naïve Scan   | Efficient Scan | Thrust Sort| Radix Sort|CPU
 
 
 Now let me draw a graph to explicitly show my result :)
-![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose1.PNG "Chart1")
+![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose1.PNG "Chart1")  
+###   
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose2.PNG "Chart2")
 
 From case 1 and case 2, we could see that when block size is less than 128, the algorithm performance is definitely worse than block size = 128. And after we set block size to 128, we could see that radix sort performance reaches to the highest level. After block size continues to grow, we could notice that Naive Scan, Efficient Scan and Radix Sort are all becoming slower.
