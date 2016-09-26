@@ -38,7 +38,10 @@ Compare all of these GPU Scan implementations (Naive, Work-Efficient, and Thrust
 
 For timing GPU, I wrapped cuda events between kernel launches and for timing CPU, I used the C++11 std::chrono API. Each configuration is run 1000 times, then taken the average as displayed below:
 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
+![Scan performance](https://github.com/trungtle/Project2-Stream-Compaction/blob/master/images/ScanPerformaceAnalysis.png "Scan performance")
+
+
+![Compaction performance](https://github.com/trungtle/Project2-Stream-Compaction/blob/master/images/CompactPerformaceAnalysis.png "Compaction performance")
 
 As we can see, the CPU version is outperformed by the rest. Thrust is clearly a winner here (probably due to the fact that it was implemented properly). It occurs to me that the 'efficient' version is in fact a bit slower than the naive but is still faster than the CPU version. There are a couple reasons for this:
 - We're not taking advantage of shared memory inside each block to store the partial sum results.
@@ -49,8 +52,7 @@ As we can see, the CPU version is outperformed by the rest. Thrust is clearly a 
 
 When testing with different block sizes, I found it pretty interesting that at size 128, it seems to be the most optimal. So I decided to use this block size for the rest of profiling 
 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
-
+![Block sizes performance](https://github.com/trungtle/Project2-Stream-Compaction/blob/master/images/BlockSizePerformanceAnalysis.png "Block sizes performance")
 For more details on the data collected, see [link](https://docs.google.com/spreadsheets/d/1mtohoQ4BtD_RamWI2KeV-HhkSYDMmendWos7sQgdVR8/edit?usp=sharing).
 
 To guess at what might be happening inside the Thrust implementation (e.g. allocation, memory copy), take a look at the Nsight timeline for its execution. Your analysis here doesn't have to be detailed, since you aren't even looking at the code for the implementation.
