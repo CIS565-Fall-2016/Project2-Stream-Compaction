@@ -56,8 +56,10 @@ When testing with different block sizes, I found it pretty interesting that at s
 
 For more details on the data collected, see [link](https://docs.google.com/spreadsheets/d/1mtohoQ4BtD_RamWI2KeV-HhkSYDMmendWos7sQgdVR8/edit?usp=sharing).
 
-To guess at what might be happening inside the Thrust implementation (e.g. allocation, memory copy), take a look at the Nsight timeline for its execution. Your analysis here doesn't have to be detailed, since you aren't even looking at the code for the implementation.
-Write a brief explanation of the phenomena you see here.
+I also used NSight to profile thrust performance. It seems that thrust does take advantage of shared memory (24,528 bytes per block). It's occupancy is also lower (50.0%) and it uses more registers per threads compare to my efficient implementation.
+
+![Thrust performance](https://github.com/trungtle/Project2-Stream-Compaction/blob/master/images/ThrustCapture.PNG "Thrust performance")
+
 
 # Test output
 
