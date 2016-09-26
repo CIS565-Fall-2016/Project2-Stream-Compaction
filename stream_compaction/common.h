@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <chrono>
+#include <ctime>
 
 #define FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define checkCUDAError(msg) checkCUDAErrorFn(msg, FILENAME, __LINE__)

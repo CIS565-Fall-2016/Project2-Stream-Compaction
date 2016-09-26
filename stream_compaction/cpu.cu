@@ -1,4 +1,5 @@
 #include <cstdio>
+#include "common.h"
 #include "cpu.h"
 
 namespace StreamCompaction {
@@ -78,6 +79,66 @@ int compactWithScan(const int n, int *odata, const int *idata) {
 	delete bools;
 
 	return rtn;
+}
+
+void TestScan(int n, int *odata, const int *idata) {
+
+	double time = 0;
+	int samp = 1000;
+
+	for (int i = 0; i < samp; i++) {
+		std::chrono::time_point<std::chrono::system_clock> start, end;
+		start = std::chrono::system_clock::now();
+
+		scan(n, odata, idata);
+
+		end = std::chrono::system_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end - start;
+
+		time += elapsed_seconds.count() * 1000 / samp;
+	}
+	printf("     %f\n", time);
+
+}
+
+void TestCompact(int n, int *odata, const int *idata) {
+
+	double time = 0;
+	int samp = 1000;
+
+	for (int i = 0; i < samp; i++) {
+		std::chrono::time_point<std::chrono::system_clock> start, end;
+		start = std::chrono::system_clock::now();
+
+		compactWithScan(n, odata, idata);
+
+		end = std::chrono::system_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end - start;
+
+		time += elapsed_seconds.count() * 1000 / samp;
+	}
+	printf("     %f\n", time);
+
+}
+
+void TestCompactWithoutScan(int n, int *odata, const int *idata) {
+
+	double time = 0;
+	int samp = 1000;
+
+	for (int i = 0; i < samp; i++) {
+		std::chrono::time_point<std::chrono::system_clock> start, end;
+		start = std::chrono::system_clock::now();
+
+		compactWithoutScan(n, odata, idata);
+
+		end = std::chrono::system_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end - start;
+
+		time += elapsed_seconds.count() * 1000 / samp;
+	}
+	printf("     %f\n", time);
+
 }
 
 }
