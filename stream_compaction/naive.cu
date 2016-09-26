@@ -27,7 +27,6 @@ __global__ void kernelScan(int offset, int n, int *swapA, int *swapB) {
  */
 void scan(int n, int *odata, const int *idata) {
 	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
-	int log2n = ilog2ceil(n);
 	int offset;
 	int *swapA, *swapB;
 	cudaMalloc((void**)&swapA, n * sizeof(int));
@@ -37,13 +36,14 @@ void scan(int n, int *odata, const int *idata) {
 
 	cudaMemcpy(swapA, idata, n * sizeof(int), cudaMemcpyHostToDevice);
 	
-
-	for (int i = 0; i < log2n; i++) {
+	int log2n = ilog2ceil(n);
+	for (int i = 1; i <= log2n; i++) {
 		offset = 1 << (i - 1);
 		kernelScan << <fullBlocksPerGrid, blockSize>> >(offset, n, swapA, swapB);
 		std::swap(swapA, swapB);
 	}
 	cudaMemcpy(odata + 1, swapA, (n - 1) * sizeof(int), cudaMemcpyDeviceToHost);
+	odata[0] = 0;
 
 	cudaFree(swapA);
 	cudaFree(swapB);

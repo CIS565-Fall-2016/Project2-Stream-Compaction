@@ -11,9 +11,9 @@ void scan(int n, int *odata, const int *idata) {
 	if (n <= 0) {
 		return;
 	}
-	odata[0] = idata[0];
+	odata[0] = 0;
 	for (int i = 1; i < n; i++) {
-		odata[i] = odata[i - 1] + idata[i];
+		odata[i] = odata[i - 1] + idata[i - 1];
 	}
 }
 
@@ -46,7 +46,7 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	for (int i = 0; i < n; i++) {
 		if (idata[i] != 0) {
 			k++;
-			odata[odata[i]-1] = idata[i];
+			odata[odata[i]] = idata[i];
 		}
 	}
 	return k;
