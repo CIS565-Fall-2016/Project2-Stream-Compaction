@@ -23,6 +23,8 @@
 ####Part 5: Radix Sort (Extra Credit)
 ####Part 6: Using std::chrono and CUDA events for comparing the speed of different algorithms
 
+
+
 **Dive Into Block Size**
 -------------
 In order to find the relationship between block size and performance, I modified block size to see different algorithm run time in order to get the optimized block size.   
@@ -42,6 +44,8 @@ Block Size | Naïve Scan | Efficient Scan | Thrust Sort| Radix Sort|CPU Scan
 512 | 25.576256 | 29.840576 |2.256288|791.23053|24.5889
 1024 | 25.609535 | 33.565887 |2.211232|860.626038|24.0653
 
+
+
 **Case 2:** 
 #####Non Power of  Two number, `SIZE(NPOT)`= 1 << 24 - 3 = 16777213
 #####All the time recorded are in `ms`.
@@ -54,6 +58,11 @@ Block Size        | Naïve Scan   | Efficient Scan | Thrust Sort| Radix Sort|CPU
 256 | 25.627424 | 27.607807 |2.223552|771.496643|41.6099
 512 | 25.609535 | 29.848961 |2.146816|803.836487|42.1115
 1024 | 26.082048 | 33.715874 |2.04576|851.824646|42.6002
+
+
+Now let me draw a graph to explicitly show my result :)
+![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose1.PNG "Chart1")
+![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose2.PNG "Chart2")
 
 From case 1 and case 2, we could see that when block size is less than 128, the algorithm performance is definitely worse than block size = 128. And after we set block size to 128, we could see that radix sort performance reaches to the highest level. After block size continues to grow, we could notice that Naive Scan, Efficient Scan and Radix Sort are all becoming slower.
 So I choose my block size to be `128` in my code.  
