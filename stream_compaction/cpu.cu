@@ -38,15 +38,17 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithScan(int n, int *odata, const int *idata) {
+	int *scanResults = new int[n];
+	
 	for (int i = 0; i < n; i++) {
 		odata[i] = idata[i] != 0;
 	}
-	scan(n, odata, odata);
+	scan(n, scanResults, odata);
 	int k = 0;
 	for (int i = 0; i < n; i++) {
-		if (idata[i] != 0) {
+		if (idata[i]) {
 			k++;
-			odata[odata[i]] = idata[i];
+			odata[scanResults[i]] = idata[i];
 		}
 	}
 	return k;

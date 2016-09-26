@@ -24,7 +24,7 @@ namespace Common {
  */
 __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
 	int idx = threadIdx.x + (blockIdx.x * blockDim.x);
-	bools[idx] = idata[idx] == 0;
+	bools[idx] = idata[idx] != 0;
 }
 
 /**

@@ -9,13 +9,24 @@ namespace Efficient {
 
 // TODO: __global__
 
-__global__ void kernUpSweep(int n, int offset, int *odata, const int *idata) {
+__global__ void kernUpSweep(int n, int offset, int *buf) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	odata[index + offset - 1] += 
+	int idx = (index + 1) * (offset * 2) - 1;
+	if (idx >= n) return;
+	//if ((index + 1) % (offset * 2) == 0) return;
+	
+	buf[idx] += buf[idx - offset];
+	//buf[index] += buf[index - offset];
 }
 
-__global__ void kernDownSweep(int n, int offset, int *odata, const int *idata) {
+__global__ void kernDownSweep(int n, int offset, int *buf) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	int idx = (index + 1) * (offset * 2) - 1;
+	if (idx >= n) return;
 
+	int t = buf[idx - offset];
+	buf[idx - offset] = buf[idx];
+	buf[idx] += t;
 }
 
 
@@ -24,18 +35,25 @@ __global__ void kernDownSweep(int n, int offset, int *odata, const int *idata) {
  */
 void scan(int n, int *odata, const int *idata) {
 	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
-
 	int *buf;
-	cudaMalloc((void**)&buf, n * sizeof(int));
+	int padded = 1 << ilog2ceil(n);
+
+	cudaMalloc((void**)&buf, padded * sizeof(int));
 	checkCUDAError("cudaMalloc buf failed!");
 
+	cudaMemcpy(buf, idata, padded * sizeof(int), cudaMemcpyHostToDevice);
+
 	int offset;
-	for (int i = 0; i <= ilog2(n); i++) {
-		kernUpSweep << <fullBlocksPerGrid, blockSize >> >(n, offset, odata, idata);
+	for (int i = 0; i <= ilog2(padded); i++) {
+		kernUpSweep << <fullBlocksPerGrid, blockSize >> >(padded, 1 << i, buf);
 	}
-	for (int i = ilog2(n); i <= 0; i--) {
-		kernDownSweep << <fullBlocksPerGrid, blockSize >> >(n, offset, odata, idata);
+
+	cudaMemset(buf + padded - 1, 0, sizeof(int));
+	for (int i = ilog2(padded); i >= 0; i--) {
+		kernDownSweep << <fullBlocksPerGrid, blockSize >> >(padded, 1 << i, buf);
 	}
+
+	cudaMemcpy(odata, buf, padded * sizeof(int), cudaMemcpyDeviceToHost);
 
 	cudaFree(buf);
 }
@@ -50,8 +68,29 @@ void scan(int n, int *odata, const int *idata) {
  * @returns      The number of elements remaining after compaction.
  */
 int compact(int n, int *odata, const int *idata) {
-    // TODO
-    return -1;
+	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
+	int *bools, *indices, *in, *out;
+	
+	cudaMalloc((void**)&bools, n * sizeof(int));
+	cudaMalloc((void**)&indices, n * sizeof(int));
+	cudaMalloc((void**)&in, n * sizeof(int));
+	cudaMalloc((void**)&out, n * sizeof(int));
+
+	cudaMemcpy(in, idata, n * sizeof(int), cudaMemcpyHostToDevice);
+	StreamCompaction::Common::kernMapToBoolean << <fullBlocksPerGrid, blockSize >> >(n, bools, in);
+	cudaMemcpy(odata, bools, n * sizeof(int), cudaMemcpyDeviceToHost);
+	scan(n, odata, odata);
+	int lenCompacted = odata[n - 1];
+	cudaMemcpy(indices, odata, n * sizeof(int), cudaMemcpyHostToDevice);
+	StreamCompaction::Common::kernScatter << <fullBlocksPerGrid, blockSize >> >(n, out, in, bools, indices);
+	cudaMemcpy(odata, out, n * sizeof(int), cudaMemcpyDeviceToHost);
+
+	cudaFree(bools);
+	cudaFree(indices);
+	cudaFree(in);
+	cudaFree(out);
+
+	return lenCompacted;
 }
 
 }

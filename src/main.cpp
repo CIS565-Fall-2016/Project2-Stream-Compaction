@@ -18,6 +18,7 @@ int main(int argc, char* argv[]) {
     const int SIZE = 1 << 8;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
+	
 
     // Scan tests
 
@@ -29,6 +30,10 @@ int main(int argc, char* argv[]) {
     genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
     printArray(SIZE, a, true);
+
+	int d[] = { 0, 1, 2, 3, 4, 5};
+	int dexp[] = { 0, 0, 1, 3, 6, 10};
+	int e[] = { 0, 1, 2, 6, 4, 9, 6, 28 };
 
     zeroArray(SIZE, b);
     printDesc("cpu scan, power-of-two");
@@ -56,13 +61,13 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, power-of-two");
     StreamCompaction::Efficient::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, non-power-of-two");
     StreamCompaction::Efficient::scan(NPOT, c, a);
-    //printArray(NPOT, c, true);
+    printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
