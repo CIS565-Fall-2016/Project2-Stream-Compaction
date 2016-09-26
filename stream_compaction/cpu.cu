@@ -39,13 +39,15 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  */
 int compactWithScan(int n, int *odata, const int *idata) {
     // TODO
-    memset(odata, 0, n);
-    for (int i = 0; i < n; ++i) {
+    memset(odata, 0, n * sizeof(int));
+
+	for (int i = 0; i < n; ++i) {
       if (idata[i] != 0) {
         odata[i] = 1;
       }
     }
-    int* scanResult = new int[n];
+
+	int* scanResult = new int[n];
     scan(n, scanResult, odata);
 
     int remainingNumberOfElements = 0;

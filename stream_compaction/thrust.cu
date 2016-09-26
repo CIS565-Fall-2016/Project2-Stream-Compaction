@@ -13,7 +13,7 @@ namespace Thrust {
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
-void scan(int n, int *odata, const int *idata) {
+	void scan(int n, int *odata, const int *idata, float* timeElapsedMs) {
     // TODO use `thrust::exclusive_scan`
     // example: for device_vectors dv_in and dv_out:
     // thrust::exclusive_scan(dv_in.begin(), dv_in.end(), dv_out.begin());
@@ -24,15 +24,13 @@ void scan(int n, int *odata, const int *idata) {
 
 #ifdef PROFILE
   auto begin = std::chrono::high_resolution_clock::now();
-  for (auto it = 0; it < PROFILE_ITERATIONS; ++it) {
 #endif
 
   thrust::exclusive_scan(dev_idata.begin(), dev_idata.end(), dev_odata.begin());
 
 #ifdef PROFILE
-  }
   auto end = std::chrono::high_resolution_clock::now();
-  std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - begin) / PROFILE_ITERATIONS).count() << " ns" << std::endl;
+  *timeElapsedMs = std::chrono::duration_cast<std::chrono::nanoseconds>((end - begin) / PROFILE_ITERATIONS).count() / 1000000.0f;
 #endif
 
   thrust::host_vector<int> host_odata = dev_odata;

@@ -23,7 +23,7 @@ __global__ void naiveScan(int n, int offset, int* odata, const int *idata) {
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
-void scan(int n, int *odata, const int *idata) {
+void scan(int n, int *odata, const int *idata, float* timeElapsedMs) {
     // TODO
 
   cudaEvent_t start, stop;
@@ -64,7 +64,7 @@ void scan(int n, int *odata, const int *idata) {
   cudaEventSynchronize(stop);
   float milliseconds = 0;
   cudaEventElapsedTime(&milliseconds, start, stop);
-  printf("Runtime: %d ns\n", (int)MS_TO_NS(milliseconds));
+  *timeElapsedMs = milliseconds;
 
   cudaFree(dev_odata1);
   cudaFree(dev_odata2);

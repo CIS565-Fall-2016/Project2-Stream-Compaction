@@ -66,7 +66,7 @@ void deviceScan(int n, int* dev_odata) {
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
-void scan(int n, int *odata, const int *idata) {
+void scan(int n, int *odata, const int *idata, float* timeElapsedMs) {
     // TODO
   int* dev_odata;
   int height = ilog2ceil(n);
@@ -101,7 +101,7 @@ void scan(int n, int *odata, const int *idata) {
   cudaEventSynchronize(stop);
   float milliseconds = 0;
   cudaEventElapsedTime(&milliseconds, start, stop);
-  printf("Runtime: %d ns\n", (int)MS_TO_NS(milliseconds));
+  *timeElapsedMs = milliseconds;
 #endif
   // Transfer data back to host
   cudaMemcpy(odata, dev_odata, n * sizeof(int), cudaMemcpyDeviceToHost);
@@ -120,7 +120,7 @@ void scan(int n, int *odata, const int *idata) {
  * @param idata  The array of elements to compact.
  * @returns      The number of elements remaining after compaction.
  */
-int compact(int n, int *odata, const int *idata) {
+int compact(int n, int *odata, const int *idata, float* timeElapsedMs) {
     // TODO
     
   int height = ilog2ceil(n);
@@ -180,7 +180,7 @@ int compact(int n, int *odata, const int *idata) {
   cudaEventSynchronize(stop);
   float milliseconds;
   cudaEventElapsedTime(&milliseconds, start, stop);
-  printf("Runtime: %d ns\n", (int)MS_TO_NS(milliseconds));
+  *timeElapsedMs = milliseconds;
 #endif
   return remainingElementsCount;
 }
