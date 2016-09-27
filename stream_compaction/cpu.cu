@@ -1,4 +1,4 @@
-#include <cstdio>
+﻿#include <cstdio>
 #include "cpu.h"
 
 namespace StreamCompaction {
@@ -9,7 +9,14 @@ namespace CPU {
  */
 void scan(int n, int *odata, const int *idata) {
     // TODO
-    printf("TODO\n");
+    odata[0] = 0;
+    printf("The output array is:\n");
+    for(int tempCount = 1; tempCount < n; tempCount++)
+    {
+        odata[tempCount] = idata[tempCount-1] + odata[tempCount-1];
+        printf("%5d",odata[tempCount]);
+    }
+	printf("\n");
 }
 
 /**
@@ -19,7 +26,19 @@ void scan(int n, int *odata, const int *idata) {
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
     // TODO
-    return -1;
+	time_t start = clock();
+    int countOut=0;
+    for(int tempCount = 0; tempCount <n-1; tempCount++)
+    {
+        if(idata[tempCount]!=0)
+        {
+            odata[countOut]=idata[tempCount];
+            countOut++;
+        }
+    }
+	time_t end = clock();
+	 printf("The running time is: %f ms. \n", double(end-start)*1000/CLOCKS_PER_SEC);
+	return countOut;
 }
 
 /**
@@ -29,7 +48,38 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  */
 int compactWithScan(int n, int *odata, const int *idata) {
     // TODO
-    return -1;
+	time_t start = clock();
+	int tempCount=0;
+	int sumOutTemp=0;
+	int *tempArray_1=&odata[2*n];
+	int *tempArray_2=&odata[10*n];
+
+	for (tempCount = 0; tempCount < n; tempCount++)
+	{
+		if (idata[tempCount] != 0)
+		{
+			tempArray_1[tempCount] = 1;
+		}
+		else
+		{
+			tempArray_1[tempCount] = 2;
+		}
+	}
+	scan(n, tempArray_2, tempArray_1);
+
+	for (tempCount = 0; tempCount < n-1; tempCount++)
+	{
+		if (tempArray_2[tempCount] != tempArray_2[tempCount + 1])
+		{
+			odata[sumOutTemp] = idata[tempCount];
+			printf("%5d", odata[sumOutTemp]);
+			sumOutTemp++;
+		}
+	}
+	printf("\n");
+	time_t end = clock();
+	 printf("The running time is: %f ms. \n", double(end-start)*1000/CLOCKS_PER_SEC);
+	return sumOutTemp++;
 }
 
 }

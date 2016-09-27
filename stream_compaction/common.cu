@@ -24,6 +24,18 @@ namespace Common {
  */
 __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
     // TODO
+	int parallelCount = threadIdx.x+blockIdx.x*blockDim.x;
+	if(parallelCount<n)
+	{
+	    if(idata[parallelCount]==0)
+	{
+	    bools[parallelCount]=0;
+	}
+	else{
+	    bools[parallelCount]=1;
+	}
+	}
+	
 }
 
 /**
@@ -33,6 +45,26 @@ __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
 __global__ void kernScatter(int n, int *odata,
         const int *idata, const int *bools, const int *indices) {
     // TODO
+	int parallelCount = threadIdx.x+blockIdx.x*blockDim.x;
+	if(bools[parallelCount]==1)
+	{
+	    odata[indices[parallelCount]]=idata[parallelCount];
+	}
+}
+
+__global__ void inclusiveToExclusive(int n, int *idata, int *odata)
+{
+    int parallelCount = threadIdx.x+blockIdx.x*blockDim.x;
+	if(parallelCount<n)
+	{
+	    if(parallelCount == 0)
+		{
+		    odata[0]=0;
+			return;
+		}
+
+		odata[parallelCount] = idata[parallelCount-1];
+	}
 }
 
 }
