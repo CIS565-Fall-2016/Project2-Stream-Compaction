@@ -4,28 +4,30 @@
     [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  42   0 ]
 ==== cpu scan, power-of-two ====
     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 411089014 411089056 ]
-CPU scan power-of-two number time is 24.065300 ms
+CPU scan power-of-two number time is 25.093100 ms
 ==== cpu scan, non-power-of-two ====
     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 411088950 411088974 ]
     passed
-CPU scan non-power-of-two number time is 42.600200 ms
+CPU scan non-power-of-two number time is 43.115700 ms
 ==== naive scan, power-of-two ====
-GPU Naive Scan time is 25.836449 ms
+GPU Naive Scan time is 25.539680 ms
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 411089014 411089056 ]
     passed
 ==== naive scan, non-power-of-two ====
-GPU Naive Scan time is 26.082048 ms
+GPU Naive Scan time is 25.601631 ms
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ...   0   0 ]
     passed
 ==== work-efficient scan, power-of-two ====
-GPU Efficient Scan time is 33.565887 ms
+GPU Efficient Scan time is 27.663200 ms
     passed
 ==== work-efficient scan, non-power-of-two ====
-GPU Efficient Scan time is 33.715874 ms
+GPU Efficient Scan time is 25.619167 ms
     passed
 ==== thrust scan, power-of-two ====
-GPU Thrust Scan time is 2.211232 ms
+GPU Thrust Scan time is 2.403232 ms
     passed
 ==== thrust scan, non-power-of-two ====
-GPU Thrust Scan time is 2.045760 ms
+GPU Thrust Scan time is 2.132640 ms
     passed
 
 *********************************************
@@ -35,10 +37,11 @@ GPU Thrust Scan time is 2.045760 ms
 *********************************************
     [  38 7719 21238 2437 8855 11797 8365 32285 10450 30612 5853 28100 1142 ... 7792 2304 ]
 ==== std sort for comparasion ====
+std sort for power-of-two number time is 894.424700 ms
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
 
 ==== Extra : RadixSort ====
-GPU Radix Sort time is 860.626038 ms
+GPU Radix Sort time is 749.649841 ms
     passed
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
 
@@ -50,10 +53,11 @@ GPU Radix Sort time is 860.626038 ms
 *********************************************
     [  38 7719 21238 2437 8855 11797 8365 32285 10450 30612 5853 28100 1142 ... 7792 2304 ]
 ==== std sort for comparasion ====
+std sort for non-power-of-two number time is 909.447400 ms
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
 
 ==== Extra : RadixSort ====
-GPU Radix Sort time is 851.824646 ms
+GPU Radix Sort time is 747.378296 ms
     passed
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
 
@@ -65,18 +69,18 @@ GPU Radix Sort time is 851.824646 ms
 ==== cpu compact without scan, power-of-two ====
     [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-CPU compact without scan power-of-two number time is 51.122000 ms
+CPU compact without scan power-of-two number time is 37.114100 ms
 ==== cpu compact without scan, non-power-of-two ====
     [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-CPU compact without scan non-power-of-two number time is 37.596400 ms
+CPU compact without scan non-power-of-two number time is 37.096700 ms
 ==== cpu compact with scan ====
     [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-CPU compact with scan time is 147.394200 ms
+CPU compact with scan time is 166.425500 ms
 ==== work-efficient compact, power-of-two ====
-GPU Efficient Compact time is 31.792288 ms
+GPU Efficient Compact time is 27.002945 ms
     passed
 ==== work-efficient compact, non-power-of-two ====
-GPU Efficient Compact time is 32.711681 ms
+GPU Efficient Compact time is 27.037985 ms
     passed

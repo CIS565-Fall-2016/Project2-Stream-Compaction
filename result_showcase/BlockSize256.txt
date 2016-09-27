@@ -22,10 +22,10 @@ GPU Efficient Scan time is 27.646433 ms
 GPU Efficient Scan time is 27.607807 ms
     passed
 ==== thrust scan, power-of-two ====
-GPU Thrust Sort time is 2.404192 ms
+GPU Thrust Scan time is 2.404192 ms
     passed
 ==== thrust scan, non-power-of-two ====
-GPU Thrust Sort time is 2.223552 ms
+GPU Thrust Scan time is 2.223552 ms
     passed
 
 *********************************************

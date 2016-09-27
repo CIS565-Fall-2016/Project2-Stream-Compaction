@@ -34,7 +34,7 @@ void scan(int n, int *odata, const int *idata) {
 	cudaEventSynchronize(end);
 	float deltaTime;
 	cudaEventElapsedTime(&deltaTime, start, end);
-	printf("GPU Thrust Sort time is %f ms\n", deltaTime);
+	printf("GPU Thrust Scan time is %f ms\n", deltaTime);
 
 	thrust::copy(devOdata.begin(), devOdata.end(), odata);
 }

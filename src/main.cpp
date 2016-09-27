@@ -58,13 +58,13 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
     StreamCompaction::Naive::scan(SIZE, c, a);
- // printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
     printDesc("naive scan, non-power-of-two");
     StreamCompaction::Naive::scan(NPOT, c, a);
- // printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
@@ -101,9 +101,14 @@ int main(int argc, char* argv[]) {
 	genArray(SIZE, a, SIZE);
 	printArray(SIZE, a, true);
 	memcpy(b, a, SIZE*sizeof(int));
-
 	printDesc("std sort for comparasion");
+	startTime = std::chrono::high_resolution_clock::now();
 	std::sort(a, a + SIZE);
+	endTime = std::chrono::high_resolution_clock::now();
+	eclipsed = endTime - startTime;
+	delta = eclipsed.count();
+	printf("std sort for power-of-two number time is %f ms\n", delta);
+
 	printArray(SIZE, a, true);
 	printf("\n");
 
@@ -137,7 +142,13 @@ int main(int argc, char* argv[]) {
 	memcpy(b, a, NPOT * sizeof(int));
 
 	printDesc("std sort for comparasion");
+	startTime = std::chrono::high_resolution_clock::now();
 	std::sort(a, a + NPOT);
+	endTime = std::chrono::high_resolution_clock::now();
+	eclipsed = endTime - startTime;
+	delta = eclipsed.count();
+	printf("std sort for non-power-of-two number time is %f ms\n", delta);
+
 	printArray(NPOT, a, true);
 	printf("\n");
 
