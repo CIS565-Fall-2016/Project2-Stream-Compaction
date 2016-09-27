@@ -4,6 +4,7 @@
 #define MEASURE_EXEC_TIME
 #include "efficient.h"
 #include <vector>
+#include <algorithm>
 
 
 namespace StreamCompaction {
@@ -364,5 +365,247 @@ namespace StreamCompaction {
 			return numElemRemained;
 		}
 
+	}
+
+	namespace Efficient4
+	{
+		// Naive scan
+		__device__ unsigned scan1Inclusive(unsigned idata, volatile unsigned *s_data)
+		{
+			int pos = threadIdx.x;
+			int size = blockDim.x;
+			
+			// Pad 0's before to avoid pos >= offset branching
+			s_data[pos] = 0;
+			pos += size;
+			s_data[pos] = idata;
+
+			for (int offset = 1; offset < size; offset <<= 1)
+			{
+				__syncthreads();
+				unsigned t = s_data[pos - offset];
+				__syncthreads();
+				s_data[pos] += t;
+			}
+
+			return s_data[pos];
+		}
+
+		__device__ unsigned scan1Exclusive(unsigned idata, volatile unsigned *s_data)
+		{
+			return scan1Inclusive(idata, s_data) - idata;
+		}
+
+		__device__ uint4 scan4Inclusive(uint4 idata4, volatile unsigned *s_data)
+		{
+			// Perform inclusive prefix sum on the four elements
+			idata4.y += idata4.x;
+			idata4.z += idata4.y;
+			idata4.w += idata4.z;
+
+			// Exclusively scan the 4-element sums on each block
+			unsigned oval = scan1Exclusive(idata4.w, s_data);
+
+			// Accumulate results
+			idata4.x += oval;
+			idata4.y += oval;
+			idata4.z += oval;
+			idata4.w += oval;
+
+			return idata4;
+		}
+
+		__device__ uint4 scan4Exclusive(uint4 idata4, volatile unsigned *s_data)
+		{
+			uint4 odata4 = scan4Inclusive(idata4, s_data);
+
+			// Make exclusive
+			odata4.x -= idata4.x;
+			odata4.y -= idata4.y;
+			odata4.z -= idata4.z;
+			odata4.w -= idata4.w;
+
+			return odata4;
+		}
+
+		/**
+		* Perform exclusive prefix sum on each thread block
+		* @n - size of d_dst and d_src
+		* @d_dst - destination device buffer
+		* @d_src - source device buffer
+		*/
+		__global__ void scanExclusiveShared(int n, uint4 *d_dst, uint4 *d_src)
+		{
+			extern __shared__ unsigned s_data[]; // size = 2 * blockDim.x
+
+			int tid = blockDim.x * blockIdx.x + threadIdx.x;
+
+			uint4 idata4;
+			if (tid < n) idata4 = d_src[tid];
+			uint4 odata4 = scan4Exclusive(idata4, s_data);
+			if (tid < n) d_dst[tid] = odata4;
+		}
+
+		/*
+		* @n - valid size of d_buf (not physical size)
+		* @preSegSize - segment size used in previous level scan
+		*/
+		__global__ void scanExclusiveShared2(int n, int preSegSize,
+			unsigned *d_obuf, unsigned *d_ibuf, unsigned *d_dst, unsigned *d_src)
+		{
+			extern __shared__ unsigned s_data[]; // size = 2 * blockDim.x
+
+			int tid = blockDim.x * blockIdx.x + threadIdx.x;
+
+			unsigned idata;
+			if (tid < n)
+			{
+				idata = d_dst[preSegSize - 1 + preSegSize * tid] +
+					d_src[preSegSize - 1 + preSegSize * tid];
+				d_ibuf[tid] = idata; // so that result can be made inclusive again
+			}
+
+			// Scan the sum of each block from last level scan
+			unsigned odata = scan1Exclusive(idata, s_data);
+
+			if (tid < n) d_obuf[tid] = odata;
+		}
+
+		/*
+		* @d_dst - size = blockDim.x * numBlocks
+		* @d_buf - size = numBlocks
+		*/
+		__global__ void perSegmentAdd(uint4 *d_dst, unsigned *d_buf)
+		{
+			__shared__ unsigned buf;
+
+			int tid = blockDim.x * blockIdx.x + threadIdx.x;
+
+			if (threadIdx.x == 0) buf = d_buf[blockIdx.x];
+
+			__syncthreads();
+
+			uint4 data4 = d_dst[tid];
+			data4.x += buf;
+			data4.y += buf;
+			data4.z += buf;
+			data4.w += buf;
+			d_dst[tid] = data4;
+		}
+
+		int computeSegmentSize(int n)
+		{
+			using Efficient::nearestMultipleOfTwo;
+			return n > (MAX_SEGMENT_SIZE >> 1) ? MAX_SEGMENT_SIZE :
+				std::max(nearestMultipleOfTwo(n), 4);
+		}
+
+		size_t computeActualMemSize(int n)
+		{
+			using Efficient::alignedSize;
+
+			const size_t kMemAlignmentInBytes = 256; // the alignment CUDA driver used
+
+			int segSize = computeSegmentSize(n);
+			int numSegs = NUM_SEG(n, segSize);
+			size_t total = alignedSize(numSegs * segSize * sizeof(unsigned), kMemAlignmentInBytes);
+
+			// Extra size to store intermediate results
+			while (numSegs > 1)
+			{
+				segSize = std::min(256, computeSegmentSize(numSegs));
+				numSegs = NUM_SEG(numSegs, segSize);
+				size_t extra = alignedSize(numSegs * segSize * sizeof(unsigned), kMemAlignmentInBytes);
+				total += extra;
+			}
+
+			return total;
+		}
+
+		float scan(int n, unsigned *odata, const unsigned *idata)
+		{
+			using Efficient::alignedSize;
+
+			if (n <= 0 || !odata || !idata)
+			{
+				throw std::exception("Efficient4::scan");
+			}
+
+			cudaEvent_t start, end;
+			cudaEventCreate(&start);
+			cudaEventCreate(&end);
+
+			size_t kDevBuffSize = computeActualMemSize(n);
+			unsigned *d_idata, *d_odata;
+			
+			cudaMalloc(&d_idata, kDevBuffSize);
+			cudaMalloc(&d_odata, kDevBuffSize);
+			cudaMemset(d_idata, 0, kDevBuffSize);
+			cudaMemset(d_odata, 0, kDevBuffSize);
+			cudaMemcpy(d_idata, idata, n * sizeof(unsigned), cudaMemcpyHostToDevice);
+
+			cudaEventRecord(start);
+
+			int segSize = computeSegmentSize(n);
+			int numSegs = NUM_SEG(n, segSize);
+			int threadsPerBlock = segSize >> 2;
+
+			scanExclusiveShared<<<numSegs, threadsPerBlock, 2 * threadsPerBlock * sizeof(unsigned)>>>(
+				ROUND_SEG_SIZE(n, 4) >> 2,
+				reinterpret_cast<uint4 *>(d_odata),
+				reinterpret_cast<uint4 *>(d_idata));
+
+			std::vector<int> st;
+			unsigned *d_dst = d_odata;
+			unsigned *d_src = d_idata;
+
+			while (numSegs > 1)
+			{
+				st.push_back(numSegs);
+				st.push_back(segSize);
+
+				size_t offsetInDW = alignedSize(numSegs * segSize * sizeof(unsigned), 256) / 4;
+				unsigned *d_ibuf = d_src + offsetInDW;
+				unsigned *d_obuf = d_dst + offsetInDW;
+				int n = numSegs;
+				int preSegSize = segSize;
+
+				threadsPerBlock = segSize = std::min(256, computeSegmentSize(numSegs));
+				numSegs = NUM_SEG(numSegs, segSize);
+
+				scanExclusiveShared2<<<numSegs, threadsPerBlock, 2 * threadsPerBlock * sizeof(unsigned)>>>(
+					n, preSegSize, d_obuf, d_ibuf, d_dst, d_src);
+
+				d_src = d_ibuf;
+				d_dst = d_obuf;
+			}
+
+			while (!st.empty())
+			{
+				segSize = st.back();
+				st.pop_back();
+				numSegs = st.back();
+				st.pop_back();
+
+				size_t offsetInDW = alignedSize(numSegs * segSize * sizeof(unsigned), 256) / 4;
+				unsigned *d_buf = d_dst;
+				d_dst -= offsetInDW;
+
+				perSegmentAdd<<<numSegs, (segSize >> 2)>>>(reinterpret_cast<uint4 *>(d_dst), d_buf);
+			}
+
+			cudaEventRecord(end);
+			cudaEventSynchronize(end);
+
+			cudaMemcpy(odata, d_odata, n * sizeof(unsigned), cudaMemcpyDeviceToHost);
+			cudaFree(d_idata);
+			cudaFree(d_odata);
+
+			float execTime = 0.f;
+			cudaEventElapsedTime(&execTime, start, end);
+			cudaEventDestroy(start);
+			cudaEventDestroy(end);
+			return execTime;
+		}
 	}
 }

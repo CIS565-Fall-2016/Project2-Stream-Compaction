@@ -37,7 +37,7 @@ namespace StreamCompaction
 
 		inline int computeSegmentSize(int n)
 		{
-			return n >(MAX_SEGMENT_SIZE >> 1) ? MAX_SEGMENT_SIZE : nearestMultipleOfTwo(n);
+			return n > (MAX_SEGMENT_SIZE >> 1) ? MAX_SEGMENT_SIZE : nearestMultipleOfTwo(n);
 		}
 
 		inline size_t alignedSize(size_t sizeInBytes, size_t alignmentInBytes)
@@ -75,5 +75,10 @@ namespace StreamCompaction
 
 			return total;
 		}
+	}
+
+	namespace Efficient4
+	{
+		float scan(int n, unsigned *odata, const unsigned *idata);
 	}
 }

@@ -199,6 +199,32 @@ int main(int argc, char* argv[]) {
     printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
 
+	zeroArray(SIZE, c);
+	printDesc("batch scan, power-of-two");
+	accumExecTime = 0.f;
+	for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+	{
+		accumExecTime += StreamCompaction::Efficient4::scan(
+			SIZE, reinterpret_cast<unsigned *>(c), reinterpret_cast<unsigned *>(a));
+		if (i == 0) accumExecTime = 0.f;
+	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / (TEST_GROUP_SIZE - 1) << "ms\n";
+	printArray(SIZE, c, true);
+	printCmpResult(SIZE, b, c);
+
+	zeroArray(SIZE, c);
+	printDesc("batch scan, non-power-of-two");
+	accumExecTime = 0.f;
+	for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+	{
+		accumExecTime += StreamCompaction::Efficient4::scan(
+			NPOT, reinterpret_cast<unsigned *>(c), reinterpret_cast<unsigned *>(a));
+		if (i == 0) accumExecTime = 0.f;
+	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / (TEST_GROUP_SIZE - 1) << "ms\n";
+	printArray(NPOT, c, true);
+	printCmpResult(NPOT, b, c);
+
     zeroArray(SIZE, c);
     printDesc("thrust scan, power-of-two");
 	accumExecTime = 0.f;
