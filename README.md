@@ -33,32 +33,32 @@ In order to find the relationship between block size and performance, I modified
 Below is my chart based on my code:
 
 **Case 1:** 
-#####Power of Two number, `SIZE` = 1 << 24 = 16777216. All the time recorded are in `ms`.
+#####Power of Two number, `SIZE` = 1 << 24 = 16777216. All the time recorded in `ms`.
 
-Block Size | Naïve Scan | Efficient Scan | Thrust Scan| Radix Sort|CPU Scan
----|---|---|---|---|---
-16 | 52.045727 | 91.401695 |2.128768|2466.394043|24.0632
-32 | 30.109312  | 53.902912 |2.09424|1302.962769|24.0563
-64 | 25.546721  | 29.845119 |2.081152|786.153015|24.0908
-128 | 25.994272 | 27.808865 |2.255712|741.838257|24.0321
-256 | 25.615328 | 27.646433 |2.404192|769.176636|24.064
-512 | 25.576256 | 29.840576 |2.256288|791.23053|24.5889
-1024 | 25.609535 | 33.565887 |2.211232|860.626038|24.0653
+Block Size | Naïve Scan | Efficient Scan | Thrust Scan|CPU Scan
+---|---|---|---|---
+16 | 52.045727 | 91.401695 |2.128768|24.0632
+32 | 30.109312  | 53.902912 |2.09424|24.0563
+64 | 25.546721  | 29.845119 |2.081152|24.0908
+128 | 25.994272 | 27.808865 |2.255712|24.0321
+256 | 25.615328 | 27.646433 |2.404192|24.064
+512 | 25.576256 | 29.840576 |2.256288|24.5889
+1024 | 25.609535 | 33.565887 |2.211232|24.0653
 
 
 
 **Case 2:**
-#####Non Power of Two number, `SIZE(NPOT)`= 1 << 24 - 3 = 16777213. All the time recorded are in `ms`.
+#####Non Power of Two number, `SIZE(NPOT)`= 1 << 24 - 3 = 16777213. All the time recorded in `ms`.
 
-Block Size        | Naïve Scan   | Efficient Scan | Thrust Scan| Radix Sort|CPU Scan|
----|---|---|---|---|---
-16 | 45.901855 | 89.639648 |2.094752|2448.440186|42.9234
-32 | 30.138912  | 51.030048 |2.29776|1298.191284|43.1142
-64 | 25.93968  | 27.795744 |2.011712|788.341675|42.6413
-128 | 25.812672 | 24.770847 |2.052608|743.634277|42.6398
-256 | 25.627424 | 27.607807 |2.223552|771.496643|41.6099
-512 | 25.609535 | 29.848961 |2.146816|803.836487|42.1115
-1024 | 26.082048 | 33.715874 |2.04576|851.824646|42.6002
+Block Size        | Naïve Scan   | Efficient Scan | Thrust Scan|CPU Scan|
+---|---|---|---|---
+16 | 45.901855 | 89.639648 |2.094752|42.9234
+32 | 30.138912  | 51.030048 |2.29776|43.1142
+64 | 25.93968  | 27.795744 |2.011712|42.6413
+128 | 25.812672 | 24.770847 |2.052608|42.6398
+256 | 25.627424 | 27.607807 |2.223552|41.6099
+512 | 25.609535 | 29.848961 |2.146816|42.1115
+1024 | 26.082048 | 33.715874 |2.04576|42.6002
 
 
 Now let me draw a graph to explicitly show my result :)  
@@ -78,7 +78,7 @@ So I choose my block size to be `128` in my code.
 I set block size = `128` in my code, and start to use array size as a parameter to change, in order to compare the performance between different GPU algorithms and CPU algorithm.
 Below is my chart based on my code:
  
-#####`Blocksize` = 128.   All the time recorded are in `ms`. Max Value for scan in the array is 50 (for this chart)
+#####`Blocksize` = 128.   All the time recorded in `ms`. Max Value for scan in the array is 50 (for this chart)
 Array Size | Naïve Scan | Efficient Scan | Thrust Scan|CPU Scan
 ---|---|---|---|---
 2^8 | 0.031904 | 0.11024 |0.021248|0
@@ -87,7 +87,7 @@ Array Size | Naïve Scan | Efficient Scan | Thrust Scan|CPU Scan
 2^20 | 1.297824 | 1.681472 |0.468608|1.5041 
 2^24 | 25.53968 | 27.6632 |2.403232|25.0931 
 
-#####`Blocksize` = 128.  All the time recorded are in `ms`. Max Value for sort in the array is 2^15 (for this chart)
+#####`Blocksize` = 128.  All the time recorded in `ms`. Max Value for sort in the array is 2^15 (for this chart)
 Array Size | Radix Sort | Std::sort  
 ---|---|---
 2^8 | 1.105344 | 0
@@ -106,8 +106,8 @@ From the test result, we could see that for small Array Size, GPU implementation
 Thrust Scan is very fast for large array size.    
 
 ####     
-But for Radix sort, I compare it with std::sort. We could see that when arraysize is small, std::sort is faster.    
-However, as array size grows, our radix sort on GPU is much faster than std::sort!  
+For Radix sort, I compare it with std::sort. We could see that when arraysize is small, std::sort is faster.    
+However, as array size grows, my radix sort on GPU is much faster than std::sort!  
 
 ###Answer to Questions
 
