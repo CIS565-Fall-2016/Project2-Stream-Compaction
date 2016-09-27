@@ -19,7 +19,7 @@ using namespace std::chrono;
 void runTimings() {
 	
 	high_resolution_clock::time_point start, end;
-	for (int i = 15; i <= 29; i+=2) {
+	for (int i = 15; i <= 27; i+=2) {
 		const int SIZE = 1 << i;
 		int *a = new int[SIZE];
 		int *b = new int[SIZE];
@@ -30,10 +30,11 @@ void runTimings() {
 		StreamCompaction::CPU::scan(SIZE, b, a);
 		end = high_resolution_clock::now();
 		duration<double> duration = end - start;
-		printf("%f\n", duration.count() * 1000.0f);
+		//printf("CPU scan: %f ms\n", duration.count() * 1000.0f);
 
 		StreamCompaction::Naive::scan(SIZE, b, a);
-
+		//StreamCompaction::Efficient::scan(SIZE, b, a);
+		//StreamCompaction::Thrust::scan(SIZE, b, a);
 
 		delete a;
 		delete b;

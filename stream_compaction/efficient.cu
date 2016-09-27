@@ -11,22 +11,18 @@ namespace Efficient {
 
 __global__ void kernUpSweep(int n, int offset, int *buf) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	int idx = (index + 1) * (offset * 2) - 1;
-	if (idx >= n) return;
-	//if ((index + 1) % (offset * 2) == 0) return;
-	
-	buf[idx] += buf[idx - offset];
-	//buf[index] += buf[index - offset];
+	if (index >= (n >> offset)) return;
+	int idx = index << offset;
+	buf[idx + (1 << offset) - 1] += buf[idx + (1 << (offset - 1)) - 1];
 }
 
 __global__ void kernDownSweep(int n, int offset, int *buf) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	int idx = (index + 1) * (offset * 2) - 1;
-	if (idx >= n) return;
-
-	int t = buf[idx - offset];
-	buf[idx - offset] = buf[idx];
-	buf[idx] += t;
+	if (index >= (n >> offset)) return;
+	int idx = index << offset;
+	int t = buf[idx + (1 << offset) - 1];
+	buf[idx + (1 << offset) - 1] += buf[idx + (1 << (offset - 1)) - 1];
+	buf[idx + (1 << (offset - 1)) - 1] = t;
 }
 
 
@@ -34,14 +30,12 @@ __global__ void kernDownSweep(int n, int offset, int *buf) {
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
 void scan(int n, int *odata, const int *idata) {
-	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
+	
 	int *buf;
 	int padded = 1 << ilog2ceil(n);
 
 	cudaMalloc((void**)&buf, padded * sizeof(int));
-	checkCUDAError("cudaMalloc buf failed!");
-
-	cudaMemcpy(buf, idata, padded * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(buf, idata, n * sizeof(int), cudaMemcpyHostToDevice);
 
 	cudaEvent_t start, end;
 	cudaEventCreate(&start);
@@ -49,13 +43,15 @@ void scan(int n, int *odata, const int *idata) {
 	cudaEventRecord(start);
 
 	int offset;
-	for (int i = 0; i <= ilog2(padded); i++) {
-		kernUpSweep << <fullBlocksPerGrid, blockSize >> >(padded, 1 << i, buf);
+	for (int i = 1; i <= ilog2(padded); i++) {
+		dim3 fullBlocksPerGrid(((padded >> i) + blockSize - 1) / blockSize);
+		kernUpSweep << <fullBlocksPerGrid, blockSize >> >(padded, i, buf);
 	}
 
 	cudaMemset(buf + padded - 1, 0, sizeof(int));
-	for (int i = ilog2(padded); i >= 0; i--) {
-		kernDownSweep << <fullBlocksPerGrid, blockSize >> >(padded, 1 << i, buf);
+	for (int i = ilog2(padded); i >= 1; i--) {
+		dim3 fullBlocksPerGrid(((padded >> i) + blockSize - 1) / blockSize);
+		kernDownSweep << <fullBlocksPerGrid, blockSize >> >(padded, i, buf);
 	}
 
 	cudaEventRecord(end);
@@ -64,7 +60,7 @@ void scan(int n, int *odata, const int *idata) {
 	cudaEventElapsedTime(&milliseconds, start, end);
 	printf("Work-Efficient scan: %f ms\n", milliseconds);
 
-	cudaMemcpy(odata, buf, padded * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(odata, buf, n * sizeof(int), cudaMemcpyDeviceToHost);
 
 	cudaFree(buf);
 }
