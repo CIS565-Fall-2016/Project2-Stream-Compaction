@@ -1,0 +1,87 @@
+
+**********************
+**  TEST PARAMETERS **
+**********************
+        Array size = 16777216
+        BlockSize  = 8
+
+
+****************
+** SCAN TESTS **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  42   0 ]
+==== cpu scan, power-of-two ====
+<==TIMER==> Scan::CPU =  39.092 ms <==TIMER==>
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 411089014 411089056 ]
+
+==== cpu scan, non-power-of-two ====
+<==TIMER==> Scan::CPU =  39.110 ms <==TIMER==>
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 411088950 411088974 ]
+    passed
+
+==== naive scan, power-of-two ====
+<==TIMER==> Scan::GPU::Naive =  1218.966 ms <==TIMER==>
+    passed
+
+==== naive scan, non-power-of-two ====
+<==TIMER==> Scan::GPU::Naive =  2150.047 ms <==TIMER==>
+    passed
+
+==== work-efficient scan, power-of-two ====
+<==TIMER==> Scan::GPU::Efficient =  125.194 ms <==TIMER==>
+    passed
+
+==== work-efficient scan, non-power-of-two ====
+<==TIMER==> Scan::GPU::Efficient =  125.813 ms <==TIMER==>
+    passed
+
+==== thrust scan, power-of-two ====
+<==TIMER==> Scan::Thrust =  12.158 ms <==TIMER==>
+    passed
+
+==== thrust scan, non-power-of-two ====
+<==TIMER==> Scan::Thrust =  9.077 ms <==TIMER==>
+    passed
+
+
+*****************************
+** STREAM COMPACTION TESTS **
+*****************************
+    [   2   3   2   1   3   1   1   1   2   0   1   0   2 ...   0   0 ]
+==== cpu compact without scan, power-of-two ====
+<==TIMER==> Compact::CPU::WithoutScan =  42.459 ms <==TIMER==>
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
+    passed
+
+==== cpu compact without scan, non-power-of-two ====
+<==TIMER==> Compact::CPU::WithoutScan =  42.907 ms <==TIMER==>
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
+    passed
+
+==== cpu compact with scan ====
+<==TIMER==> Compact::CPU::WithScan =  167.147 ms <==TIMER==>
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
+    passed
+
+==== work-efficient compact, power-of-two ====
+<==TIMER==> Compact::GPU::Efficient =  245.330 ms <==TIMER==>
+    passed
+
+==== work-efficient compact, non-power-of-two ====
+<==TIMER==> Compact::GPU::Efficient =  244.949 ms <==TIMER==>
+    passed
+
+
+*****************************
+****** RADIX SORT TESTS *****
+*****************************
+    [  38 7719 21238 2437 8855 11797 8365 32285 10450 30612 5853 28100 1142 ... 7792 2304 ]
+==== std::sort ====
+<==TIMER==> CPU::std::sort =  1083.177 ms <==TIMER==>
+    [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
+
+==== GPU::RadixSort ====
+<==TIMER==> GPU::Radix Sort =  9205.295 ms <==TIMER==>
+    passed
+
+Press any key to continue . . .
