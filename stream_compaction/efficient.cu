@@ -155,7 +155,7 @@ int compact(int n, int *odata, const int *idata) {
 	cudaMemcpy(odata, dev_odata, n * sizeof(int), cudaMemcpyDeviceToHost);
 	checkCUDAError("cudaMemcpy dev_odata to odata failed!");
 	
-	int cnt = scanResult[n-1];
+	int cnt = bools[n-1] ? scanResult[n-1] + 1 : scanResult[n-1];
 	
 	cudaFree(dev_bools);
 	cudaFree(dev_idata);
