@@ -34,30 +34,6 @@ namespace Efficient {
 		g_idata[bi] += t;
 	}
 
-	__global__ void kernMap(int n, int *idata, int *odata) {
-		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-
-		if (index < n) {
-			if (idata[index] != 0) {
-				odata[index] = 1;
-			}
-			else {
-				odata[index] = 0;
-			}
-		}
-	}
-
-	__global__ void kernScatter(int n, int *idata, int *odata, int *imap, int *iscan) {
-		int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-
-		if (index < n) {
-			if (imap[index] == 1) {
-				odata[iscan[index]] = idata[index];
-			}
-		}
-
-	}
-
 
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
@@ -137,16 +113,24 @@ int compact(int n, int *odata, const int *idata) {
 	cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 
 	// Map 1s and 0s
-	kernMap << < fullBlocksPerGrid, threadsPerBlock>>>(n, dev_in, dev_map);
+	StreamCompaction::Common::kernMapToBoolean<< < fullBlocksPerGrid, threadsPerBlock>>>(n, dev_map, dev_in);
 
 	// Scan the map
 	scan(n, dev_scan, dev_map);
 
 	// Scatter
-	kernScatter << <fullBlocksPerGrid, threadsPerBlock >> >(n, dev_in, dev_out, dev_map, dev_scan);
+	StreamCompaction::Common::kernScatter<< <fullBlocksPerGrid, threadsPerBlock >> >(n, dev_out, dev_in, dev_map, dev_scan);
+
+	// Copy scan data back to host
+	// This feels kind of hacky, but I don't know of a better way to acess device arrays from the host
+
+	cudaMemcpy(odata, dev_scan, sizeof(int) * n, cudaMemcpyDeviceToHost);
+	checkCUDAError("memcpy back failed!");
+
+	int ret = odata[n - 1];
 
 	// Copy data back to host
-	cudaMemcpy(odata, dev_map, sizeof(int) * n, cudaMemcpyDeviceToHost);
+	cudaMemcpy(odata, dev_out, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("memcpy back failed!");
 
 	cudaFree(dev_in);
@@ -154,7 +138,7 @@ int compact(int n, int *odata, const int *idata) {
 	cudaFree(dev_scan);
 	cudaFree(dev_map);
 
-    return -1;
+    return ret;
 }
 
 }
