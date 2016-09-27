@@ -3,7 +3,7 @@
 #include "common.h"
 #include "efficient.h"
 
-#define blockSize 4
+#define blockSize 128
 
 namespace StreamCompaction {
 namespace Efficient {
@@ -30,6 +30,10 @@ namespace Efficient {
 
 		int ai = pow_2_d_one * (index + 1) - pow_2_d - 1;
 		int bi = pow_2_d_one * (index + 1) - 1;
+
+		if (ai >= n || bi >= n) {
+			return;
+		}
 
 		float t = g_idata[ai];
 		g_idata[ai] = g_idata[bi];

@@ -3,7 +3,7 @@
 #include "common.h"
 #include "naive.h"
 
-#define blockSize 4
+#define blockSize 128
 
 namespace StreamCompaction {
 namespace Naive {
