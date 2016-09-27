@@ -70,14 +70,13 @@ void TestSortStable(int n, int *odata, const int *idata) {
 		time += elapsed_seconds.count() * 1000 / samp;
 	}
 	printf("    %f\n", time);
-
 }
 
 void TestSortUnstable(int n, int *odata, const int *idata) {
 
 	double time = 0;
 	int samp = 1000;
-
+	
 	for (int i = 0; i < samp; i++) {
 		memcpy(odata, idata, n*sizeof(int));
 

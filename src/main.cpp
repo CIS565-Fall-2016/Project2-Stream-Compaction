@@ -26,14 +26,15 @@ int main(int argc, char* argv[]) {
 	int a_sm[8], b_sm[8], c_sm[8];
 	genArray(8, a_sm, 1 << KEYSIZE);
 
+	genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
+
     // Scan tests
-#if 1
+#if 0
     printf("\n");
     printf("****************\n");
     printf("** SCAN TESTS **\n");
     printf("****************\n");
 
-    genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
     printArray(SIZE, a, true);
 
@@ -53,9 +54,6 @@ int main(int argc, char* argv[]) {
     StreamCompaction::Naive::scan(SIZE, c, a);
     printArray(SIZE, c, true);
 	printCmpResult(SIZE, b, c);
-	//printArray(8, &a[2046], true);
-	//printArray(8, &b[2046], true);
-	//printArray(8, &c[2046], true);
 
     zeroArray(SIZE, c);
     printDesc("naive scan, non-power-of-two");
@@ -161,7 +159,7 @@ int main(int argc, char* argv[]) {
 	printCmpResult(7, b_sm, c_sm);
 
 #endif
-#if 1
+#if 0
 	int successes = 0;
 	int tests = 1000;
 	for (int n = 0; n < tests; n++){
@@ -179,7 +177,7 @@ int main(int argc, char* argv[]) {
 
 #endif
 
-#if 0
+#if 1
 	printf("\n");
 	printf("**********************\n");
 	printf("**   TIMING TESTS   **\n");

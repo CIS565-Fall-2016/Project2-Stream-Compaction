@@ -9,40 +9,47 @@ CUDA Stream Compaction
 ## Contents
 1. [Introduction](#intro)
 2. [Algorithms](#part1)
-4. [Performance Analysis](#part3)
-5. [Development Process](#part4)
-6. [Build Instructions](#appendix)
+3. [Verification and Performance Analysis](#part2)
+4. [Development Process](#part3)
+5. [Build Instructions](#appendix)
 
 
 <a name="intro"/>
 ## Introduction: Parallel Algorithms
-This project explores introductory concepts of GPU paralization methods for simulating flocking behaviors
-of simple particles known as boids. Boid motion is based off of three rules calculated from nearby particles:
-
-1. *Cohesion* - Boids will move towards the center of mass of nearby boids
-2. *Separation* - Boids will try to maintain a minimum distance from one another to avoid collision
-3. *Alignment* - Boids in a group will try to align vector headings with those in the group
-
-These simple rules with the appropriate tuning parameter set can lead to a surprisingly complex emergent 
-behavior very similar to how schools of fish or flocks of birds move in nature, as seen below.
+The goal of this project was to implement several versions of basic GPU algorithms to become familiar with
+parallel programming ideas, as well as compare the performance overhead of memory management on GPU vs 
+traditional CPU implementations.
 
 
 <a name="part1"/>
 ## Section 1: Scanning, Stream Compaction, and Sorting
-The boids flocking simulation is naively calculated by comparing euclidean distance from the current
-boid to every other boid in the simulation, and checking if the distance is within the desired range for
-the rule being calculated (we use a smaller distance metric for calculating separation, otherwise the boids
-never exhibit flocking behavior).
+Three basic algorithms were implemented in this project
 
-While computationally this results in the correct behavior, it can be wasteful in the number of comparison operations
-since we only apply position and velocity updates if a boid has at least one other particle close to it. For smaller
-particle counts, this method can achieve 60 fps on a cheap modern process, but scales very poorly as the number of 
-comparisons increases. Detailed analysis is available in [Section 3: Performance Analysis](#part-3).
+1. Scan - consective sum of all elements in the array prior to the current index.
+2. Compaction - removal of all elements in an array that meet some boolean criteria.
+3. Sort - arrange all elements in an array from low to high using a radix sort implementation.
+
+Two implementations of GPU based scan were implemented: a naive version where elements were added in pairs until all
+sums were computed, and a work efficient version where the total number of operators is reduced at the cost of performing
+two separate stages of analysis. In the implemented version, the work-efficient scan performs slightly worse than
+the naive approach from the extra down-sweep phase, however, there is room for improvement with smarter array
+indexing to reduce the total number of GPU kernel calls. Both algorithms run in O(log(N)) which is theoretically
+faster than CPU implementations at O(N), but performance analysis shows that this is only significant for large
+arrays due to array access overhead on the GPU level.
+
+Stream compaction shows similar trends in computation complexity in GPU vs. CPU performance, but catches up to CPU 
+faster than the scan implementations since GPU accelerated reording of arrays is significantly faster than CPU 
+implementations even for relatively small arrays.
+
+The radix sort agorithm iterates over each bit in the input value from least significant to most significant, reordering
+the array at each step. Again since the reording step is highly efficient on a GPU, the major overhead is due to
+memory access time. 
+
 
 <a name="part2"/>
-## Section 2: Performance Analysis
+## Section 2: Verification and Performance Analysis
+*Code Correctness for Scan, Compact, and Sort Implementations:*
 
-Code Correctness for Scan, Compact, and Sort Implementations:
 > ****************
 > ** SCAN TESTS **
 > ****************
@@ -119,20 +126,47 @@ Code Correctness for Scan, Compact, and Sort Implementations:
 > Sort passed 1000/1000 randomly generated verification tests.
 
 
+### Benchmarks
+*All performance measurements were averaged over 1000 samples on a single dataset*
+![Scan Performance](imgs/scan_benchmarks.PNG)
+![Compact Performance](imgs/compact_benchmarks.PNG)
+![Scan Performance](imgs/sort_benchmarks.PNG)
 
+We can quickly see from the above charts that run time for the various GPU implementations for scan, compact, and stort all 
+have logarithmic growth, while CPU implementations observe polynomial growth (for scan and compaction, CPU growth is linear). 
+As a result, for smaller arrays the overhead of memory access and array manipulation results in significantly worse execution 
+time, and it isn't until arrays of about ~50,000 elements that performance is comparable. Unfortunately due to implementation
+choices, the GPU implemenations crash for arrays larger than 2<sup>16</sup>, so performance analysis could not be run for these
+large arrays, and estimates must be extrapolated from the current dataset.
+
+![Scan Kernal Calls](imgs/scan_performance.PNG)
+The above figure shows the room for improvement of the efficient scan quite easily. Compared to the naive scan steps,
+the up-sweep and down-sweep of the work-efficient implementation do not utilize nearly as much of the GPU per call as
+the naive scan. Saturating the GPU here could yeild significant improvements by reducing the total number of kernal
+calls required.
+
+
+For the thrust library benchmarks, it is very interesting to see what appears to be standard linear growth due to the
+performance loss in large arrays. Preliminary research on the thrust sort implementation implies that for basic sorting
+of primitives like integers used in this example, it should also be using a radix sort implemented on the GPU. The charts
+suggest, however, that thrust either not properly parallelizing the data, or it is running on the CPU. Documentation states
+that method overloads that accept arrays located on the host will automatically handle data transfer to and from the GPU,
+but that may not be the case. Additional work to instantiate the data on the GPU prior to the sort results in an Abort()
+call from the thrust library, so additional investigation would be merited.
 
 <a name="part3"/>
 ## Section 3: Development Process
 Development was fairly straight forward algorithmic implementation. Future work could be done in the work effecient 
-implementations to better handle launching kernal functions at the high depth levels when only a couple of sums are
-being calculated for the whole array. This should 
+scan implementation to better handle launching kernal functions at the high depth levels when only a couple of sums are
+being calculated for the whole array. This should improve peformance to be faster than the naive approach, but I
+exepect it to still be outperformed by the thrust implementation as well as the CPU version for arrays with fewer than
+30,000 elements.
 
 It was worth noting there was a bug in using std::pow for calculating the array index in each kernal invocation. For some
-unknown reason, it consisantly produced erronius values at 2^11, or 2048. This is odd since variables were being cast to 
+unknown reason, it consisantly produced erronius values at 2<sup>11</sup>, or 2048. This is odd since variables were being cast to 
 double precision before the computation, but the reverse cast was incorrect. This bug may be compiler specific as running
 the index calculation on a separate machine result in accurate indexing in this range. Simply changing the code to use
 bitshift operations cleared the error entirely. 
-
 
 
 <a name="appendix"/>
