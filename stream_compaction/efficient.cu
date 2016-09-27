@@ -37,28 +37,39 @@ void scan(int n, int *odata, const int *idata) {
 	cudaMalloc((void**)&buf, padded * sizeof(int));
 	cudaMemcpy(buf, idata, n * sizeof(int), cudaMemcpyHostToDevice);
 
+	int offset;
+	int fullBlocksPerGrid = 0;
+	float total = 0;
+	float milliseconds = 0;
+
 	cudaEvent_t start, end;
 	cudaEventCreate(&start);
 	cudaEventCreate(&end);
 	cudaEventRecord(start);
-
-	int offset;
 	for (int i = 1; i <= ilog2(padded); i++) {
-		dim3 fullBlocksPerGrid(((padded >> i) + blockSize - 1) / blockSize);
+		fullBlocksPerGrid = ((padded >> i) + blockSize - 1) / blockSize;
 		kernUpSweep << <fullBlocksPerGrid, blockSize >> >(padded, i, buf);
 	}
+	cudaEventRecord(end);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, start, end);
+	total += milliseconds;
 
 	cudaMemset(buf + padded - 1, 0, sizeof(int));
+	
+	cudaEventCreate(&start);
+	cudaEventCreate(&end);
+	cudaEventRecord(start);
 	for (int i = ilog2(padded); i >= 1; i--) {
-		dim3 fullBlocksPerGrid(((padded >> i) + blockSize - 1) / blockSize);
+		fullBlocksPerGrid = ((padded >> i) + blockSize - 1) / blockSize;
 		kernDownSweep << <fullBlocksPerGrid, blockSize >> >(padded, i, buf);
 	}
 
 	cudaEventRecord(end);
 	cudaEventSynchronize(end);
-	float milliseconds = 0;
 	cudaEventElapsedTime(&milliseconds, start, end);
-	printf("Work-Efficient scan: %f ms\n", milliseconds);
+	total += milliseconds;
+	printf("Work-Efficient scan: %f ms\n", total);
 
 	cudaMemcpy(odata, buf, n * sizeof(int), cudaMemcpyDeviceToHost);
 
