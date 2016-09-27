@@ -1,5 +1,6 @@
 #include <cstdio>
 #include "cpu.h"
+#include "timer.h"
 
 namespace StreamCompaction {
 namespace CPU {
@@ -15,6 +16,7 @@ void scan(int n, int *odata, const int *idata) {
 	for (int i = 1; i < n; i++) {
 		odata[i] = odata[i - 1] + idata[i - 1];
 	}
+
 }
 
 /**
@@ -39,11 +41,16 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  */
 int compactWithScan(int n, int *odata, const int *idata) {
 	int *scanResults = new int[n];
-	
+
+	// mapping boolean function
 	for (int i = 0; i < n; i++) {
 		odata[i] = idata[i] != 0;
 	}
+
+	//scan
 	scan(n, scanResults, odata);
+	
+	//compaction
 	int k = 0;
 	for (int i = 0; i < n; i++) {
 		if (idata[i]) {
