@@ -15,7 +15,7 @@
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 8;
+    const int SIZE = 1 << 16;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
@@ -126,10 +126,28 @@ int main(int argc, char* argv[]) {
 	printf("*****************************\n");
 	printf("***** RADIX SORT TESTS ******\n");
 	printf("*****************************\n");
-
+	
 	int t1[10] = { 4, 1, 6, 3, 8, 9, 2, 0, 5, 7 };
 	int t2[10];
-	printDesc("Radix Sort");
-	StreamCompaction::radixSort::sort(10, t2, t1);	
+	int t3[10];
+	printDesc("thrust sort small array");
+	StreamCompaction::Thrust::sort(10, t2, t1);
 	printArray(10, t2, true);
+
+	printDesc("Radix Sort small array");
+	StreamCompaction::radixSort::sort(10, t3, t1);	
+	printArray(10, t3, true);
+	printCmpResult(10, t2, t3);
+	
+	genArray(SIZE, a, 200);
+	zeroArray(SIZE, c);
+	printDesc("thrust sort large array");
+	StreamCompaction::Thrust::sort(SIZE, c, a);
+	printArray(SIZE, c, true);
+
+	zeroArray(SIZE, b);
+	printDesc("Radix Sort large array");
+	StreamCompaction::radixSort::sort(SIZE, b, a);
+	printArray(SIZE, b, true);
+	printCmpResult(10, c, b);
 }
