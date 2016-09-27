@@ -43,6 +43,11 @@ void scan(int n, int *odata, const int *idata) {
 
 	cudaMemcpy(buf, idata, padded * sizeof(int), cudaMemcpyHostToDevice);
 
+	cudaEvent_t start, end;
+	cudaEventCreate(&start);
+	cudaEventCreate(&end);
+	cudaEventRecord(start);
+
 	int offset;
 	for (int i = 0; i <= ilog2(padded); i++) {
 		kernUpSweep << <fullBlocksPerGrid, blockSize >> >(padded, 1 << i, buf);
@@ -52,6 +57,12 @@ void scan(int n, int *odata, const int *idata) {
 	for (int i = ilog2(padded); i >= 0; i--) {
 		kernDownSweep << <fullBlocksPerGrid, blockSize >> >(padded, 1 << i, buf);
 	}
+
+	cudaEventRecord(end);
+	cudaEventSynchronize(end);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, end);
+	printf("Work-Efficient scan: %f ms\n", milliseconds);
 
 	cudaMemcpy(odata, buf, padded * sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -77,12 +88,37 @@ int compact(int n, int *odata, const int *idata) {
 	cudaMalloc((void**)&out, n * sizeof(int));
 
 	cudaMemcpy(in, idata, n * sizeof(int), cudaMemcpyHostToDevice);
+
+	float total = 0;
+	float milliseconds = 0;
+	cudaEvent_t start, end;
+	cudaEventCreate(&start);
+	cudaEventCreate(&end);
+	cudaEventRecord(start);
+
 	StreamCompaction::Common::kernMapToBoolean << <fullBlocksPerGrid, blockSize >> >(n, bools, in);
+	
+	cudaEventRecord(end);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, start, end);
+	total += milliseconds;
+	
 	cudaMemcpy(odata, bools, n * sizeof(int), cudaMemcpyDeviceToHost);
 	scan(n, odata, odata);
 	int lenCompacted = odata[n - 1];
 	cudaMemcpy(indices, odata, n * sizeof(int), cudaMemcpyHostToDevice);
+
+	cudaEventCreate(&start);
+	cudaEventCreate(&end);
+	cudaEventRecord(start);
+
 	StreamCompaction::Common::kernScatter << <fullBlocksPerGrid, blockSize >> >(n, out, in, bools, indices);
+
+	cudaEventRecord(end);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, start, end);
+	total += milliseconds;
+	printf("Work-Efficient Compact: %f ms\n", total);
 	cudaMemcpy(odata, out, n * sizeof(int), cudaMemcpyDeviceToHost);
 
 	cudaFree(bools);

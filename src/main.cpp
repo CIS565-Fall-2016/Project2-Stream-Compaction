@@ -14,19 +14,31 @@
 #include "testing_helpers.hpp"
 #include <chrono>
 using namespace std::chrono;
-#define RUNS 10
+#define RUNS 1
 
 void runTimings() {
-	const int SIZE = 1 << 25;
-	int *a = new int[SIZE];
-	int *b = new int[SIZE];
+	
 	high_resolution_clock::time_point start, end;
-	for (int i = 0; i < RUNS; i++) {
+	for (int i = 15; i <= 29; i+=2) {
+		const int SIZE = 1 << i;
+		int *a = new int[SIZE];
+		int *b = new int[SIZE];
+		zeroArray(SIZE, a);
+		zeroArray(SIZE, b);
+
 		start = high_resolution_clock::now();
 		StreamCompaction::CPU::scan(SIZE, b, a);
 		end = high_resolution_clock::now();
 		duration<double> duration = end - start;
 		printf("%f\n", duration.count() * 1000.0f);
+
+		StreamCompaction::Naive::scan(SIZE, b, a);
+
+
+		delete a;
+		delete b;
+
+
 	}
 }
 

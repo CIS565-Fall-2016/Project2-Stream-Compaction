@@ -12,14 +12,14 @@ namespace Naive {
 // TODO: __global__
 
 
-__global__ void kernelScan(int offset, int n, int *swapA, int *swapB) {
+__global__ void kernelScan(int offset, int n, int *dev_odata, int *dev_idata) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= n) return;
 	if (index < offset) {
-		swapB[index] = swapA[index];
+		dev_idata[index] = dev_odata[index];
 	}
 	else {
-		swapB[index] = swapA[index - offset] + swapA[index];
+		dev_idata[index] = dev_odata[index - offset] + dev_odata[index];
 	}
 }
 /**
@@ -28,25 +28,35 @@ __global__ void kernelScan(int offset, int n, int *swapA, int *swapB) {
 void scan(int n, int *odata, const int *idata) {
 	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 	int offset;
-	int *swapA, *swapB;
-	cudaMalloc((void**)&swapA, n * sizeof(int));
-	checkCUDAError("cudaMalloc swapA failed!");
-	cudaMalloc((void**)&swapB, n * sizeof(int));
-	checkCUDAError("cudaMalloc swapB failed!");
+	int *dev_odata, *dev_idata;
+	cudaMalloc((void**)&dev_odata, n * sizeof(int));
+	cudaMalloc((void**)&dev_idata, n * sizeof(int));
 
-	cudaMemcpy(swapA, idata, n * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_odata, idata, n * sizeof(int), cudaMemcpyHostToDevice);
 	
+	cudaEvent_t start, end;
+	cudaEventCreate(&start);
+	cudaEventCreate(&end);
+	cudaEventRecord(start);
+
 	int log2n = ilog2ceil(n);
 	for (int i = 1; i <= log2n; i++) {
 		offset = 1 << (i - 1);
-		kernelScan << <fullBlocksPerGrid, blockSize>> >(offset, n, swapA, swapB);
-		std::swap(swapA, swapB);
+		kernelScan << <fullBlocksPerGrid, blockSize>> >(offset, n, dev_odata, dev_idata);
+		std::swap(dev_odata, dev_idata);
 	}
-	cudaMemcpy(odata + 1, swapA, (n - 1) * sizeof(int), cudaMemcpyDeviceToHost);
+
+	cudaEventRecord(end);
+	cudaEventSynchronize(end);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, end);
+	printf("Naive scan: %f ms\n", milliseconds);
+
+	cudaMemcpy(odata + 1, dev_odata, (n - 1) * sizeof(int), cudaMemcpyDeviceToHost);
 	odata[0] = 0;
 
-	cudaFree(swapA);
-	cudaFree(swapB);
+	cudaFree(dev_odata);
+	cudaFree(dev_idata);
 }
 
 }

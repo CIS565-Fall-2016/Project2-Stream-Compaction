@@ -1,6 +1,5 @@
 #include <cstdio>
 #include "cpu.h"
-#include "timer.h"
 
 namespace StreamCompaction {
 namespace CPU {
