@@ -33,3 +33,18 @@ namespace Common {
             const int *idata, const int *bools, const int *indices);
 }
 }
+
+#define START_CUDA_TIMER() \
+  cudaEvent_t start, stop; \
+  cudaEventCreate(&start); \
+  cudaEventCreate(&stop); \
+  cudaEventRecord(start);
+
+#define STOP_CUDA_TIMER() \
+  cudaEventRecord(stop); \
+  cudaEventSynchronize(stop); \
+  float milliseconds = 0; \
+  cudaEventElapsedTime(&milliseconds, start, stop); \
+  cudaEventDestroy(start); \
+  cudaEventDestroy(stop); \
+  printf("Elapsed: %fms\n", milliseconds);
