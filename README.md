@@ -73,9 +73,12 @@ CUDA Stream Compaction
     * Excessive global memory access
 	* Too many kernel calls (each level of up/down-sweep require one kernel call)
   * Work-efficient scan
-    * Bank conflicts at the beginning but have been resolved now
-	* Algorithm not good enough (too much computation) when compared to thrust's implementation 
-	bacause my scan kernel, on average, takes twice as much time to execute as thrust's kernel
+    * Too many threads and in efficient memory I/O
+      * Threads exceed the number of cores on GPU will queue up. Too many threads also increases
+      management and scheduling overhead
+      * Each thread only read in two 4-byte data and the two 4-byte are read in using two separate
+      instructions. GPU, due to its SIMD nature, is better in handling vector I/O. That is why
+      batch scan loads and stores a vec4 in each thread
     * Too many kernel calls when array size is large
 	* In my implementation, if array size exceed 2 times block size, two more calls are
 	required: one scan the sub-sums and another one scatter scanned sub-sums to corresponding
@@ -85,10 +88,13 @@ CUDA Stream Compaction
 	* Thrust's scan implementation stablizes at 3 kernel calls despite of the size of data.
 	Thus even though my implementation is comparable or even slightly faster than thrust scan,
 	it becomes much slower when array size becomes really large (2^25 for example)
+    * Bank conflicts at the beginning but have been resolved now
+	* Algorithm not good enough (too much computation) when compared to thrust's implementation 
+	bacause my scan kernel, on average, takes twice as much time to execute as thrust's kernel
   * Thrust scan
     * Additional cudaMalloc and cudaFree calls
 	* Judging from the performance analysis timeline, thrust is doing cudaMalloc and cudaFree
-	even if I pass in thrust::device_ptr<T>. This causes thrust scan become slower than my
+	even if I pass in thrust::device_ptr. This causes thrust scan become slower than my
 	work-efficient scan when array size is small
   * Work-effcient stream compaction
     * My implementation is basically a wrapper on work-efficient scan plus two light-weight
