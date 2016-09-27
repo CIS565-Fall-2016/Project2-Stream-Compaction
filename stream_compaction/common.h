@@ -3,9 +3,13 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <chrono>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #define FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define checkCUDAError(msg) checkCUDAErrorFn(msg, FILENAME, __LINE__)
+#define blockSize 128
 
 /**
  * Check for CUDA errors; print and exit if there was a problem.
@@ -31,5 +35,6 @@ namespace Common {
 
     __global__ void kernScatter(int n, int *odata,
             const int *idata, const int *bools, const int *indices);
+
 }
 }
