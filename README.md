@@ -182,7 +182,7 @@ So my guess is right. :)
 More my test result are in the `result_showcase` folder.
 Here I show one of them here:
 ####Array Size = 1 << 24. Block Size is 128.
-
+```
 ****************
 ** SCAN TESTS **
 ****************
@@ -265,4 +265,4 @@ GPU Efficient Compact time is 27.158209 ms
 ==== work-efficient compact, non-power-of-two ====
 GPU Efficient Compact time is 27.228865 ms
     passed
-
+```
