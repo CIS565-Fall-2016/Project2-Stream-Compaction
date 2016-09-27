@@ -85,6 +85,8 @@ assignments, as well.
 
 When block size is smaller than 16, my application suffers from performance drop, which is recorded in `test_results` folder. I decided to just use `cudaOccupancyMaxPotentialBlockSize` for each device functions, which is almost 1024 on my computer.
 
+![chart_blocksize](/screenshots/chart_blocksize.png)
+
 | Block size | Naïve Scan(ms) | Work-efficient Scan (ms) | Reference CPU Scan (ms) |
 |------------|----------------|--------------------------|-------------------------|
 | 4          | 755.433        | 76.5717                  | 134.408                 |
@@ -103,6 +105,8 @@ All the test are done with block size of 1024. The possible max value for sortin
 
 __Scan__ : this work-efficient scan implementation is faster than cpu scan on large input but slower than Thrust's
 
+![chart_scan](/screenshots/chart_scan.png)
+
 | Input array length power of 2 | CPU Scan (ms) | Naïve Scan (ms) | Work-efficient scan (ms) | Thrust scan (ms) (CUDA event) |
 |-------------------------------|---------------|-----------------|--------------------------|-------------------------------|
 | 12                            | 0             | 0.047872        | 0.110784                 | 0.028192                      |
@@ -112,6 +116,8 @@ __Scan__ : this work-efficient scan implementation is faster than cpu scan on la
 | 26                            | 159.925       | 133.61          | 44.4511                  | 7.7283                        |
 
 __Compaction__ : this work-efficient compaction implementation is faster than cpu's
+
+![chart_compact](/screenshots/chart_compact.png)
 
 | Input array length power of 2 | CPU compact (ms) | CPU scan compact  (ms) | Work-efficient compact (ms) |
 |-------------------------------|------------------|------------------------|-----------------------------|
@@ -123,7 +129,9 @@ __Compaction__ : this work-efficient compaction implementation is faster than cp
 
 __Sort__ : radix sort on GPU is faster than std::sort
 
-| Input array length power of 2 | std::sort (ms) | Radix sort (ms) | 
+![chart_sort](/screenshots/chart_sort.png)
+
+| Input array length power of 2 | std::sort (ms) | Radix sort (ms) |
 |-------------------------------|----------------|-----------------|
 | 12                            | 0              | 0.883328        |
 | 16                            | 0              | 1.44288         |
@@ -173,31 +181,31 @@ Array size (non-power of two): 33554429
 ==== cpu scan, non-power-of-two ====
     [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
    elapsed time: 87ms    (std::chrono Measured)
-    passed 
+    passed
 ==== naive scan, power-of-two ====
     [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752752 821752789 ]
    elapsed time: 38.1036ms    (CUDA Measured)
-    passed 
+    passed
 ==== naive scan, non-power-of-two ====
     [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
    elapsed time: 38.112ms    (CUDA Measured)
-    passed 
+    passed
 ==== work-efficient scan, power-of-two ====
     [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752752 821752789 ]
    elapsed time: 15.0276ms    (CUDA Measured)
-    passed 
+    passed
 ==== work-efficient scan, non-power-of-two ====
     [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
    elapsed time: 15.0576ms    (CUDA Measured)
-    passed 
+    passed
 ==== thrust scan, power-of-two ====
     [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752752 821752789 ]
    elapsed time: 8.90237ms    (CUDA Measured)
-    passed 
+    passed
 ==== thrust scan, non-power-of-two ====
     [   0  13  42  89  96  98 126 170 219 254 300 302 351 ... 821752661 821752701 ]
    elapsed time: 2.74368ms    (CUDA Measured)
-    passed 
+    passed
 
 *****************************
 ** STREAM COMPACTION TESTS **
@@ -208,23 +216,23 @@ Array size (non-power of two): 33554429
 ==== cpu compact without scan, power-of-two ====
     [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   2   3 ]
    elapsed time: 83ms    (std::chrono Measured)
-    passed 
+    passed
 ==== cpu compact without scan, non-power-of-two ====
     [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   3   2 ]
    elapsed time: 84ms    (std::chrono Measured)
-    passed 
+    passed
 ==== cpu compact with scan ====
     [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   2   3 ]
    elapsed time: 237ms    (std::chrono Measured)
-    passed 
+    passed
 ==== work-efficient compact, power-of-two ====
     [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   2   3 ]
    elapsed time: 18.2364ms    (CUDA Measured)
-    passed 
+    passed
 ==== work-efficient compact, non-power-of-two ====
     [   1   1   3   1   1   3   2   3   2   1   3   2   2 ...   3   2 ]
    elapsed time: 18.2344ms    (CUDA Measured)
-    passed 
+    passed
 
 *****************************
 ** RADIX SORT TESTS **
@@ -239,18 +247,18 @@ Max value: 1000000000
 ==== thrust::sort (which calls Thrust's radix sort), power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
    elapsed time: 20.6702ms    (CUDA Measured)
-    passed 
+    passed
 ==== radix sort, power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
    elapsed time: 628.72ms    (CUDA Measured)
-    passed 
+    passed
 ==== std::sort, non power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
    elapsed time: 2153ms    (std::chrono Measured)
 ==== radix sort, non power-of-two ====
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 32767 32767 ]
    elapsed time: 617.616ms    (CUDA Measured)
-    passed 
+    passed
 ```
 
 
@@ -261,6 +269,8 @@ Max value: 1000000000
 For work-efficient scan, my original implementation was using the same of amount of threads for every up sweep and down sweeps. Then I optimized it by using only necessary amount of threads for each iteration.
 
 The performance for scanning an array of length 67108861 using work-efficient approach boosted __from ~120.5ms to ~44.4ms__, which is __270% speed__ of my original approach. You can see the data in the files under __test_results/__ folder
+
+![chart_scan_optimization](/screenshots/chart_scan_optimization.png)
 
 Original implementation (in which `(index + 1) % (add_distance * 2) == 0` is `false` at many threads so __these threads were wasted__):
 
