@@ -17,7 +17,7 @@ for stream compaction.
 There are 2 types of arrays to consider.  Powers of 2 and non
 powers of 2 which are part of the test.
 
-  * ## Scan
+  * Scan
 * The first method used is on the CPU where all elements are
   added using a for loop.  This works very well on small arrays.
 
@@ -37,7 +37,7 @@ powers of 2 which are part of the test.
 * Thrust scan uses CUDA's thrust exclusive function which is 
   built in the CUDA library.
 
-  * ## Stream Compaction
+  * Stream Compaction
 * The first implementation is on the CPU where a for loop looks
   for values greater than 0 and adds them to the new array while
   incrementing the count when a non zero value is found.
@@ -52,10 +52,10 @@ powers of 2 which are part of the test.
   present wich will result in a compact array with no zeros.
 
 
-  * ## Thrust 
+  * Thrust 
 * The implementation is mentionned in the Scan section.
 
-  * ## Radix sort
+  * Radix sort
 * There are 2 versions of the Radix sort.  This first one runs
   on the CPU using a CPU version on scan.
 
@@ -68,7 +68,7 @@ powers of 2 which are part of the test.
   There are multiple scan functions that can be used, a few are
   benchmarked.
 
-  * ## Benchmarks
+  * Benchmarks
 * Running benhmarks on a range of 256 to 65536 with a power of 4
   increment gave the following results:
 
