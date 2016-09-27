@@ -1,5 +1,6 @@
 #include <cstdio>
 #include "cpu.h"
+#include <cstring>
 
 namespace StreamCompaction {
 namespace CPU {
@@ -9,7 +10,10 @@ namespace CPU {
  */
 void scan(int n, int *odata, const int *idata) {
     // TODO
-    printf("TODO\n");
+    odata[0] = 0;
+    for (int i = 1; i < n; ++i) {
+      odata[i] = odata[i - 1] + idata[i - 1];
+    }
 }
 
 /**
@@ -19,7 +23,13 @@ void scan(int n, int *odata, const int *idata) {
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
     // TODO
-    return -1;
+  int oIndex = 0;
+  for (int iIndex = 0; iIndex < n; ++iIndex) {
+    if (idata[iIndex] != 0) {
+      odata[oIndex++] = idata[iIndex];
+    }
+  }
+  return oIndex;
 }
 
 /**
@@ -29,7 +39,27 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  */
 int compactWithScan(int n, int *odata, const int *idata) {
     // TODO
-    return -1;
+    memset(odata, 0, n * sizeof(int));
+
+	for (int i = 0; i < n; ++i) {
+      if (idata[i] != 0) {
+        odata[i] = 1;
+      }
+    }
+
+	int* scanResult = new int[n];
+    scan(n, scanResult, odata);
+
+    int remainingNumberOfElements = 0;
+    for (int i = 0; i < n; ++i) {
+      if (odata[i] == 1) {
+        odata[scanResult[i]] = idata[i];
+        remainingNumberOfElements = scanResult[i] + 1;
+      }
+    }
+
+    delete[] scanResult;
+    return remainingNumberOfElements;
 }
 
 }

@@ -14,16 +14,40 @@ void checkCUDAErrorFn(const char *msg, const char *file, int line) {
     exit(EXIT_FAILURE);
 }
 
-
 namespace StreamCompaction {
 namespace Common {
+
+  /**
+   * Convert an inclusice scan result to an exclusive scan result
+   *
+   */
+__global__ void inclusiveToExclusiveScanResult(int n, int* odata, const int* idata) {
+  int tid = threadIdx.x + (blockIdx.x * blockDim.x);
+  if (tid >= n) {
+    return;
+  }
+
+  if (tid == 0) {
+    odata[0] = 0;
+    return;
+  }
+
+  odata[tid] = idata[tid - 1];
+}
+
+
 
 /**
  * Maps an array to an array of 0s and 1s for stream compaction. Elements
  * which map to 0 will be removed, and elements which map to 1 will be kept.
  */
 __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
-    // TODO
+  int tid = threadIdx.x + blockDim.x * blockIdx.x;
+  if (tid >= n) {
+    return;
+  }
+
+  bools[tid] = (bool)idata[tid];
 }
 
 /**
@@ -33,6 +57,14 @@ __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
 __global__ void kernScatter(int n, int *odata,
         const int *idata, const int *bools, const int *indices) {
     // TODO
+  int tid = threadIdx.x + blockDim.x * blockIdx.x;
+  if (tid >= n) {
+    return;
+  }
+
+  if (bools[tid] == 1) {
+    odata[indices[tid]] = idata[tid];
+  }
 }
 
 }
