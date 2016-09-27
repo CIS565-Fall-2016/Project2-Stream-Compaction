@@ -126,9 +126,13 @@ int main(int argc, char* argv[]) {
     printf("*****************************\n");
     printf("** RADIX SORT TESTS **\n");
     printf("*****************************\n");
+    genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
+    a[SIZE - 1] = 0;
+    printArray(SIZE, a, true);
 	zeroArray(SIZE, b);
     printDesc("RADIX SORT power-of-two");
 	int msb=31;
-    StreamCompaction::RadixSort::sort(SIZE, b, a, msb);
+	printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
+    StreamCompaction::RadixSort::sort(SIZE, b, a, msb); 
     printArray(SIZE, b, true);
 }
