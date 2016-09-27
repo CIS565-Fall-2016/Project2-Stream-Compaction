@@ -13,7 +13,7 @@ namespace StreamCompaction {
 			int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 			if (index >= n) return;
 
-			if ((index / float(d) - index / d) > 0)  return;
+			if ((index % d) > 0)  return;
 			data[index + d - 1] += data[index + d / 2 - 1];
 		}
 
@@ -21,7 +21,7 @@ namespace StreamCompaction {
 			int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 			if (index >= n) return;
 
-			if ((index / float(d) - index / d) > 0)  return;
+			if ((index % d) > 0)  return;
 			int t = data[index + d / 2 - 1];
 			data[index + d / 2 - 1] = data[index + d - 1];
 			data[index + d - 1] += t;
