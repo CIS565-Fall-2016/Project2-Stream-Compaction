@@ -17,49 +17,49 @@ for stream compaction.
 There are 2 types of arrays to consider.  Powers of 2 and non
 powers of 2 which are part of the test.
 
-  * Scan
-* The first method used is on the CPU where all elements are
+* Scan
+  * The first method used is on the CPU where all elements are
   added using a for loop.  This works very well on small arrays.
 
-* The second method consists of using the GPU to compute the
+  * The second method consists of using the GPU to compute the
   scan result.  This is a naive implementation where the first
   iteration copies elements left to right (exclusive), then 
   2^(i+1) for a depth of log2(n).  Each depth skips 2^(d-1).
   This is faster than the CPU version for large arrays.
 
-* The third method uses a double sweep.  An upsweep, followed by
+  * The third method uses a double sweep.  An upsweep, followed by
   a downsweep using a balanced tree form.  Each sweeps takes 
   log2(n-1) iterations but the calls on the GPU are only taking
   place on multiples of 2^(d+1).  This should be fast because
   there are only O(n) adds for the up sweep and O(n) adds and
   O(n) swaps.
 
-* Thrust scan uses CUDA's thrust exclusive function which is 
+  * Thrust scan uses CUDA's thrust exclusive function which is 
   built in the CUDA library.
 
-  * Stream Compaction
-* The first implementation is on the CPU where a for loop looks
+* Stream Compaction
+  * The first implementation is on the CPU where a for loop looks
   for values greater than 0 and adds them to the new array while
   incrementing the count when a non zero value is found.
 
-* The second implementation uses the CPU but also uses the scan
+  * The second implementation uses the CPU but also uses the scan
   function to look up indices.
 
-* The third implementation uses the GPU to generate a [0 1] 
+  * The third implementation uses the GPU to generate a [0 1] 
   mapped array which is then run into the scan GPU function
   and used as an index lookup for placing the elements.
   After the scan function all non zero elements will be 
   present wich will result in a compact array with no zeros.
 
 
-  * Thrust 
-* The implementation is mentionned in the Scan section.
+* Thrust 
+  * The implementation is mentionned in the Scan section.
 
-  * Radix sort
-* There are 2 versions of the Radix sort.  This first one runs
+* Radix sort
+  * There are 2 versions of the Radix sort.  This first one runs
   on the CPU using a CPU version on scan.
 
-* The second version uses the GPU to run the scan.  It also uses
+  * The second version uses the GPU to run the scan.  It also uses
   a GPU function to determine the max number in the array.  This
   is used to determine how many loops are needed before we reach
   the maximum amount of decimals in the maximum number.
@@ -68,8 +68,8 @@ powers of 2 which are part of the test.
   There are multiple scan functions that can be used, a few are
   benchmarked.
 
-  * Benchmarks
-* Running benhmarks on a range of 256 to 65536 with a power of 4
+* Benchmarks
+  * Running benhmarks on a range of 256 to 65536 with a power of 4
   increment gave the following results:
 
 
@@ -264,10 +264,10 @@ Press any key to continue . . .
 ```
 
 * Large scale results:
-![largescale](./images/bench1.png)
+![largescale](../images/bench1.png)
 
 * Small scale results:
-![largescale](./images/bench2.png)
+![largescale](../images/bench2.png)
 
 
 The significance is obvious between the CPU and GPU
