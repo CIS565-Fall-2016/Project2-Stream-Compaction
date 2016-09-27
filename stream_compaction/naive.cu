@@ -5,6 +5,10 @@
 
 #define blockSize 128
 
+#if PROFILE
+cudaEvent_t start, stop;
+#endif
+
 namespace StreamCompaction {
 namespace Naive {
 
@@ -37,6 +41,12 @@ namespace Naive {
 
 		cudaMemcpy(dev_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 
+		#if PROFILE
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+			cudaEventRecord(start);
+		#endif
+
 		for (int d = 1; d <= ilog2ceil(n); d++) { //ilog2ceil(n)
 			val = pow(2, d - 1);
 			if (flag == 1)	{
@@ -51,6 +61,15 @@ namespace Naive {
 		}
 
 		odata[0] = 0;
+
+		#if PROFILE
+			cudaEventRecord(stop);
+			cudaEventSynchronize(stop);
+			float milliseconds = 0;
+			cudaEventElapsedTime(&milliseconds, start, stop);
+			std::cout << "Time Elapsed for Naive scan (size " << n << "): " << milliseconds << std::endl;
+		#endif
+
 		if (flag == 0) {
 			cudaMemcpy(odata+1, dev_odata, (n-1)*sizeof(int), cudaMemcpyDeviceToHost);
 		}

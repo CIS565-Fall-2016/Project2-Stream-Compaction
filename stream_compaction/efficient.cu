@@ -61,6 +61,13 @@ namespace Efficient {
 
 		cudaMemcpy(dev_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 
+		#if PROFILE
+		cudaEvent_t start, stop;
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaEventRecord(start);
+		#endif
+
 		for (int d = 0; d < ilog2ceil(paddedArraySize); d++) {
 			upSweep << <fullBlocksPerGrid, blockSize >> >(paddedArraySize, dev_idata, 1<<d);
 		}
@@ -70,6 +77,14 @@ namespace Efficient {
 		for (int d = ilog2ceil(paddedArraySize) - 1; d >= 0; d--) {
 			downSweep << <fullBlocksPerGrid, blockSize >> >(paddedArraySize, dev_idata, 1<<d);
 		}
+
+		#if PROFILE
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		float milliseconds = 0;
+		cudaEventElapsedTime(&milliseconds, start, stop);
+		std::cout << "Time Elapsed for Efficient scan (size " << n << "): " << milliseconds << std::endl;
+		#endif
 	
 		cudaMemcpy(odata, dev_idata, n*sizeof(int), cudaMemcpyDeviceToHost);
 	
@@ -108,6 +123,13 @@ namespace Efficient {
 
 		cudaMemcpy(dev_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 
+		#if PROFILE
+		cudaEvent_t start, stop;
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaEventRecord(start);
+		#endif
+
 		StreamCompaction::Common::kernMapToBoolean << <fullBlocksPerGrid, blockSize >> >(n, dev_boolean, dev_idata);
 
 		copyElements << <fullBlocksPerGrid, blockSize >> >(n, dev_boolean, dev_indices);
@@ -124,8 +146,16 @@ namespace Efficient {
 
 		StreamCompaction::Common::kernScatter << <fullBlocksPerGrid, blockSize >> >(n, dev_odata, dev_idata, dev_boolean, dev_indices);
 
+		#if PROFILE
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		float milliseconds = 0;
+		cudaEventElapsedTime(&milliseconds, start, stop);
+		std::cout << "Time Elapsed for Efficient compact (size " << n << "): " << milliseconds << std::endl;
+		#endif
+
 		cudaMemcpy(odata, dev_odata, n*sizeof(int), cudaMemcpyDeviceToHost);
-		cudaMemcpy(&count, dev_indices+n-1, sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(&count, dev_indices + paddedArraySize - 1, sizeof(int), cudaMemcpyDeviceToHost);
 
 		cudaFree(dev_idata);
 		cudaFree(dev_odata);

@@ -1,5 +1,6 @@
 #include <cstdio>
 #include "cpu.h"
+#include "common.h"
 
 namespace StreamCompaction {
 namespace CPU {
@@ -9,10 +10,20 @@ namespace CPU {
  */
 void scan(int n, int *odata, const int *idata) {
 	odata[0] = 0;
+
+	#if PROFILE
+		auto begin = std::chrono::high_resolution_clock::now();
+	#endif
+
 	for (int i = 1; i < n; i++)
 	{
 		odata[i] = odata[i - 1] + idata[i - 1];
 	}
+
+	#if PROFILE
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "Time Elapsed for cpu scan(size " << n << "): " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+	#endif
 }
 
 /**
@@ -22,6 +33,11 @@ void scan(int n, int *odata, const int *idata) {
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
 	long j = 0;
+
+	#if PROFILE
+		auto begin = std::chrono::high_resolution_clock::now();
+	#endif
+
 	for (int i = 0; i < n; i++)
 	{
 		if (idata[i] != 0)
@@ -30,6 +46,12 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
 			j++;
 		}
 	}
+
+	#if PROFILE
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "Time Elapsed for compact without scan(size " << n << "): " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+	#endif
+
 	return j;
 }
 
@@ -44,6 +66,10 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	long j = 0;
 	temporal = (int*)malloc(sizeof(int)*n);
 	pscan = (int*)malloc(sizeof(int)*n);
+
+	#if PROFILE
+		auto begin = std::chrono::high_resolution_clock::now();
+	#endif
 	for (int i = 0; i < n; i++)
 	{
 		temporal[i] = idata[i] ? 1 : 0;
@@ -57,6 +83,12 @@ int compactWithScan(int n, int *odata, const int *idata) {
 			j++;
 		}
 	}
+
+	#if PROFILE
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "Time Elapsed for compact with scan(size " << n << "): " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+	#endif
+	
 	return j;
 }
 

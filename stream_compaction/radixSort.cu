@@ -71,6 +71,13 @@ namespace StreamCompaction {
 			checkCUDAError("Cannot allocate memory for odata");
 
 			cudaMemcpy(dev_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
+
+			#if PROFILE
+			cudaEvent_t start, stop;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+			cudaEventRecord(start);
+			#endif
 			
 			for (int i = 0; i < ilog2ceil(n); i++){
 				makeBarray << <fullBlocksPerGrid,blockSize >> >(n, dev_b, dev_idata, 1 << i);
@@ -91,6 +98,15 @@ namespace StreamCompaction {
 				dev_odata = dev_idata;
 				dev_idata = temp;
 			}
+
+			#if PROFILE
+			cudaEventRecord(stop);
+			cudaEventSynchronize(stop);
+			float milliseconds = 0;
+			cudaEventElapsedTime(&milliseconds, start, stop);
+			std::cout << "Time Elapsed for radix sort (size " << n << "): " << milliseconds << std::endl;
+			#endif
+
 			cudaMemcpy(odata, dev_idata, n*sizeof(int), cudaMemcpyDeviceToHost);
 			
 			cudaFree(dev_idata);
