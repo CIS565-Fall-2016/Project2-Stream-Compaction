@@ -29,7 +29,10 @@ namespace StreamCompaction {
 		/**
 		* Performs prefix-sum (aka scan) on idata, storing the result into odata.
 		*/
-		void scan(int n, int *odata, const int *idata) {
+		void scan(int n, int *odata, const int *idata, float& time) {
+			cudaEvent_t start, stop;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
 			dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 
 			int *dev_out;
@@ -41,20 +44,22 @@ namespace StreamCompaction {
 			checkCUDAErrorWithLine("cudaMalloc dev_out failed!");
 
 			cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
-
+			
+			float milliseconds = 0;
+			cudaEventRecord(start);
 			for (int d = 1; d <= ilog2ceil(n); ++d) {
 				kernReduce << <fullBlocksPerGrid, blockSize >> >((1 << (d - 1)), n, dev_in, dev_out);
 				std::swap(dev_in, dev_out);
 			}
+			cudaEventRecord(stop);
 			std::swap(dev_in, dev_out);
 			cudaMemcpy(odata + 1, dev_out, sizeof(int) * (n-1), cudaMemcpyDeviceToHost);
 			
-			/*for (int i = n-1; i > 0; --i) {
-				odata[i] = odata[i - 1];
-			}*/
-			
 			odata[0] = 0;
-			//printf("TODO\n");
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&milliseconds, start, stop);
+			time = milliseconds;
+			//printf("%f\n", milliseconds);
 			cudaFree(dev_out);
 			cudaFree(dev_in);
 		}

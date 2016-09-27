@@ -38,7 +38,10 @@ namespace StreamCompaction {
 		/**
 		* Performs prefix-sum (aka scan) on idata, storing the result into odata.
 		*/
-		void sort(int n, int *odata, const int *idata) {
+		void sort(int n, int *odata, const int *idata, float& time) {
+			cudaEvent_t start, stop;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
 			dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 
 			int *dev_in;
@@ -63,29 +66,40 @@ namespace StreamCompaction {
 			checkCUDAErrorWithLine("cudaMalloc t failed!");
 
 			cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
-
+			
+			float milliseconds = 0, totalTime = 0.f;
+			
 			//max number allowed is ilog2ceil(n) - 1; for ex: if n == 8, max value any element can have is 7
 			for (int lsb = 0; lsb < 3; ++lsb) {
+				cudaEventRecord(start);
 				//compute e array
 				kernComputeEArray << <fullBlocksPerGrid, blockSize >> >(n, lsb, e, dev_in);
+				cudaEventRecord(stop);
+				cudaEventSynchronize(stop);
+				cudaEventElapsedTime(&milliseconds, start, stop);
+				totalTime += milliseconds;
 				//scan e
 				cudaMemcpy(e_host, e, sizeof(int) * (n), cudaMemcpyDeviceToHost);
 				int total_falses = e_host[n - 1];
 				thrust::exclusive_scan(e_host, e_host + n, e_host);
 				total_falses += e_host[n - 1];
 				cudaMemcpy(f, e_host, sizeof(int) * n, cudaMemcpyHostToDevice);
+				cudaEventRecord(start);
 				//compute t array
 				kernComputeTArray << <fullBlocksPerGrid, blockSize >> >(n, total_falses, f, t);
-				//cudaMemcpy(t_host, t, sizeof(int) * (n), cudaMemcpyDeviceToHost);
 
 				//scatter
 				kernScatter << <fullBlocksPerGrid, blockSize >> >(n, e, t, f, dev_out, dev_in);
+				cudaEventRecord(stop);
+				cudaEventSynchronize(stop);
+				cudaEventElapsedTime(&milliseconds, start, stop);
+				totalTime += milliseconds;
 				std::swap(dev_in, dev_out);
 			}
 			std::swap(dev_in, dev_out);
 			cudaMemcpy(odata, dev_out, sizeof(int) * (n), cudaMemcpyDeviceToHost);
-			for (int i = 0; i < n; ++i)
-				printf("%d\n", odata[i]);
+			
+			time = totalTime;
 
 			cudaFree(dev_in);
 			cudaFree(dev_out);
