@@ -121,4 +121,14 @@ int main(int argc, char* argv[]) {
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+    printf("\n");
+    printf("*****************************\n");
+    printf("** RADIX SORT TESTS **\n");
+    printf("*****************************\n");
+	zeroArray(SIZE, b);
+    printDesc("RADIX SORT power-of-two");
+	int msb=31;
+    StreamCompaction::RadixSort::sort(SIZE, b, a, msb);
+    printArray(SIZE, b, true);
 }

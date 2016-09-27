@@ -8,9 +8,9 @@ namespace StreamCompaction {
 namespace RadixSort {
 #define blockSize 128
 
-int getNbit(int input, int nth){
-	return (input >> nth) & 1;
-}
+//int getNbit(int input, int nth){
+//	return (input >> nth) & 1;
+//}
 
 // assume the input and output are bits
 __global__ void computeE(int n, int * edata, const int * bdata){
@@ -35,7 +35,7 @@ __global__ void computeT(int n, int * tdata, const int * fdata, const int totalF
 __global__ void computeB(int n, int *bdata, const int *idata, int ith){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	if (index < n){
-		bdata[index] = getNbit(idata[index], ith);
+		bdata[index] =  (idata[index]>> ith) & 1; 
 	}
 }
 
@@ -107,7 +107,8 @@ void sort(int n, int *odata, const int *idata, int msb) {
 	}
 
 	//GPU --> CPU
-
+	cudaMemcpy(odata,idata_buff,n*sizeof(int),cudaMemcpyDeviceToHost);
+	checkCUDAError("cudaMemcpy-odata-failed");
 	//free
 	cudaFree(idata_buff);
 	cudaFree(idata_buff2);
