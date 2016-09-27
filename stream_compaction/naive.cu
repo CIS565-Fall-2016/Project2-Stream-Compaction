@@ -40,6 +40,13 @@ void scan(int n, int *odata, const int *idata) {
 	cudaMalloc((void**)&dev_data2, n * sizeof(int));
 	cudaMemcpy((void*)dev_data, (void*)idata, n * sizeof(int), cudaMemcpyHostToDevice);
 
+#if TIMING == 1
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start);
+#endif
+
 	for (int i = 1; i <= ilog2ceil(n); i++) {
 		kernNaiveScan << <fullBlocksPerGrid, blockSize >> >(n, i, dev_data2, dev_data);
 		int * tempPtr = dev_data;
@@ -47,6 +54,14 @@ void scan(int n, int *odata, const int *idata) {
 		dev_data2 = tempPtr;
 	}
 	kernInclusiveToExclusiveScan << <fullBlocksPerGrid, blockSize >> >(n, dev_data2, dev_data);
+
+#if TIMING == 1
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Naive scan: %f milliseconds\n", milliseconds);
+#endif
 
 	cudaMemcpy((void*)odata, (void*)dev_data2, n * sizeof(int), cudaMemcpyDeviceToHost);
 	cudaFree(dev_data);

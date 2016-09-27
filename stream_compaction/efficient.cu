@@ -39,6 +39,14 @@ void scan(int n, int *odata, const int *idata) {
 	cudaMalloc((void**)&dev_data, nCeil * sizeof(int));
 	cudaMemset((void*)dev_data, 0, nCeil * sizeof(int));
 	cudaMemcpy((void*)dev_data, (void*)idata, n * sizeof(int), cudaMemcpyHostToDevice);
+
+#if TIMING == 1
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start);
+#endif
+
 	for (int i = 1; i <= logCeil; i++) {
 		int gridSize = ((nCeil >> i) + blockSize - 1) / blockSize;
 		kernScanUpsweep << <gridSize, blockSize >> >(nCeil, i, dev_data);
@@ -50,6 +58,14 @@ void scan(int n, int *odata, const int *idata) {
 		int gridSize = ((nCeil >> i) + blockSize - 1) / blockSize;
 		kernScanDownsweep << <gridSize, blockSize >> >(nCeil, i, dev_data);
 	}
+
+#if TIMING == 1
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Efficient scan: %f milliseconds\n", milliseconds);
+#endif
 
 	cudaMemcpy((void*)odata, (void*)dev_data, n * sizeof(int), cudaMemcpyDeviceToHost);
 	cudaFree(dev_data);
