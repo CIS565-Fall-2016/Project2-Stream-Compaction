@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include "common.h"
 #include "efficient.h"
+#include <iostream>
 
 #define blockSize 128
 
@@ -51,6 +52,10 @@ namespace StreamCompaction {
 			cudaMemcpy(dev_data, temp, sizeof(int)*newN, cudaMemcpyHostToDevice);
 			checkCUDAErrorFn("Failed to copy dev_iData");
 
+			cudaEvent_t start, stop;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+			cudaEventRecord(start);
 			// Perform scan
 			for (int x = 1; x < newN; x *= 2) {
 				kernUpSweep<<<fullBlocksPerGrid, blockSize>>>(newN, dev_data, 2 * x);
@@ -61,6 +66,13 @@ namespace StreamCompaction {
 			for (int x = newN / 2; x > 0; x /= 2) {
 				kernDownSweep<<<fullBlocksPerGrid, blockSize>>>(newN, dev_data, 2 * x);
 			}
+
+			cudaEventRecord(stop);
+
+			cudaEventSynchronize(stop);
+			float milliseconds = 0;
+			cudaEventElapsedTime(&milliseconds, start, stop);
+			std::cout << milliseconds << std::endl;
 
 			cudaMemcpy(temp, dev_data, sizeof(int)*newN, cudaMemcpyDeviceToHost);
 			for (int x = 0; x < n; x++){
