@@ -50,81 +50,63 @@ memory access time.
 ## Section 2: Verification and Performance Analysis
 *Code Correctness for Scan, Compact, and Sort Implementations:*
 
-> ****************
-> ** SCAN TESTS **
-> ****************
->     [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  35   0 ]
+```
+****************
+** SCAN TESTS **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  35   0 ]
+==== cpu scan, power-of-two ====
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+==== cpu scan, non-power-of-two ====
+    passed
+==== naive scan, power-of-two ====
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+    passed
+==== naive scan, non-power-of-two ====
+    passed
+==== work-efficient scan, power-of-two ====
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+    passed
+==== work-efficient scan, non-power-of-two ====
+    passed
+==== thrust scan, power-of-two ====
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+    passed
+==== thrust scan, non-power-of-two ====
+    passed
 
-> ==== cpu scan, power-of-two ====
+*****************************
+** STREAM COMPACTION TESTS **
+*****************************
+    [   2   3   2   1   3   1   1   1   2   0   1   0   2 ...   1   0 ]
+==== cpu compact without scan, power-of-two ====
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
+    passed
+==== cpu compact without scan, non-power-of-two ====
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   3   3 ]
+    passed
+==== cpu compact with scan ====
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
+    passed
+==== work-efficient compact, power-of-two ====
+    passed
+==== work-efficient compact, non-power-of-two ====
+    passed
 
->     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
-> ==== cpu scan, non-power-of-two ====
+**********************
+** RADIX SORT TESTS **
+**********************
+==== radix sort, power-of-two ====
+    [  38 7719 21238 2437 8855 11797 8365 32285 ]
+    [  38 2437 7719 8365 8855 11797 21238 32285 ]
+    passed
+==== radix sort, non-power-of-two ====
+    [  38 7719 21238 2437 8855 11797 8365 ]
+    [  38 2437 7719 8365 8855 11797 21238 ]
+    passed
 
->     passed
-> ==== naive scan, power-of-two ====
-
->     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
->     passed
-> ==== naive scan, non-power-of-two ====
-
->     passed
-> ==== work-efficient scan, power-of-two ====
-
->     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
->     passed
-> ==== work-efficient scan, non-power-of-two ====
-
->     passed
-> ==== thrust scan, power-of-two ====
-
->     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
->     passed
-> ==== thrust scan, non-power-of-two ====
-
->     passed
-> 
-> *****************************
-> ** STREAM COMPACTION TESTS **
-> *****************************
-
->     [   2   3   2   1   3   1   1   1   2   0   1   0   2 ...   1   0 ]
-> ==== cpu compact without scan, power-of-two ====
-
->     [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
->     passed
-> ==== cpu compact without scan, non-power-of-two ====
-
->     [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   3   3 ]
->     passed
-> ==== cpu compact with scan ====
-
->     [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
->     passed
-> ==== work-efficient compact, power-of-two ====
-
->     passed
-> ==== work-efficient compact, non-power-of-two ====
-
->     passed
-> 
-> **********************
-> ** RADIX SORT TESTS **
-> **********************
-
-> ==== radix sort, power-of-two ====
-
->     [  38 7719 21238 2437 8855 11797 8365 32285 ]
->     [  38 2437 7719 8365 8855 11797 21238 32285 ]
->     passed
-> ==== radix sort, non-power-of-two ====
-
->     [  38 7719 21238 2437 8855 11797 8365 ]
->     [  38 2437 7719 8365 8855 11797 21238 ]
->     passed
-
-> 
-> Sort passed 1000/1000 randomly generated verification tests.
-
+Sort passed 1000/1000 randomly generated verification tests.
+```
 
 ### Benchmarks
 *All performance measurements were averaged over 1000 samples on a single dataset*
@@ -171,6 +153,7 @@ bitshift operations cleared the error entirely.
 
 <a name="appendix"/>
 ## Appendix: Build Instructions
+**CMakeLists.txt modified to include new sort class and update compute compatability**
 
 * `src/` contains the source code.
 
