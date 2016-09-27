@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdlib>
+#include <cstdio>
+#include <iostream>
+#include <string>
 
 template<typename T>
 int cmpArrays(int n, T *a, T *b) {
@@ -15,6 +18,12 @@ int cmpArrays(int n, T *a, T *b) {
 
 void printDesc(const char *desc) {
     printf("==== %s ====\n", desc);
+}
+
+template<typename T>
+void printElapsedTime(T time, std::string note = "")
+{
+    std::cout << "   elapsed time: " << time << "ms    " << note << std::endl;
 }
 
 template<typename T>
@@ -40,10 +49,19 @@ void zeroArray(int n, int *a) {
 }
 
 void genArray(int n, int *a, int maxval) {
-    srand(0);
+    //srand(0);
+    srand(time(nullptr));
 
-    for (int i = 0; i < n; i++) {
-        a[i] = rand() % maxval;
+    for (int i = 0; i < n; i++) 
+    {
+        if (maxval == 0)
+        {
+            a[i] = 0;
+        }
+        else
+        {
+            a[i] = rand() % maxval;
+        }
     }
 }
 
