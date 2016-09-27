@@ -18,17 +18,23 @@ int *dev_ScanResult;
 int *dev_OutputData;
 int *dev_total;
 
-//__global__ void CudaUpSweep(int d, int *data)
+int threadPerBlock = 1024;
+int BlockNum;
+//__global__ void CudaUpSweep(int d, int *data, int addTimes)
 //{
-//	int thid = threadIdx.x;
+//	int thid = (blockIdx.x * blockDim.x) + threadIdx.x;
+//	if (thid >= addTimes)
+//		return;
 //	int m = 1 << (d + 1);
 //	if (!(thid % m))
 //		data[thid + m - 1] += data[thid + (m >> 1) - 1];
 //}
 //
-//__global__ void CudaDownSweep(int d, int *data)
+//__global__ void CudaDownSweep(int d, int *data, int addTimes)
 //{
-//	int thid = threadIdx.x;
+//	int thid = (blockIdx.x * blockDim.x) + threadIdx.x;
+//	if (thid >= addTimes)
+//		return;
 //	int m = 1 << (d + 1);
 //	if (!(thid % m))
 //	{
@@ -37,15 +43,19 @@ int *dev_total;
 //		data[thid + m - 1] += temp;
 //	}
 //}
-__global__ void CudaUpSweep(int d, int *data)
+__global__ void CudaUpSweep(int d, int *data, int addTimes)
 {
-	int thid = threadIdx.x;
+	int thid = (blockIdx.x * blockDim.x) + threadIdx.x;
+	if (thid >= addTimes)
+		return;
 	data[(thid + 1) * (1 << (d + 1)) - 1] += data[(thid + 1) * (1 << (d + 1)) - 1 - (1 << d)];
 }
 
-__global__ void CudaDownSweep(int d, int *data)
+__global__ void CudaDownSweep(int d, int *data, int addTimes)
 {
-	int thid = threadIdx.x;
+	int thid = (blockIdx.x * blockDim.x) + threadIdx.x;
+	if (thid >= addTimes)
+		return;
 	int m = (thid + 1) * (1 << (d + 1));
 	int temp = data[m - 1 - (1 << d)];
 	data[m - 1 - (1 << d)] = data[m - 1];
@@ -58,7 +68,7 @@ void scan(int n, int *odata, const int *idata) {
 	//int odata[8];
 	int nCeilLog = ilog2ceil(n);
 	int nLength = 1 << nCeilLog;
-
+	
 	cudaMalloc((void**)&dev_Data, nLength * sizeof(int));
 	checkCUDAError("cudaMalloc failed!");
 
@@ -68,7 +78,8 @@ void scan(int n, int *odata, const int *idata) {
 	for (int i = 0; i < nCeilLog; i++)
 	{
 		int addTimes = 1 << (nCeilLog - 1 - i);
-		CudaUpSweep<<<1, addTimes>>>(i, dev_Data);
+		BlockNum = addTimes / threadPerBlock + 1;
+		CudaUpSweep<<<BlockNum, threadPerBlock>>>(i, dev_Data, addTimes);
 	}
 
 	cudaMemset(dev_Data + nLength - 1, 0, sizeof(int));
@@ -76,8 +87,22 @@ void scan(int n, int *odata, const int *idata) {
 	for (int i = nCeilLog - 1; i >= 0; i--)
 	{
 		int addTimes = 1 << (nCeilLog - 1 - i);
-		CudaDownSweep<<<1, addTimes>>>(i, dev_Data);
+		BlockNum = addTimes / threadPerBlock + 1;
+		CudaDownSweep<<<BlockNum, threadPerBlock>>>(i, dev_Data, addTimes);
 	}
+	//for (int i = 0; i < nCeilLog; i++)
+	//{
+	//	BlockNum = nLength / threadPerBlock + 1;
+	//	CudaUpSweep<<<BlockNum, threadPerBlock>>>(i, dev_Data, nLength);
+	//}
+
+	//cudaMemset(dev_Data + nLength - 1, 0, sizeof(int));
+	//checkCUDAError("cudaMemset failed!");
+	//for (int i = nCeilLog - 1; i >= 0; i--)
+	//{
+	//	BlockNum = nLength / threadPerBlock + 1;
+	//	CudaDownSweep<<<BlockNum, threadPerBlock>>>(i, dev_Data, nLength);
+	//}
 
 	cudaMemcpy(odata, dev_Data, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("cudaMemcpy to host failed!");	
@@ -87,23 +112,28 @@ void scan(int n, int *odata, const int *idata) {
 	cudaFree(dev_Data);
 }
 
-__global__ void CudaGetFlag(int *out, int *in)
+__global__ void CudaGetFlag(int *out, int *in, int n)
 {
-	int thid = threadIdx.x;
+	int thid = (blockIdx.x * blockDim.x) + threadIdx.x;
+	if (thid >= n)
+		return;
 	out[thid] = in[thid] ? 1 : 0;
 }
 
-__global__ void CudaGetResult(int *result, int *flag, int *scanResult, int *data)
+__global__ void CudaGetResult(int *result, int *flag, int *scanResult, int *data, int n)
 {
-	int thid = threadIdx.x;
+	int thid = (blockIdx.x * blockDim.x) + threadIdx.x;
+	if (thid >= n)
+		return;
 	if (flag[thid])
 		result[scanResult[thid]] = data[thid];
 }
 
-__global__ void CudaGetTotal(int *total, int *flag)
+__global__ void CudaGetTotal(int *total, int *flag, int n)
 {
-	int thid = threadIdx.x;
-	
+	int thid = (blockIdx.x * blockDim.x) + threadIdx.x;
+	if (thid >= n)
+		return;
 	if (flag[thid])
 	{
 		total[0] = total[0] + total[1];
@@ -150,25 +180,60 @@ int compact(int n, int *odata, const int *idata) {
 	checkCUDAError("cudaMemcpy to device failed!");
 
 	// dev_Flag is 0 or 1, calculate dev_Flag
-	CudaGetFlag<<<1, nLength>>>(dev_Flag, dev_Data);
+	BlockNum = nLength / threadPerBlock + 1;
+	CudaGetFlag<<<BlockNum, threadPerBlock>>>(dev_Flag, dev_Data, nLength);
+
+
+
+
+
 
 	// now scan
 	cudaMemcpy(dev_ScanResult, dev_Flag, nLength * sizeof(int), cudaMemcpyDeviceToDevice);
 	checkCUDAError("cudaMemcpy device to device failed!");
+
+float time_elapsed=0;
+cudaEvent_t start,stop;
+cudaEventCreate(&start);
+cudaEventCreate(&stop);
+cudaEventRecord( start,0);
+
 	for (int i = 0; i < nCeilLog; i++)
 	{
 		int addTimes = 1 << (nCeilLog - 1 - i);
-		CudaUpSweep<<<1, addTimes>>>(i, dev_ScanResult);
+		BlockNum = addTimes / threadPerBlock + 1;
+		CudaUpSweep<<<BlockNum, threadPerBlock>>>(i, dev_ScanResult, addTimes);
 	}
 	cudaMemset(dev_ScanResult + nLength - 1, 0, sizeof(int));
 	checkCUDAError("cudaMemcpy to device failed!");
 	for (int i = nCeilLog - 1; i >= 0; i--)
 	{
 		int addTimes = 1 << (nCeilLog - 1 - i);
-		CudaDownSweep<<<1, addTimes>>>(i, dev_ScanResult);
+		BlockNum = addTimes / threadPerBlock + 1;
+		CudaDownSweep<<<BlockNum, threadPerBlock>>>(i, dev_ScanResult, addTimes);
 	}
-
-	CudaGetResult<<<1, n>>>(dev_OutputData, dev_Flag, dev_ScanResult, dev_Data);
+	//for (int i = 0; i < nCeilLog; i++)
+	//{
+	//	BlockNum = nLength / threadPerBlock + 1;
+	//	CudaUpSweep<<<BlockNum, threadPerBlock>>>(i, dev_ScanResult, nLength);
+	//}
+	//cudaMemset(dev_ScanResult + nLength - 1, 0, sizeof(int));
+	//checkCUDAError("cudaMemcpy to device failed!");
+	//for (int i = nCeilLog - 1; i >= 0; i--)
+	//{
+	//	BlockNum = nLength / threadPerBlock + 1;
+	//	CudaDownSweep<<<BlockNum, threadPerBlock>>>(i, dev_ScanResult, nLength);
+	//}
+	cudaEventRecord( stop,0);
+cudaEventSynchronize(start);
+cudaEventSynchronize(stop);
+cudaEventElapsedTime(&time_elapsed,start,stop);
+//FILE* fp = fopen("efficient.txt", "a+");
+//fprintf(fp, "%d %f\n", nCeilLog, time_elapsed);
+//fclose(fp);
+	
+	BlockNum = n / threadPerBlock + 1;
+	CudaGetResult<<<BlockNum, threadPerBlock>>>(dev_OutputData, dev_Flag, dev_ScanResult, dev_Data, n);
 	cudaMemcpy(odata, dev_OutputData, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("cudaMemcpy to host failed!");	
 	

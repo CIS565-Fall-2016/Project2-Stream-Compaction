@@ -12,12 +12,15 @@
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
 #include "testing_helpers.hpp"
-
+#define maxlength (1 << 25)
+int a[maxlength], b[maxlength], c[maxlength];
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 8;
-    const int NPOT = SIZE - 3;
-    int a[SIZE], b[SIZE], c[SIZE];
-
+	int SIZE = 1 << 8;
+    int NPOT = SIZE - 3;
+    
+for (int SIZE = 1 << 8; SIZE < maxlength; SIZE <<= 1)
+{
+	NPOT = SIZE - 3;
     // Scan tests
 
     printf("\n");
@@ -120,6 +123,7 @@ int main(int argc, char* argv[]) {
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+}
 
 	system("pause");
 }

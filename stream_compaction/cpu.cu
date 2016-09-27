@@ -1,6 +1,8 @@
 #include <cstdio>
 #include "stream_compaction\common.h"
 #include "cpu.h"
+#include <chrono>
+#include <iostream>
 
 namespace StreamCompaction {
 namespace CPU {
@@ -108,7 +110,15 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	
 	for (int i = 0; i < n; i++)
 		odata[i] = idata[i] ? 1 : 0;
+	auto start = std::chrono::system_clock::now();
 	scan(n, odata, odata);
+	auto end   = std::chrono::system_clock::now();
+	//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	std::chrono::duration<double, std::milli> duration = end - start;
+	std::cout << duration.count() << std::endl;
+	//FILE* fp = fopen("efficient.txt", "a+");
+	//fprintf(fp, "%d %f\n", ilog2ceil(n), duration.count());
+	//fclose(fp);
 	for (int i = 0; i < n - 1; i++)
 	{
 		if (odata[i] != odata[i + 1])
