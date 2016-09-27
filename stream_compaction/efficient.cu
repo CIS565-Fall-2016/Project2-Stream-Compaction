@@ -37,7 +37,13 @@ __global__ void downSweep(int offset, int n,  int *idata){
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
-void scan(int n, int *odata, const int *idata) {
+float scan(int n, int *odata, const int *idata) {
+	cudaEvent_t t0, t2;
+	cudaEventCreate(&t0);
+	cudaEventCreate(&t2); 
+ 
+	float milliscs = 0.0f;
+	float tmpt;
     // TODO
     //printf("TODO\n");
 	int levels_max = ilog2ceil(n);
@@ -55,23 +61,41 @@ void scan(int n, int *odata, const int *idata) {
 	/// CPU -->GPU
 	cudaMemcpy(idata_buff,idata,n*sizeof(int),cudaMemcpyHostToDevice);
 		checkCUDAError("cudaMemcpy-idata_buff-failed");
+
+	cudaEventRecord(t0);
+
 	//upsweep
 	for (int level=0; level <= levels_max-1; level++){
 		upSweep<<<numblocks,blockSize>>>(1<<level, n_max, idata_buff);
 	}
+
+	cudaEventRecord(t2);	
+	cudaEventSynchronize(t2);
+	cudaEventElapsedTime(&tmpt, t0, t2);	 
+	milliscs += tmpt;
+
+
 	//downsweep
 	//set root x[n-1]=0
 	//idata_buff[n_max-1]=0;
 	cudaMemset(idata_buff+n_max-1, 0,  sizeof(int));
 		
+	cudaEventRecord(t0);
+
 	for (int level=levels_max-1; level >=0 ; level--){
 		downSweep<<<numblocks,blockSize>>>(1<<level, n_max, idata_buff);
 	}
+
+	cudaEventSynchronize(t2);
+	cudaEventRecord(t2);
+	cudaEventElapsedTime(&tmpt, t0, t2);
+	milliscs += tmpt;
 
 	/// GPU --> CPU
 	cudaMemcpy(odata, idata_buff, n*sizeof(int),cudaMemcpyDeviceToHost);
 		checkCUDAError("cudaMemcpy-odata-failed");
 	cudaFree(idata_buff);
+	return milliscs;
 }
 
 /**

@@ -1,8 +1,8 @@
 /**
  * @file      main.cpp
  * @brief     Stream compaction test program
- * @authors   Kai Ninomiya
- * @date      2015
+ * @authors   Kai Ninomiya, Xiang Deng
+ * @date      2015, 2016
  * @copyright University of Pennsylvania
  */
 
@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     const int SIZE = 1 << 8;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
-
+	float milscs;
     // Scan tests
 
     printf("\n");
@@ -53,29 +53,36 @@ int main(int argc, char* argv[]) {
     //printArray(SIZE, c, true);
     printCmpResult(NPOT, b, c);
 
+	
+	 
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, power-of-two");
-    StreamCompaction::Efficient::scan(SIZE, c, a);
+    milscs = StreamCompaction::Efficient::scan(SIZE, c, a);
     //printArray(SIZE, c, true);
-    printCmpResult(SIZE, b, c);
+    printCmpResult(SIZE, b, c);	 
+	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, non-power-of-two");
-    StreamCompaction::Efficient::scan(NPOT, c, a);
+    milscs = StreamCompaction::Efficient::scan(NPOT, c, a);
     //printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
+	printf("time lapsed %f ms\n", milscs);
+
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, power-of-two");
-    StreamCompaction::Thrust::scan(SIZE, c, a);
+    milscs = StreamCompaction::Thrust::scan(SIZE, c, a);
     //printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
+	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, non-power-of-two");
-    StreamCompaction::Thrust::scan(NPOT, c, a);
+    milscs = StreamCompaction::Thrust::scan(NPOT, c, a);
     //printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
+	printf("time lapsed %f ms\n", milscs);
 
     printf("\n");
     printf("*****************************\n");
