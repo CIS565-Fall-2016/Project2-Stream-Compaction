@@ -264,10 +264,10 @@ Press any key to continue . . .
 ```
 
 * Large scale results:
-![largescale](../images/bench1.png)
+![largescale](./images/bench1.png)
 
 * Small scale results:
-![largescale](../images/bench2.png)
+![largescale](./images/bench2.png)
 
 
 The significance is obvious between the CPU and GPU
@@ -299,11 +299,11 @@ desired.  About 40% og the GPU is not used.
 This is very obvious when looking at the following
 timeline and the kernDecimalsMap function:
 * Cuda memory calls frequency:
-![timeline](../memoryswapping.png)
+![timeline](./images/memoryswapping.png)
 
 
 * DecimalsMap bottleneck:
-![timeline](../bottleneck.png)
+![timeline](./images/bottleneck.png)
 
 
 
