@@ -13,7 +13,7 @@
 #include <stream_compaction/thrust.h>
 #include <stream_compaction/radixSort.h>
 #include "testing_helpers.hpp"
-
+#include <algorithm>
 int main(int argc, char* argv[]) {
     const int SIZE = 1 << 8;
     const int NPOT = SIZE - 3;
@@ -126,13 +126,38 @@ int main(int argc, char* argv[]) {
     printf("*****************************\n");
     printf("** RADIX SORT TESTS **\n");
     printf("*****************************\n");
-    genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
+    genArray(SIZE - 1, a, 200);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
+	printDesc("Array to be sorted power of 2");
     printArray(SIZE, a, true);
 	zeroArray(SIZE, b);
-    printDesc("RADIX SORT power-of-two");
+    printDesc("RADIX SORT POT");
 	int msb=31;
-	printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
+	//printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
     StreamCompaction::RadixSort::sort(SIZE, b, a, msb); 
     printArray(SIZE, b, true);
+
+	printDesc("C++ SORT POT"); 
+	memcpy(c, a, SIZE*sizeof(int)); 
+	std::sort(c,c+SIZE); 
+	printArray(SIZE, c, true);
+    printCmpResult(SIZE, b, c);
+
+	genArray(SIZE - 1, a, 2000);  // Leave a 0 at the end to test that edge case
+    a[SIZE - 1] = 0;
+	printDesc("Array to be sorted not power of 2");
+    printArray(SIZE, a, true);
+	zeroArray(SIZE, b);
+	zeroArray(SIZE, c);
+    printDesc("RADIX SORT NPOT"); 
+	//printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
+    StreamCompaction::RadixSort::sort(NPOT, b, a, msb); 
+	printArray(NPOT, b, true);
+
+	printDesc("C++ SORT NPOT"); 
+	memcpy(c, a, SIZE*sizeof(int)); 
+	std::sort(c,c+NPOT); 
+	printArray(NPOT, c, true);
+    printCmpResult(NPOT, b, c);
+
 }
