@@ -14,8 +14,6 @@ CUDA Stream Compaction
 
 ![Compaction Analysis](https://docs.google.com/spreadsheets/d/1x1MppbyAceIIrwhDLsmV7unUYS2RYU_I20_wK0ReORY/pubchart?oid=477396612&format=image)
 
-## Analysis
-
 For smaller input sizes, the CPU implementation for both Scan and Stream Compaction is much, much faster than the GPU implementation. When dealing with contiguous buffers of memory, the CPU reaps large benefits from cache which makes it very fast. However, at around 2^19 in input size, the more efficient GPU implementations begin to outperform the CPU. With only a single core, CPU performance becomes worse as the number of computations required increases exponentially.
 
 Meanwhile, on the GPU, the exponent of this algorithmic growth is divided by the number of cores so there is much slower growth. However, there is a larger cost from memory access so the GPU implementations are much slower for lower input sizes because of this memory overhead. Memory usage, however, increases linearly not exponentially, so for larger sets of data, the GPU wins with performance.
@@ -23,6 +21,11 @@ Meanwhile, on the GPU, the exponent of this algorithmic growth is divided by the
 In comparing the Naive and Efficient GPU implementations, we see that for smaller datasets, the Naive implementation is faster. This is probably because there are fewer kernel invocations are made. Even though there are an exponential number of additions, this still takes less time. However, as the input size increases, the much more computationally-efficient method performs better.
 
 I did not see much difference between power-of-two input sizes and non-power-of-two data sizes. This is likely because my implementation just increases the size of non-power-of-two inputs to be power-of-two inputs.
+
+### More Efficient `Efficient` Scan
+
+It turns out that my initial implementation of the Efficient scan was the extra credit implementation. Instead of launching the same number threads for the upsweep and downsweep, we decrease the number to avoid wasted threads and increase occupancy. Why? For the upsweep, after every iteration we need half as many threads. The others don't do anything. For the downsweep, our first iteration uses just 1 thread and each subsequent iteration doubles this number. A more efficient way to implement Efficient scan is to launch only the number of threads needed and have your calculated thread index jump by a power of two. So: `index = 2^d * (blockIdx.x * blockDim.x + threadIdx.x)`. Now our indicies will jump 2 -- 4 -- 6 -- 8 or 16 -- 32 -- 48 -- 64, etc. We can launch only the needed number of threads instead of launching `n` threads and using far, far less than half of them.
+
 
 ### Why is Thrust So Fast?
 
