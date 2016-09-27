@@ -19,9 +19,11 @@ Build Instructions
 Performance analysis
 ====================
 Milliseconds to calculate prefix sums for arrays of given sizes:
+
 ![](images/milliseconds.png)
 
 Log2 of nanoseconds for same data:
+
 ![](images/log_nanoseconds.png)
 
 The timings above did not include the time needed to copy arrays onto device. 
