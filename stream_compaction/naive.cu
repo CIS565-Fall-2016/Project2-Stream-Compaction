@@ -3,7 +3,7 @@
 #include "common.h"
 #include "naive.h"
 
-#define blockSize 128
+#define blockSize 4
 
 namespace StreamCompaction {
 namespace Naive {
@@ -44,6 +44,11 @@ void scan(int n, int *odata, const int *idata) {
 	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 	dim3 threadsPerBlock(blockSize);
 
+	// Initialize timers
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
 	// Move data GPU-side
 	int* dev_in;
 	int* dev_out;
@@ -59,6 +64,8 @@ void scan(int n, int *odata, const int *idata) {
 	int max_d = ilog2ceil(n);
 
 	// Loop over data 
+	cudaEventRecord(start);
+
 	for (int d = 1; d <= max_d; d++) {
 
 		kernRunScan << < fullBlocksPerGrid, threadsPerBlock >> >(n, pow(2, d - 1), dev_out, dev_in);
@@ -69,6 +76,13 @@ void scan(int n, int *odata, const int *idata) {
 	}
 
 	kernInclusiveToExclusive << < fullBlocksPerGrid, threadsPerBlock >> >(n, dev_out, dev_in);
+
+	cudaEventRecord(stop);
+	
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Time: %f\n", milliseconds);
 
 	cudaMemcpy(odata, dev_out, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("memcpy back failed!");

@@ -3,6 +3,8 @@
 #include "common.h"
 #include "efficient.h"
 
+#define blockSize 4
+
 namespace StreamCompaction {
 namespace Efficient {
 	__global__ void kernScanUp(int n, int pow_2_d, int pow_2_d_one, int*g_idata) {
@@ -40,7 +42,12 @@ namespace Efficient {
  */
 void scan(int n, int *odata, const int *idata) {
 	dim3 fullBlocksPerGrid;
-	dim3 threadsPerBlock(128);
+	dim3 threadsPerBlock(blockSize);
+
+	// Initialize timers
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
 
 	// Allocate GPU space
 	int* dev_in;
@@ -50,12 +57,13 @@ void scan(int n, int *odata, const int *idata) {
 
 	// Copy array to device
 	cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
-	
+	cudaEventRecord(start);
+
 	// Scan up
 	for (int d = 0; d < ilog2ceil(n); d++) {
 
 		int n2 = pow(2, ilog2ceil(n) - d - 1);
-		fullBlocksPerGrid = dim3((n2 + 128 - 1) / 128);
+		fullBlocksPerGrid = dim3((n2 + blockSize - 1) / blockSize);
 
 		kernScanUp << <fullBlocksPerGrid, threadsPerBlock >> >(n, pow(2, d), pow(2, d + 1), dev_in);
 
@@ -67,11 +75,17 @@ void scan(int n, int *odata, const int *idata) {
 	// Scan down
 	for (int d = ilog2ceil(n) - 1; d >= 0; d--) {
 		int n2 = pow(2, ilog2ceil(n) - d - 1);
-		fullBlocksPerGrid = dim3((n2 + 128 - 1) / 128);
+		fullBlocksPerGrid = dim3((n2 + blockSize - 1) / blockSize);
 
 		kernScanDown << <fullBlocksPerGrid, threadsPerBlock >> >(n, pow(2, d), pow(2, d + 1), dev_in);
 	}
-	
+	cudaEventRecord(stop);
+
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Scan Time: %f\n", milliseconds);
+
 	// Copy data back to host
 	cudaMemcpy(odata, dev_in, sizeof(int) * n, cudaMemcpyDeviceToHost);
 	checkCUDAError("memcpy back failed!");
@@ -88,8 +102,13 @@ void scan(int n, int *odata, const int *idata) {
  * @returns      The number of elements remaining after compaction.
  */
 int compact(int n, int *odata, const int *idata) {
-	dim3 fullBlocksPerGrid((n + 128 - 1) / 128);
-	dim3 threadsPerBlock(128);
+	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
+	dim3 threadsPerBlock(blockSize);
+
+	// Initialize timers
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
 
 	// Allocate GPU space
 	int* dev_in;
@@ -112,6 +131,8 @@ int compact(int n, int *odata, const int *idata) {
 	// Copy array to device
 	cudaMemcpy(dev_in, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 
+	cudaEventRecord(start);
+
 	// Map 1s and 0s
 	StreamCompaction::Common::kernMapToBoolean<< < fullBlocksPerGrid, threadsPerBlock>>>(n, dev_map, dev_in);
 
@@ -120,6 +141,12 @@ int compact(int n, int *odata, const int *idata) {
 
 	// Scatter
 	StreamCompaction::Common::kernScatter<< <fullBlocksPerGrid, threadsPerBlock >> >(n, dev_out, dev_in, dev_map, dev_scan);
+	cudaEventRecord(stop);
+
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Compact Time: %f\n", milliseconds);
 
 	// Copy scan data back to host
 	// This feels kind of hacky, but I don't know of a better way to acess device arrays from the host
