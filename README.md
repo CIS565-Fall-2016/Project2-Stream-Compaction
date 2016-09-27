@@ -5,7 +5,7 @@ CUDA Stream Compaction
 
 * David Liao
 * Tested on: Windows 7 Professional, Intel(R) Xeon(R) CPU E5-1630 v4 @ 3.70 GHz 3.70 GHz, GTX 1070 8192MB (SIG Lab)
-* Also Tested on: Windows 7 Professional, Intel(R) i7 4770 CPU @ 3.4GHz, Quadro K600
+* Also Tested on: Windows 7 Professional, Intel(R) i7 4770 CPU @ 3.4GHz, Quadro K600 (SIG Lab)
 
 ### Analysis
 
