@@ -73,8 +73,7 @@ powers of 2 which are part of the test.
   increment gave the following results:
 
 
-<!---
-
+```
 ****************
 ** SCAN TESTS **
 ****************
@@ -262,8 +261,49 @@ Time:  167007 microSeconds
 ==== work-efficient compact, power-of-two ====
 Time:  39963 microSeconds
 Press any key to continue . . .
--->
+```
 
+* Large scale results:
+![largescale](./images/bench1.png)
+
+* Small scale results:
+![largescale](./images/bench2.png)
+
+
+The significance is obvious between the CPU and GPU
+implementations.  When looking at small arrays, the
+CPU seems to take an interesting advantage.  However
+on large arrays, the CPU implementations scale very
+poorly, hence the need to have 2 graph scales.
+Radix sort suffers particularly when running on the 
+CPU.  One pattern that emerges is that the naive
+and efficient methods scale logarithmically.
+The efficient version was a fraction slower and that
+is due to interrupts between the up and downscan.
+Every time upscan is called, memory has to be
+allocated and copied, the same happens with downscan
+This is shown in the last figure.  Despite that,
+the loss is minumal.
+Thrust scan does well and scales linearly albeit not
+as good as the naive and efficient methods.
+One thing that was interesting to note is that radix
+benefitted more from the thrust scan than the other
+GPU implementations.  Again possibly due to the 
+multiple GPU functions.  The max number function is
+run on the GPU and memory is copied back and forth.
+One bottleneck that manifests itself in the graph
+below is from the kernDecimalsMap function.
+Not enough resources are used during this function
+which created a bottleneck that is minimal but not
+desired.  About 40% og the GPU is not used.
+This is very obvious when looking at the following
+timeline and the kernDecimalsMap function:
+* Cuda memory calls frequency:
+![timeline](memoryswapping.png)
+
+
+* DecimalsMap bottleneck:
+![timeline](bottleneck.png)
 
 
 
