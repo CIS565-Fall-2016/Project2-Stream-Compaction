@@ -47,7 +47,6 @@ As we can see, the CPU version is outperformed by the rest. Thrust is clearly a 
 - We're not taking advantage of shared memory inside each block to store the partial sum results.
 - Each level of upsweep/downsweep currently launches a new kernel. It would be ideal to use the same kernel and compute the next level there without having to transfer the control back to the CPU.
 - At deeper level in the upsweep/downsweep calls, there are a lot of idle threads not doing work. This is wasting a lot of GPU cycles.
-- In the stream compaction phase, in order to find the number of remaining elements after compaction, I launched a new kernel to search for the maximum value in the prefix-sum array that is used to index into the output array. This could be a potential bottle neck but I haven't tested a different version to compare.
 - There are quite a bit of memory transfering between GPU & CPU, which initially slowed the application down alot. So I rewrote my scan and compaction functions to minimize this memory transfer.
 
 When testing with different block sizes, I found it pretty interesting that at size 128, it seems to be the most optimal. So I decided to use this block size for the rest of profiling 
@@ -128,8 +127,11 @@ Runtime: 2.01408 ms
 ```
 
 ## Note
+
 ### Modified test
 I added a #define PROFILE and #define PROFILE_ITERATIONS flags in a new header file "profilingcommon.h". When this is on, running main() will also iterate through each function call PROFILE_ITERATIONS number of times, then measure the execution time and average it for profiling analysis.
+
+I also increased the reserved stack size in VS to 0x40000000 to prevent stack overflow for larger array size
 
 ### Modified CMakeList.txt
 - Added "ProfilingCommon.h"

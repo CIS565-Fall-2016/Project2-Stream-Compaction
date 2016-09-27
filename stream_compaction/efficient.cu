@@ -39,8 +39,8 @@ __global__ void downsweep(int n, int level, int* odata) {
 }
 
 // Should only be launched with 1 thread?
-__global__ void remainingElementsCountForCompact(const int boolIndex, int* dev_indices, const int* dev_bools, int* remainingElementsCount) {
-	*remainingElementsCount = dev_bools[boolIndex] == 1 ? boolIndex : boolIndex;
+__global__ void kernRemainingElementsCountForCompact(const int n, int* dev_indices, const int* dev_bools, size_t* remainingElementsCount) {
+	*remainingElementsCount = dev_bools[n - 1] + dev_indices[n - 1];
 }
 
 void deviceScan(int n, int* dev_odata) {
@@ -160,7 +160,11 @@ int compact(int n, int *odata, const int *idata, float* timeElapsedMs) {
   Common::kernScatter << <BLOCK_COUNT(ceilPower2), BLOCK_SIZE >> >(ceilPower2, dev_odata, dev_idata, dev_bools, dev_indices);
 
   // The max value of all the valid indices for the compacted stream is the number of remaining elements
-  int remainingElementsCount = findMaxInDeviceArray(ceilPower2, dev_indices);
+  size_t* dev_remainingElementCount;
+  cudaMalloc((void**)&dev_remainingElementCount, sizeof(size_t));
+  kernRemainingElementsCountForCompact<<<1, 1>>>(ceilPower2, dev_indices, dev_bools, dev_remainingElementCount);
+  size_t remainingElementCount = 0;
+  cudaMemcpy(&remainingElementCount, dev_remainingElementCount, sizeof(size_t), cudaMemcpyDeviceToHost);
   
 #ifdef PROFILE
   // -- End code block to profile
@@ -182,7 +186,7 @@ int compact(int n, int *odata, const int *idata, float* timeElapsedMs) {
   cudaEventElapsedTime(&milliseconds, start, stop);
   *timeElapsedMs = milliseconds;
 #endif
-  return remainingElementsCount;
+  return remainingElementCount;
 }
 
 }

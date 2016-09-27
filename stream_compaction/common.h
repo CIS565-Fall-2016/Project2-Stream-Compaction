@@ -33,9 +33,6 @@ inline int ilog2ceil(int x) {
     return ilog2(x - 1) + 1;
 }
 
-int findMaxInDeviceArray(int n, int *idata);
-
-
 namespace StreamCompaction {
 namespace Common {
     __global__ void inclusiveToExclusiveScanResult(int n, int* odata, const int* idata);

@@ -14,35 +14,6 @@ void checkCUDAErrorFn(const char *msg, const char *file, int line) {
     exit(EXIT_FAILURE);
 }
 
-/* Max reduction is really just the partial sum upsweep algorithm */
-__global__ void maxReduction(int n, int level, int* odata) {
-  int tid = threadIdx.x + (blockIdx.x * blockDim.x);
-  if (tid >= n) {
-    return;
-  }
-  
-  int twoToLevel = powf(2, level);
-  int twoToLevelPlusOne = powf(2, level + 1);
-  if (tid % twoToLevelPlusOne == 0) {
-    odata[tid + twoToLevelPlusOne - 1] = imax(odata[tid + twoToLevel - 1], odata[tid + twoToLevelPlusOne - 1]);
-  }
-}
-
-int findMaxInDeviceArray(int n, int *dev_idata) {
-
-  int height = ilog2ceil(n);
-
-
-  for (int level = 0; level < height; ++level) {
-	  maxReduction << <BLOCK_COUNT(n), BLOCK_SIZE >> >(n, level, dev_idata);
-  }
-
-  int maxValue = 0;
-  cudaMemcpy(&maxValue, dev_idata + n - 1, sizeof(int), cudaMemcpyDeviceToHost);
-
-  return maxValue;
-}
-
 namespace StreamCompaction {
 namespace Common {
 
