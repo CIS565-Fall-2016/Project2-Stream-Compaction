@@ -29,7 +29,7 @@ Part 6: Using std::chrono and CUDA events for comparing the speed of different a
 
 **Dive Into Block Size**
 -------------
-In order to find the relationship between block size and performance, I modified block size to see different algorithm run time in order to get the optimized block size.   
+In order to find the relationship between block size and performance, I modified block size to see different algorithm run time for getting the optimized block size.   
 Below is my chart based on my code:
 
 **Case 1:** 
@@ -70,7 +70,7 @@ This graph is based on Case 1 result, `Array Size` is Power of Two number, `SIZE
 ###   
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose2.PNG "Chart2")
 
-From case 1 and case 2, we could see that when block size is less than 128, the algorithm performance is definitely worse than block size = 128. And after we set block size to 128, we could see that radix sort performance reaches to its highest level. After block size continues to grow, we could notice that Naive Scan, Efficient Scan and Radix Sort are all becoming slower.
+From case 1 and case 2, we could see that when block size is less than 128, the algorithm performance is definitely worse than block size = 128. And after we set block size to 128, we could see that radix sort performance reaches to its highest level. As block size continues to grow, we could notice that Naive Scan, Efficient Scan and Radix Sort are all becoming slower.
 So I choose my block size to be `128` in my code.  
 
 **Dive Into Array Size**
@@ -165,17 +165,17 @@ Plan to optimize this (yet several interviews this week I have to say: "lol" D:)
 Try to optimize mycode in path tracer project !
 
 Also a huge problem: Memory I/O!    
-We need to malloc memory in device, copy the host content into device then get a result, then transfer back to host memoy......  
+We need to malloc memory in device, copy the host content into device then get a result, then transfer back to host memory......  
 When we're doing first assignment, we know that for index-continuous threads to access physical-not-continuous memory, it needs extra unnecessary operations and becomes slow.    
 And in this project, we have a lot of memory I/O operation... So here we found another issue!!!
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/Profiling.PNG "Chart1")  
 ###
-We can see CUDA memory operations occupied especially large part of the entire execution.
+From the picture above, we can see that CUDA memory operations occupied especially large part of the entire execution.    
 So my guess is right. :)
 
 #### 5. Sample output 
 More my test result are in the `result_showcase` folder.
-Here I show one of them here:
+Here I show one of them:
 ####Array Size = 1 << 24. Block Size is 128.
 ```
 ****************
