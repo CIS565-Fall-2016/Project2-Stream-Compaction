@@ -88,6 +88,8 @@ See Performance Analysis.
 
 See Performance Analysis.
 
+As mentioned in GPU Gem 3, I guess thrust::exclusive_scan is using shared memory instread of global memory in my implementation. Accessing to shared memory in a block is more efficient than accessing to global memory.
+
 - **Write a brief explanation of the phenomena you see here.**
 
 The problem of non-optimized efficient scan is that lots of threads are doing nothing because we're examining if the index is divisible in the thread. The solution is to eliminate these threads. Actually we're able to access the useful indices of data directly by deducing some formulas using the index of thread.
