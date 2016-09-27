@@ -11,6 +11,7 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/radixSort.h>
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
