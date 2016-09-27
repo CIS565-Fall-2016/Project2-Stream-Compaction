@@ -18,7 +18,7 @@ int *dev_ScanResult;
 int *dev_OutputData;
 int *dev_total;
 
-int threadPerBlock = 1024;
+int threadPerBlock = 64;
 int BlockNum;
 //__global__ void CudaUpSweep(int d, int *data, int addTimes)
 //{

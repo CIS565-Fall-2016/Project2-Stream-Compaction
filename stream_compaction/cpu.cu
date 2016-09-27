@@ -115,7 +115,7 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	auto end   = std::chrono::system_clock::now();
 	//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 	std::chrono::duration<double, std::milli> duration = end - start;
-	std::cout << duration.count() << std::endl;
+	//std::cout << duration.count() << std::endl;
 	//FILE* fp = fopen("efficient.txt", "a+");
 	//fprintf(fp, "%d %f\n", ilog2ceil(n), duration.count());
 	//fclose(fp);
