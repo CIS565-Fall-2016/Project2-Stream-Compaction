@@ -26,9 +26,9 @@ namespace StreamCompaction {
 		 */
 		void scan(int n, int *odata, const int *idata) {
 
-			cudaEvent_t start, stop;
-			cudaEventCreate(&start);
-			cudaEventCreate(&stop);
+			//cudaEvent_t start, stop;
+			//cudaEventCreate(&start);
+			//cudaEventCreate(&stop);
 
 			dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 
@@ -46,18 +46,18 @@ namespace StreamCompaction {
 			cudaMemcpy(dev_oData, odata, sizeof(int)*n, cudaMemcpyHostToDevice);
 			checkCUDAErrorFn("Failed to copy dev_oData");
 
-			cudaEventRecord(start);
+			//cudaEventRecord(start);
 			// Perform scan
 			for (int x = 1; x < n; x *= 2) {
 				kernScanInnerLoop << <fullBlocksPerGrid, blockSize >> >(n, dev_oData, dev_iData, x);
 				std::swap(dev_oData, dev_iData);
 			}
-			cudaEventRecord(stop);
+			//cudaEventRecord(stop);
 
-			cudaEventSynchronize(stop);
-			float milliseconds = 0;
-			cudaEventElapsedTime(&milliseconds, start, stop);
-			std::cout << milliseconds << std::endl;
+			//cudaEventSynchronize(stop);
+			//float milliseconds = 0;
+			//cudaEventElapsedTime(&milliseconds, start, stop);
+			//std::cout << milliseconds << std::endl;
 
 			// Swap back
 			std::swap(dev_oData, dev_iData);

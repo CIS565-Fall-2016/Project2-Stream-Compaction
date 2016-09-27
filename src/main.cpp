@@ -99,12 +99,12 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, b);
     printDesc("cpu compact without scan, power-of-two");
     
-		begin = std::chrono::high_resolution_clock::now();
-		for (int i = 0; i < 1000; i++){
+		//begin = std::chrono::high_resolution_clock::now();
+		//for (int i = 0; i < 1000; i++){
 			count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
-		}
-		end = std::chrono::high_resolution_clock::now();
-		std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+		//}
+		//end = std::chrono::high_resolution_clock::now();
+		//std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
 
     expectedCount = count;
     printArray(count, b, true);
@@ -121,12 +121,12 @@ int main(int argc, char* argv[]) {
     printDesc("cpu compact with scan");
 
 
-		begin = std::chrono::high_resolution_clock::now();
-		for (int i = 0; i < 1000; i++){
+		//begin = std::chrono::high_resolution_clock::now();
+		//for (int i = 0; i < 1000; i++){
 			count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
-		}
-		end = std::chrono::high_resolution_clock::now();
-		std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+		//}
+		//end = std::chrono::high_resolution_clock::now();
+		//std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
     
     printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);

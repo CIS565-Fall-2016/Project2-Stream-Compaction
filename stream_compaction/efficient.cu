@@ -52,10 +52,10 @@ namespace StreamCompaction {
 			cudaMemcpy(dev_data, temp, sizeof(int)*newN, cudaMemcpyHostToDevice);
 			checkCUDAErrorFn("Failed to copy dev_iData");
 
-			cudaEvent_t start, stop;
-			cudaEventCreate(&start);
-			cudaEventCreate(&stop);
-			cudaEventRecord(start);
+			//cudaEvent_t start, stop;
+			//cudaEventCreate(&start);
+			//cudaEventCreate(&stop);
+			//cudaEventRecord(start);
 			// Perform scan
 			for (int x = 1; x < newN; x *= 2) {
 				kernUpSweep<<<fullBlocksPerGrid, blockSize>>>(newN, dev_data, 2 * x);
@@ -67,12 +67,12 @@ namespace StreamCompaction {
 				kernDownSweep<<<fullBlocksPerGrid, blockSize>>>(newN, dev_data, 2 * x);
 			}
 
-			cudaEventRecord(stop);
+			//cudaEventRecord(stop);
 
-			cudaEventSynchronize(stop);
-			float milliseconds = 0;
-			cudaEventElapsedTime(&milliseconds, start, stop);
-			std::cout << milliseconds << std::endl;
+			//cudaEventSynchronize(stop);
+			//float milliseconds = 0;
+			//cudaEventElapsedTime(&milliseconds, start, stop);
+			//std::cout << milliseconds << std::endl;
 
 			cudaMemcpy(temp, dev_data, sizeof(int)*newN, cudaMemcpyDeviceToHost);
 			for (int x = 0; x < n; x++){
@@ -116,6 +116,10 @@ namespace StreamCompaction {
 			cudaMemcpy(dev_idata, idata, sizeof(int)*n, cudaMemcpyHostToDevice);
 			checkCUDAErrorFn("Failed to copy dev_iData");
 
+			//cudaEvent_t start, stop;
+			//cudaEventCreate(&start);
+			//cudaEventCreate(&stop);
+			//cudaEventRecord(start);
 			
 			Common::kernMapToBoolean<<<fullBlocksPerGrid, blockSize>>>(n, dev_bools, dev_idata);
 
@@ -137,6 +141,13 @@ namespace StreamCompaction {
 			checkCUDAErrorFn("Failed to copy dev_oData");
 
 			Common::kernScatter<<<fullBlocksPerGrid, blockSize>>>(n, dev_odata, dev_idata, dev_bools, dev_indices);
+
+			//cudaEventRecord(stop);
+
+			//cudaEventSynchronize(stop);
+			//float milliseconds = 0;
+			//cudaEventElapsedTime(&milliseconds, start, stop);
+			//std::cout << milliseconds << std::endl;
 
 			// Bring odata back
 			cudaMemcpy(odata, dev_odata, sizeof(int)*n, cudaMemcpyDeviceToHost);
