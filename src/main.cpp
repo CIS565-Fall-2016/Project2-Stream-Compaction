@@ -14,11 +14,15 @@
 #include <stream_compaction/radixSort.h>
 #include "testing_helpers.hpp"
 #include <algorithm>
+#include <chrono>
+
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 8;
+    const int SIZE = 1 << 12;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 	float milscs;
+	int nitercpu = 10000;
+	
     // Scan tests
 
     printf("\n");
@@ -32,27 +36,42 @@ int main(int argc, char* argv[]) {
 
     zeroArray(SIZE, b);
     printDesc("cpu scan, power-of-two");
-    StreamCompaction::CPU::scan(SIZE, b, a);
+	auto begin = std::chrono::high_resolution_clock::now();
+	for (int i = 1; i < nitercpu; i++){
+		StreamCompaction::CPU::scan(SIZE, b, a);
+	}
+	auto end = std::chrono::high_resolution_clock::now();
+	milscs = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / nitercpu;
     printArray(SIZE, b, true);
+	printf("time lapsed %f ms\n", milscs);
+
 
     zeroArray(SIZE, c);
     printDesc("cpu scan, non-power-of-two");
-    StreamCompaction::CPU::scan(NPOT, c, a);
+	 begin = std::chrono::high_resolution_clock::now();
+	 for (int i = 1; i < nitercpu; i++){
+		 StreamCompaction::CPU::scan(NPOT, c, a);
+	 }
+	 end = std::chrono::high_resolution_clock::now();
+	 milscs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()  / nitercpu;
     printArray(NPOT, b, true);
     printCmpResult(NPOT, b, c);
+	printf("time lapsed %f ms\n", milscs);
+
 
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
-    StreamCompaction::Naive::scan(SIZE, c, a);
+	milscs = StreamCompaction::Naive::scan(SIZE, c, a);
     //printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
+	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("naive scan, non-power-of-two");
-    StreamCompaction::Naive::scan(NPOT, c, a);
+	milscs = StreamCompaction::Naive::scan(NPOT, c, a);
     //printArray(SIZE, c, true);
     printCmpResult(NPOT, b, c);
-
+	printf("time lapsed %f ms\n", milscs);
 	
 	 
     zeroArray(SIZE, c);
@@ -99,35 +118,55 @@ int main(int argc, char* argv[]) {
 
     zeroArray(SIZE, b);
     printDesc("cpu compact without scan, power-of-two");
-    count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 1; i < nitercpu; i++){
+		count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	milscs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()  / nitercpu;
     expectedCount = count;
     printArray(count, b, true);
     printCmpLenResult(count, expectedCount, b, b);
+	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact without scan, non-power-of-two");
-    count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 1; i < nitercpu; i++){
+		count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
     expectedNPOT = count;
     printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+	milscs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()  / nitercpu;
+	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("cpu compact with scan");
-    count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 1; i < nitercpu; i++){
+		count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
     printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
+	milscs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()  / nitercpu;
+	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, power-of-two");
-    count = StreamCompaction::Efficient::compact(SIZE, c, a);
+	count = StreamCompaction::Efficient::compact(SIZE, c, a, milscs);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
+	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, non-power-of-two");
-    count = StreamCompaction::Efficient::compact(NPOT, c, a);
+	count = StreamCompaction::Efficient::compact(NPOT, c, a, milscs);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+	printf("time lapsed %f ms\n", milscs);
 
     printf("\n");
     printf("*****************************\n");

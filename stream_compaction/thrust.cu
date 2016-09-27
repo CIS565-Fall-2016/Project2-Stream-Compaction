@@ -6,6 +6,7 @@
 #include "common.h"
 #include "thrust.h"
 #include <ctime>
+#include <chrono>
 
 namespace StreamCompaction {
 namespace Thrust {
@@ -18,12 +19,14 @@ float scan(int n, int *odata, const int *idata) {
     // example: for device_vectors dv_in and dv_out:
     // thrust::exclusive_scan(dv_in.begin(), dv_in.end(), dv_out.begin());
  
-
-	for (int i=0;i <10000 ; i++){
+	auto begin = std::chrono::high_resolution_clock::now();
+	 
 	thrust::exclusive_scan(idata , idata +n , odata);
-	}
- 
-	return 0;
+	 
+	auto end = std::chrono::high_resolution_clock::now();
+	float ns = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+	 
+	return ns;
 }
 
 }

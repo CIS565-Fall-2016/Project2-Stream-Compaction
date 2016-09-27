@@ -86,8 +86,8 @@ float scan(int n, int *odata, const int *idata) {
 		downSweep<<<numblocks,blockSize>>>(1<<level, n_max, idata_buff);
 	}
 
-	cudaEventSynchronize(t2);
 	cudaEventRecord(t2);
+	cudaEventSynchronize(t2);	
 	cudaEventElapsedTime(&tmpt, t0, t2);
 	milliscs += tmpt;
 
@@ -107,7 +107,15 @@ float scan(int n, int *odata, const int *idata) {
  * @param idata  The array of elements to compact.
  * @returns      The number of elements remaining after compaction.
  */
-int compact(int n, int *odata, const int *idata) {
+int compact(int n, int *odata, const int *idata, float &milliscs) {
+	cudaEvent_t t0, t2;
+	cudaEventCreate(&t0);
+	cudaEventCreate(&t2);
+
+	milliscs = 0.0f;
+	float tmpt;
+
+
     int n_remaing=0;
 	int * idata_buff;
 	int * odata_buff;
@@ -129,14 +137,19 @@ int compact(int n, int *odata, const int *idata) {
 		checkCUDAError("cudaMemcpy-idata_buff-failed");
 	cudaMemcpy(odata_buff, odata, n* sizeof(int), cudaMemcpyHostToDevice);
 		checkCUDAError("cudaMemcpy-odata_buff-failed");
-
+	
+	cudaEventRecord(t0);
 	//produce the indices
 	StreamCompaction::Common::kernMapToBoolean<<<numblocks, blockSize>>> ( n, bool_buff, idata_buff);
 
 	scan  (n, indices_buff, bool_buff);
 
 	StreamCompaction::Common::kernScatter<<<numblocks, blockSize>>>( n, odata_buff, idata_buff,  bool_buff,  indices_buff);
-
+	
+	cudaEventRecord(t2);
+	cudaEventSynchronize(t2);	
+	cudaEventElapsedTime(&tmpt, t0, t2);
+	milliscs += tmpt;
 
 	//GPU-->CPU
 	cudaMemcpy(odata,odata_buff,n*sizeof(int),cudaMemcpyDeviceToHost);
@@ -145,11 +158,13 @@ int compact(int n, int *odata, const int *idata) {
 	//	n_remaing+=bool_buff[i];
 	//}
 	cudaMemcpy(&n_remaing,indices_buff+n-1,sizeof(int),cudaMemcpyDeviceToHost);
+	int extra;
+	cudaMemcpy(&extra, bool_buff + n - 1, sizeof(int), cudaMemcpyDeviceToHost);
 	cudaFree(idata_buff);
 	cudaFree(odata_buff);
 	cudaFree(bool_buff);
 	cudaFree(indices_buff);
-    return n_remaing;
+	return n_remaing + extra;
 }
 
 }

@@ -34,8 +34,13 @@ __global__ void excludesiveShift(int n, int *odata, int *idata){
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
-void scan(int n, int *odata, const int *idata) {
- 
+float scan(int n, int *odata, const int *idata) {
+	cudaEvent_t t0, t2;
+	cudaEventCreate(&t0);
+	cudaEventCreate(&t2);
+
+	float milliscs = 0.0f;
+	float tmpt;
 	//dim3 numblocks(std::ceil((double) n / blockSize));
 	dim3 numblocks((n + blockSize - 1) / blockSize);
 	int* idata_buff;
@@ -59,18 +64,33 @@ void scan(int n, int *odata, const int *idata) {
 		else {
 			offset = 2 << (level -2);
 		}
+
+		cudaEventRecord(t0);
 		// for the given level, all threads read from idata_buff
 		scan <<<numblocks, blockSize>>>(offset, n, odata_buff, idata_buff);
+		cudaEventRecord(t2);
+		cudaEventSynchronize(t2);
+		cudaEventElapsedTime(&tmpt, t0, t2);
+		milliscs += tmpt;
+
 		//std::swap(idata_buff, odata_buff);
 		// odata_buff --> idata_buff for next iteration
 		cudaMemcpy(idata_buff, odata_buff, sizeof(int)*n, cudaMemcpyDeviceToDevice);
 	}
+
+	cudaEventRecord(t0);
 	excludesiveShift<<<numblocks, blockSize>>>(n, odata_buff, idata_buff);
+	cudaEventRecord(t2);
+	cudaEventSynchronize(t2);
+	cudaEventElapsedTime(&tmpt, t0, t2);
+	milliscs += tmpt;
 
 	//GPU --> CPU 	
 	cudaMemcpy(odata, odata_buff, sizeof(int)*n, cudaMemcpyDeviceToHost);
 	cudaFree(idata_buff);
 	cudaFree(odata_buff);
+
+	return milliscs;
 }
 
 }
