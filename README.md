@@ -74,6 +74,7 @@ powers of 2 which are part of the test.
 
 
 ```
+
 ****************
 ** SCAN TESTS **
 ****************
@@ -84,9 +85,11 @@ powers of 2 which are part of the test.
     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 6146 6190 ]
     passed
 ==== naive scan, power-of-two ====
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 6203 6259 ]
     a[129] = 3191, b[129] = 3221
     FAIL VALUE
 ==== naive scan, non-power-of-two ====
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ...   0   0 ]
     passed
 ==== work-efficient scan, power-of-two ====
     passed
@@ -123,9 +126,11 @@ powers of 2 which are part of the test.
     [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   1 ]
     passed
 ==== work-efficient compact, power-of-two ====
-    passed
+    expected 190 elements, got 0
+    FAIL COUNT
 ==== work-efficient compact, non-power-of-two ====
-    passed
+    expected 189 elements, got -1
+    FAIL COUNT
 
 ****************
 ** BENCHMARKS **
@@ -137,25 +142,103 @@ powers of 2 which are part of the test.
 ==== cpu scan, power-of-two ====
 Time:  0 microSeconds
 ==== naive scan, power-of-two ====
-Time:  146 microSeconds
+Time:  580 microSeconds
 ==== work-efficient scan, power-of-two ====
-Time:  166 microSeconds
+Time:  628 microSeconds
 ==== thrust scan, power-of-two ====
-Time:  0 microSeconds
+Time:  1 microSeconds
 ==== cpu radix sort ====
-Time:  36 microSeconds
+Time:  34 microSeconds
 ==== gpu radix sort cpu scan ====
-Time:  597 microSeconds
+Time:  925 microSeconds
 ==== gpu radix sort naive scan ====
-Time:  866 microSeconds
+Time:  1093 microSeconds
 ==== gpu radix sort thrust scan ====
-Time:  436 microSeconds
+Time:  903 microSeconds
 ==== cpu compact without scan, power-of-two ====
 Time:  0 microSeconds
 ==== cpu compact with scan ====
 Time:  1 microSeconds
 ==== work-efficient compact, power-of-two ====
-Time:  637 microSeconds
+Time:  729 microSeconds
+
+** SIZE = 512 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  11   0 ]
+==== cpu scan, power-of-two ====
+Time:  0 microSeconds
+==== naive scan, power-of-two ====
+Time:  540 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  578 microSeconds
+==== thrust scan, power-of-two ====
+Time:  1 microSeconds
+==== cpu radix sort ====
+Time:  66 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  1593 microSeconds
+==== gpu radix sort naive scan ====
+Time:  2907 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  1690 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  0 microSeconds
+==== cpu compact with scan ====
+Time:  3 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  718 microSeconds
+
+** SIZE = 1024 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  40   0 ]
+==== cpu scan, power-of-two ====
+Time:  1 microSeconds
+==== naive scan, power-of-two ====
+Time:  550 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  527 microSeconds
+==== thrust scan, power-of-two ====
+Time:  8 microSeconds
+==== cpu radix sort ====
+Time:  137 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  2025 microSeconds
+==== gpu radix sort naive scan ====
+Time:  2654 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  1655 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  1 microSeconds
+==== cpu compact with scan ====
+Time:  5 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  775 microSeconds
+
+** SIZE = 2048 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  32   0 ]
+==== cpu scan, power-of-two ====
+Time:  2 microSeconds
+==== naive scan, power-of-two ====
+Time:  579 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  612 microSeconds
+==== thrust scan, power-of-two ====
+Time:  2 microSeconds
+==== cpu radix sort ====
+Time:  264 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  2095 microSeconds
+==== gpu radix sort naive scan ====
+Time:  2749 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  1875 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  3 microSeconds
+==== cpu compact with scan ====
+Time:  10 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  734 microSeconds
 
 ** SIZE = 4096 **
 ****************
@@ -163,25 +246,103 @@ Time:  637 microSeconds
 ==== cpu scan, power-of-two ====
 Time:  5 microSeconds
 ==== naive scan, power-of-two ====
-Time:  767 microSeconds
+Time:  538 microSeconds
 ==== work-efficient scan, power-of-two ====
-Time:  609 microSeconds
+Time:  574 microSeconds
 ==== thrust scan, power-of-two ====
-Time:  7 microSeconds
+Time:  6 microSeconds
 ==== cpu radix sort ====
-Time:  531 microSeconds
+Time:  533 microSeconds
 ==== gpu radix sort cpu scan ====
-Time:  1268 microSeconds
+Time:  2041 microSeconds
 ==== gpu radix sort naive scan ====
-Time:  1700 microSeconds
+Time:  2819 microSeconds
 ==== gpu radix sort thrust scan ====
-Time:  1143 microSeconds
+Time:  1928 microSeconds
 ==== cpu compact without scan, power-of-two ====
 Time:  7 microSeconds
 ==== cpu compact with scan ====
 Time:  23 microSeconds
 ==== work-efficient compact, power-of-two ====
-Time:  539 microSeconds
+Time:  781 microSeconds
+
+** SIZE = 8192 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...   4   0 ]
+==== cpu scan, power-of-two ====
+Time:  11 microSeconds
+==== naive scan, power-of-two ====
+Time:  555 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  631 microSeconds
+==== thrust scan, power-of-two ====
+Time:  11 microSeconds
+==== cpu radix sort ====
+Time:  1062 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  2257 microSeconds
+==== gpu radix sort naive scan ====
+Time:  3114 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  2471 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  16 microSeconds
+==== cpu compact with scan ====
+Time:  47 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  825 microSeconds
+
+** SIZE = 16384 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  26   0 ]
+==== cpu scan, power-of-two ====
+Time:  23 microSeconds
+==== naive scan, power-of-two ====
+Time:  554 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  619 microSeconds
+==== thrust scan, power-of-two ====
+Time:  21 microSeconds
+==== cpu radix sort ====
+Time:  2181 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  3084 microSeconds
+==== gpu radix sort naive scan ====
+Time:  3642 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  2595 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  34 microSeconds
+==== cpu compact with scan ====
+Time:  97 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  866 microSeconds
+
+** SIZE = 32768 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...   7   0 ]
+==== cpu scan, power-of-two ====
+Time:  49 microSeconds
+==== naive scan, power-of-two ====
+Time:  612 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  895 microSeconds
+==== thrust scan, power-of-two ====
+Time:  44 microSeconds
+==== cpu radix sort ====
+Time:  4240 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  4343 microSeconds
+==== gpu radix sort naive scan ====
+Time:  5006 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  3910 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  69 microSeconds
+==== cpu compact with scan ====
+Time:  196 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  1046 microSeconds
 
 ** SIZE = 65536 **
 ****************
@@ -189,77 +350,233 @@ Time:  539 microSeconds
 ==== cpu scan, power-of-two ====
 Time:  94 microSeconds
 ==== naive scan, power-of-two ====
-Time:  1072 microSeconds
+Time:  704 microSeconds
 ==== work-efficient scan, power-of-two ====
-Time:  833 microSeconds
+Time:  917 microSeconds
 ==== thrust scan, power-of-two ====
-Time:  102 microSeconds
+Time:  90 microSeconds
 ==== cpu radix sort ====
-Time:  8615 microSeconds
+Time:  8625 microSeconds
 ==== gpu radix sort cpu scan ====
-Time:  5620 microSeconds
+Time:  6799 microSeconds
 ==== gpu radix sort naive scan ====
-Time:  5810 microSeconds
+Time:  7905 microSeconds
 ==== gpu radix sort thrust scan ====
-Time:  5537 microSeconds
+Time:  6677 microSeconds
 ==== cpu compact without scan, power-of-two ====
-Time:  145 microSeconds
+Time:  140 microSeconds
 ==== cpu compact with scan ====
-Time:  413 microSeconds
+Time:  397 microSeconds
 ==== work-efficient compact, power-of-two ====
-Time:  1451 microSeconds
+Time:  1730 microSeconds
+
+** SIZE = 131072 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  10   0 ]
+==== cpu scan, power-of-two ====
+Time:  188 microSeconds
+==== naive scan, power-of-two ====
+Time:  885 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  1259 microSeconds
+==== thrust scan, power-of-two ====
+Time:  432 microSeconds
+==== cpu radix sort ====
+Time:  17407 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  12398 microSeconds
+==== gpu radix sort naive scan ====
+Time:  14302 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  11650 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  280 microSeconds
+==== cpu compact with scan ====
+Time:  1034 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  1204 microSeconds
+
+** SIZE = 262144 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  42   0 ]
+==== cpu scan, power-of-two ====
+Time:  738 microSeconds
+==== naive scan, power-of-two ====
+Time:  15 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  25 microSeconds
+==== thrust scan, power-of-two ====
+Time:  766 microSeconds
+==== cpu radix sort ====
+Time:  35010 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  2323 microSeconds
+==== gpu radix sort naive scan ====
+Time:  2052 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  1959 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  590 microSeconds
+==== cpu compact with scan ====
+Time:  2427 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  523 microSeconds
+
+** SIZE = 524288 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  42   0 ]
+==== cpu scan, power-of-two ====
+Time:  1415 microSeconds
+==== naive scan, power-of-two ====
+Time:  16 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  24 microSeconds
+==== thrust scan, power-of-two ====
+Time:  1762 microSeconds
+==== cpu radix sort ====
+Time:  69752 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  4077 microSeconds
+==== gpu radix sort naive scan ====
+Time:  4009 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  4086 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  1143 microSeconds
+==== cpu compact with scan ====
+Time:  4837 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  1044 microSeconds
 
 ** SIZE = 1048576 **
 ****************
     [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...   6   0 ]
 ==== cpu scan, power-of-two ====
-Time:  1521 microSeconds
+Time:  2821 microSeconds
 ==== naive scan, power-of-two ====
 Time:  17 microSeconds
 ==== work-efficient scan, power-of-two ====
-Time:  27 microSeconds
+Time:  26 microSeconds
 ==== thrust scan, power-of-two ====
-Time:  3638 microSeconds
+Time:  3631 microSeconds
 ==== cpu radix sort ====
-Time:  137808 microSeconds
+Time:  139054 microSeconds
 ==== gpu radix sort cpu scan ====
-Time:  8723 microSeconds
+Time:  8441 microSeconds
 ==== gpu radix sort naive scan ====
-Time:  8787 microSeconds
+Time:  8830 microSeconds
 ==== gpu radix sort thrust scan ====
-Time:  8568 microSeconds
+Time:  9037 microSeconds
 ==== cpu compact without scan, power-of-two ====
-Time:  2321 microSeconds
+Time:  2301 microSeconds
 ==== cpu compact with scan ====
-Time:  10280 microSeconds
+Time:  8768 microSeconds
 ==== work-efficient compact, power-of-two ====
-Time:  2295 microSeconds
+Time:  2365 microSeconds
+
+** SIZE = 2097152 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...   2   0 ]
+==== cpu scan, power-of-two ====
+Time:  4628 microSeconds
+==== naive scan, power-of-two ====
+Time:  20 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  31 microSeconds
+==== thrust scan, power-of-two ====
+Time:  7244 microSeconds
+==== cpu radix sort ====
+Time:  277141 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  17729 microSeconds
+==== gpu radix sort naive scan ====
+Time:  17591 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  17553 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  4684 microSeconds
+==== cpu compact with scan ====
+Time:  17774 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  4784 microSeconds
+
+** SIZE = 4194304 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  26   0 ]
+==== cpu scan, power-of-two ====
+Time:  6579 microSeconds
+==== naive scan, power-of-two ====
+Time:  18 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  30 microSeconds
+==== thrust scan, power-of-two ====
+Time:  15121 microSeconds
+==== cpu radix sort ====
+Time:  555419 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  35741 microSeconds
+==== gpu radix sort naive scan ====
+Time:  35411 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  35747 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  9555 microSeconds
+==== cpu compact with scan ====
+Time:  35407 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  9463 microSeconds
+
+** SIZE = 8388608 **
+****************
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  10   0 ]
+==== cpu scan, power-of-two ====
+Time:  13667 microSeconds
+==== naive scan, power-of-two ====
+Time:  18 microSeconds
+==== work-efficient scan, power-of-two ====
+Time:  29 microSeconds
+==== thrust scan, power-of-two ====
+Time:  31478 microSeconds
+==== cpu radix sort ====
+Time:  1111762 microSeconds
+==== gpu radix sort cpu scan ====
+Time:  71012 microSeconds
+==== gpu radix sort naive scan ====
+Time:  70982 microSeconds
+==== gpu radix sort thrust scan ====
+Time:  71596 microSeconds
+==== cpu compact without scan, power-of-two ====
+Time:  18627 microSeconds
+==== cpu compact with scan ====
+Time:  69722 microSeconds
+==== work-efficient compact, power-of-two ====
+Time:  18604 microSeconds
 
 ** SIZE = 16777216 **
 ****************
     [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  42   0 ]
 ==== cpu scan, power-of-two ====
-Time:  24411 microSeconds
+Time:  25969 microSeconds
 ==== naive scan, power-of-two ====
-Time:  19 microSeconds
+Time:  20 microSeconds
 ==== work-efficient scan, power-of-two ====
-Time:  32 microSeconds
+Time:  31 microSeconds
 ==== thrust scan, power-of-two ====
-Time:  64703 microSeconds
+Time:  61397 microSeconds
 ==== cpu radix sort ====
-Time:  2208906 microSeconds
+Time:  2213557 microSeconds
 ==== gpu radix sort cpu scan ====
-Time:  145916 microSeconds
+Time:  142111 microSeconds
 ==== gpu radix sort naive scan ====
-Time:  145302 microSeconds
+Time:  142175 microSeconds
 ==== gpu radix sort thrust scan ====
-Time:  144644 microSeconds
+Time:  142549 microSeconds
 ==== cpu compact without scan, power-of-two ====
-Time:  37473 microSeconds
+Time:  38071 microSeconds
 ==== cpu compact with scan ====
-Time:  167007 microSeconds
+Time:  140700 microSeconds
 ==== work-efficient compact, power-of-two ====
-Time:  39963 microSeconds
+Time:  38334 microSeconds
 Press any key to continue . . .
 ```
 

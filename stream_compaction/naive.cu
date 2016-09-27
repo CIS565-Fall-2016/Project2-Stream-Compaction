@@ -61,7 +61,7 @@ namespace Naive {
             for (int d = 1; d <= ilog2ceil(n); d++)
             {
                 kernscan << <blocks, blockSize >> >(n, d, dev_scandata, dev_scandata2);
-                count++;   
+                count++;
             }
         }
         else
