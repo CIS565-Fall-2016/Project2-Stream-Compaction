@@ -16,9 +16,9 @@ Max size: 2<sup>30</sup>
 
 CUDA Summary
 
-![](images/GPUCUDAstats.png)
+![](images/GPUCUDAstats.PNG)
 
-![](images/cudaCoreStats.png)
+![](images/cudaCoreStats.PNG)
 
 Memory I/O looks to be the bottleneck over the GPU, meaning changing the variables over to shared memory might make a difference. (not checked, just speculating)
 
