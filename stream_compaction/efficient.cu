@@ -23,7 +23,7 @@ namespace Efficient {
 		}
 	}
 
-	__global__ void kernReduce(int d, int n, int* idata) {
+	__global__ void kernUpSweep(int d, int n, int* idata) {
 		int index = threadIdx.x + (blockDim.x * blockIdx.x);
 
 		if (index >= n) return;
@@ -56,7 +56,7 @@ void scan(int n, int *odata, const int *idata, float& time) {
 	cudaEventRecord(start);
 	//up-sweep
 	for (int d = 0; d < ilog; ++d) {
-		kernReduce << <fullBlocksPerGrid, blockSize >> >(d, off_n, dev_in);
+		kernUpSweep << <fullBlocksPerGrid, blockSize >> >(d, off_n, dev_in);
 	}
 	
 	//set the last value as zero

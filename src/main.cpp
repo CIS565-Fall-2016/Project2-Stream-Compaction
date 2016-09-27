@@ -19,7 +19,7 @@
 #define ITER 1
 
 int main(int argc, char* argv[]) {
-    const size_t SIZE = 1 << 26;
+    const size_t SIZE = 1 << 20;
     const int NPOT = SIZE - 3;
     //int a[SIZE], b[SIZE], c[SIZE];
 	
