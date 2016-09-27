@@ -10,21 +10,20 @@
 **SCREENSHOT**
 -------------
 **BlockSize : 128**  
-**SIZE :  1 << 24**  
-**SIZE :  1 << 24**  
+**SIZE :  1 << 24**   
 
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/XueyinResultOriginal_pow(2%2C24).gif "Performance One") 
 
 ###   
 **FEATURES I IMPLEMENT**
 -------------
-```javascript
-####Part 1: CPU Scan & Stream Compaction
-####Part 2: Naive GPU Scan Algorithm
-####Part 3: Work-Efficient GPU Scan & Stream Compaction
-####Part 4: Thrust Exclusive Scan using Thrust library
-####Part 5: Radix Sort (Extra Credit)
-####Part 6: Using std::chrono and CUDA events for comparing the speed of different algorithms 
+```
+Part 1: CPU Scan & Stream Compaction
+Part 2: Naive GPU Scan Algorithm
+Part 3: Work-Efficient GPU Scan & Stream Compaction
+Part 4: Thrust Exclusive Scan using Thrust library
+Part 5: Radix Sort (Extra Credit)
+Part 6: Using std::chrono and CUDA events for comparing the speed of different algorithms 
 ```
 ###        
 
@@ -34,8 +33,7 @@ In order to find the relationship between block size and performance, I modified
 Below is my chart based on my code:
 
 **Case 1:** 
-#####Power of Two number, `SIZE` = 1 << 24 = 16777216
-#####All the time recorded are in `ms`.
+#####Power of Two number, `SIZE` = 1 << 24 = 16777216. All the time recorded are in `ms`.
 
 Block Size | Naïve Scan | Efficient Scan | Thrust Scan| Radix Sort|CPU Scan
 ---|---|---|---|---|---
@@ -50,8 +48,8 @@ Block Size | Naïve Scan | Efficient Scan | Thrust Scan| Radix Sort|CPU Scan
 
 
 **Case 2:**
-#####Non Power of Two number, `SIZE(NPOT)`= 1 << 24 - 3 = 16777213  
-#####All the time recorded are in `ms`.
+#####Non Power of Two number, `SIZE(NPOT)`= 1 << 24 - 3 = 16777213. All the time recorded are in `ms`.
+
 Block Size        | Naïve Scan   | Efficient Scan | Thrust Scan| Radix Sort|CPU Scan|
 ---|---|---|---|---|---
 16 | 45.901855 | 89.639648 |2.094752|2448.440186|42.9234
@@ -64,13 +62,15 @@ Block Size        | Naïve Scan   | Efficient Scan | Thrust Scan| Radix Sort|CPU
 
 
 Now let me draw a graph to explicitly show my result :)  
+####
 `Notice: ` 
-This graph is based on Case 1 result, `Array Size` is Power of Two number, `SIZE` = 1 << 24 = 16777216   
+This graph is based on Case 1 result, `Array Size` is Power of Two number, `SIZE` = 1 << 24 = 16777216 
+###
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose1.PNG "Chart1")  
 ###   
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutBlockSizeChoose2.PNG "Chart2")
 
-From case 1 and case 2, we could see that when block size is less than 128, the algorithm performance is definitely worse than block size = 128. And after we set block size to 128, we could see that radix sort performance reaches to the highest level. After block size continues to grow, we could notice that Naive Scan, Efficient Scan and Radix Sort are all becoming slower.
+From case 1 and case 2, we could see that when block size is less than 128, the algorithm performance is definitely worse than block size = 128. And after we set block size to 128, we could see that radix sort performance reaches to its highest level. After block size continues to grow, we could notice that Naive Scan, Efficient Scan and Radix Sort are all becoming slower.
 So I choose my block size to be `128` in my code.  
 
 **Dive Into Array Size**
@@ -78,9 +78,7 @@ So I choose my block size to be `128` in my code.
 I set block size = `128` in my code, and start to use array size as a parameter to change, in order to compare the performance between different GPU algorithms and CPU algorithm.
 Below is my chart based on my code:
  
-#####`Blocksize` = 128
-#####All the time recorded are in `ms`.
-#####Max Value for scan in the array is 50
+#####`Blocksize` = 128.   All the time recorded are in `ms`. Max Value for scan in the array is 50 (for this chart)
 Array Size | Naïve Scan | Efficient Scan | Thrust Scan|CPU Scan
 ---|---|---|---|---
 2^8 | 0.031904 | 0.11024 |0.021248|0
@@ -89,9 +87,7 @@ Array Size | Naïve Scan | Efficient Scan | Thrust Scan|CPU Scan
 2^20 | 1.297824 | 1.681472 |0.468608|1.5041 
 2^24 | 25.53968 | 27.6632 |2.403232|25.0931 
 
-#####`Blocksize` = 128
-#####All the time recorded are in `ms`.
-#####Max Value for sort in the array is 2^15
+#####`Blocksize` = 128.  All the time recorded are in `ms`. Max Value for sort in the array is 2^15 (for this chart)
 Array Size | Radix Sort | Std::sort  
 ---|---|---
 2^8 | 1.105344 | 0
@@ -101,11 +97,12 @@ Array Size | Radix Sort | Std::sort
 2^24 | 749.649841 | 894.4247
 
 Graph for summary:
+####
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutArraySizeChoose0.PNG "Chart1")  
-###   
+####
 ![alt text](https://github.com/xueyinw/Project2-Stream-Compaction/blob/master/result_showcase/ReadMeAboutArraySizeChoose1.PNG "Chart2")
 
-From the test result, we could see GPU implementation is slower than CPU's. But when the array size grows, they two become close.    
+From the test result, we could see that for small Array Size, GPU implementation is slower than CPU's. But when the array size grows, they two become close.    
 Thrust Scan is very fast for large array size.    
 
 ####     
@@ -125,15 +122,13 @@ I use std::chrono for timing CPU code.
  
 #### 3.To guess at what might be happening inside the Thrust implementation (e.g. allocation, memory copy)
 Answer:   
-I guess the inner mechnism of THRUST requires some initialization operations.    
-After this step, it reaches to better performance.    
-(For int numbers it is also implemented in radix sort algorithm.)
+I guess the inner mechnism of THRUST requires some initialization operations. After this step, it reaches to better performance.    
 
 #### 4.Can you find the performance bottlenecks? 
 Answer:    
-Yes. First I want to mention, When we are doing iterations in scan function, and inside each loop is kernal function like Upsweep, downsweep and scan in device. We could see that as the iteration goes on, one phenomena appears:     
+Yes. First I want to mention, When we are doing iterations in scan function, and inside each loop is kernal function like Upsweep, Downsweep. We could see that as the iteration goes on, one phenomenon appears:     
 There are several threads idling. Since they need to wait those threads which are working to finish there mission, they have to be idling, which causes extra resource allocate.  
-My code here to address this problem:
+Paste part of my code here to address this problem:
 ```java
 void scanInDevice(int n, int *devData) {
 		int blockNum = (n + blockSize - 1) / blockSize;
@@ -160,7 +155,7 @@ __global__ void upSweep(int N, int d, int *idata) {
 	int delta = 1 << d;
 	int doubleDelta = 1 << (d + 1);
 	if (n % doubleDelta == 0) {    // not each thread is working, right? 
-                                   //But those "should not be working" threads are still evoked via kernal function
+                                   //But those "should not be working" threads are still evoked.
 		idata[n + doubleDelta - 1] += idata[n + delta - 1];
 	}
 	}
