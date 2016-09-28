@@ -7,6 +7,8 @@
  */
 
 #include <cstdio>
+#include <chrono>
+#include <iostream>
 #include <stream_compaction/cpu.h>
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
@@ -27,17 +29,25 @@ int main(int argc, char* argv[]) {
 
     genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
-    printArray(SIZE, a, true);
+	//printArray(SIZE, a, true);
 
-    zeroArray(SIZE, b);
-    printDesc("cpu scan, power-of-two");
-    StreamCompaction::CPU::scan(SIZE, b, a);
-    printArray(SIZE, b, true);
+	{
+		zeroArray(SIZE, b);
+		printDesc("cpu scan, power-of-two");
+		auto begin = std::chrono::high_resolution_clock::now();
+
+		StreamCompaction::CPU::scan(SIZE, b, a);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+
+		//printArray(SIZE, b, true);
+	}
 
     zeroArray(SIZE, c);
     printDesc("cpu scan, non-power-of-two");
     StreamCompaction::CPU::scan(NPOT, c, a);
-    printArray(NPOT, b, true);
+    //printArray(NPOT, b, true);
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
@@ -87,27 +97,43 @@ int main(int argc, char* argv[]) {
     a[SIZE - 1] = 0;
     printArray(SIZE, a, true);
 
-    int count, expectedCount, expectedNPOT;
+	int count, expectedCount, expectedNPOT;
 
-    zeroArray(SIZE, b);
-    printDesc("cpu compact without scan, power-of-two");
-    count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
-    expectedCount = count;
-    printArray(count, b, true);
-    printCmpLenResult(count, expectedCount, b, b);
+	{
+		zeroArray(SIZE, b);
+		printDesc("cpu compact without scan, power-of-two");
+		auto begin = std::chrono::high_resolution_clock::now();
+
+		count = StreamCompaction::CPU::compactWithoutScan(SIZE, b, a);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+
+		expectedCount = count;
+		//printArray(count, b, true);
+		printCmpLenResult(count, expectedCount, b, b);
+	}
 
     zeroArray(SIZE, c);
     printDesc("cpu compact without scan, non-power-of-two");
     count = StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
     expectedNPOT = count;
-    printArray(count, c, true);
-    printCmpLenResult(count, expectedNPOT, b, c);
+    //printArray(count, c, true);
+	printCmpLenResult(count, expectedNPOT, b, c);
 
-    zeroArray(SIZE, c);
-    printDesc("cpu compact with scan");
-    count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
-    printArray(count, c, true);
-    printCmpLenResult(count, expectedCount, b, c);
+	{
+		zeroArray(SIZE, c);
+		printDesc("cpu compact with scan");
+		auto begin = std::chrono::high_resolution_clock::now();
+
+		count = StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "ns" << std::endl;
+
+		//printArray(count, c, true);
+		printCmpLenResult(count, expectedCount, b, c);
+	}
 
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, power-of-two");
