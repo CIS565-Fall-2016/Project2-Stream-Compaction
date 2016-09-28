@@ -31,10 +31,12 @@ While this process is easily done in an iterative fashion, we can also employ so
 to compute the compacted array more quickly. These parallel algorithms require that first a temporary boolean 
 mapping of the list must be created, which then undergoes an "exclusive scan". 
 
-A "scan" is an operation that creates and ouput list such that for each index an input list, the output list 
+A "scan" (depicted below) is an operation that creates and ouput list such that for each index an input list, the output list 
 contains the sums of all elements preceeding it in the input list. The term "exclusive" means that the first 
 element of the output array is always 0, and thus the last element of the input array is excluded. This contrasts 
 with an "inclusive" scan, which begins with the first element of the input array.
+
+![](images/scan.tiff)
 
 It is here that we can divide our algorithms into naive and efficientimplementations. For comparison's sake, 
 the scan method was also implemented as a CPU function.
