@@ -27,7 +27,7 @@ I added a benchmark suite for testing the run time of each implementation under 
 ## Performance Analysis
 ### Performance of different implementation
 
-![](/images/process_time.png)
+![](/image/process_time.png)
 
 Here's the test result for each of the methods. The tests are run with the block size of 256(which is decided as near optimal after testing on numerous values). For each methods, I ran 100 independent tests, and calculated their average process time.
 
@@ -35,7 +35,7 @@ We can observe indeed that the GPU version of scan has a better performance than
 
 ### Performance of GPU methods under different block size
 
-![](/images/process_time_blocksize.png)
+![](/image/process_time_blocksize.png)
 
 The tests are run with the stream length of 2^24, each method is tested 100 times and recorded the average. Observe that the performance starts to decrease after blocksize getting over 256. 
 
