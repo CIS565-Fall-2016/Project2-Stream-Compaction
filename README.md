@@ -56,7 +56,15 @@ optimizations are inherit to the CPU implementation due to hardware features suc
 
 ![](images/naive_parallel.tiff)
 
+As depicted above, the Naive parallel implmentation computes several pairwise adds for each level in 0 to lg n. 
+
+While this limits the number of parallel loops that need to be launched, this algorithm is not considered "work efficient" since the number of additions that must be computed is O(n lgn). 
+
+I optimized this implementation be launching a scan of an array of length 2^15 using different thread counts. The results are depicted below. In this graph and those later, Po2 stands for Power of Two. 
+
 ![](images/naive_blocksize.png)
+
+This graph shows that a 256 blocksize has the lowest average runtime, so this is the value I selected for the final analysis. 
 
 ### Efficient Parallel Implementation 
 
