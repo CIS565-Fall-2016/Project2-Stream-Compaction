@@ -33,3 +33,33 @@ Note that the depiction of array sizes in this diagram is logarithmic (that is, 
 There are a few curiosities about these results. First, we observe that efficient scan, naive scan, and Thrust scan, all appear to be running with linear time complexity. This is the case because the GeForce GTX 1070 only has 1920 CUDA cores. In any GPU, the number of threads is constant and does not increase with the size of the inputs. However in more powerful GPUs, this can still lead to substantial performance increases by parallelizing a large fraction of the operations and dividing the total execution time by a large constant number. However as the number elements in the array increases relative to the number of threads executing in parallel, this improvement becomes less evident. In fact, the constant time improvement may be offset by the shortcomings of the GPU, namely its lack of optimizations for sequential operations.
 
 This explains why the performance of the GPU scans is still comparable to the performance of the CPU scan. It still does not explain the fact that naive scan outperforms all the other GPU algorithms, and efficient scan performs worst of all. One possible reason for this is that efficient scan reduces the total number of addition operations by O(log n). However, it requires the operation to be split into an upsweep and a downsweep, the latter having to wait for the former to complete. At the end of both these operations very few cores are active -- in fact, at the very end, only one core is active since approximately only one addition operation is performed on the last iteration. This is a problem for the naive implementation as well but it only happens once. In contrast the efficient implementation actually encounters this situation twice.
+
+## Stream Compaction
+We also implemented three versions of `stream-compact`.
+
+- efficient stream-compact: this version takes three steps:
+
+  1. We call a kernel to populate a new array of booleans that determines whether an element passes our test function (in our case, whether an element is nonzero).
+  2. We perform `scan` on the array of booleans. We use the efficient version of `scan` described in the previous section.
+  3. Finally, we use the output of `scan` to determine the indices in the output array to assign each nonzero element in the input array.
+
+- compact with scan: in order to emulate the GPU version, we implement a version on the CPU that uses the CPU scan algorithm. As the diagram below demonstrates, this has no performance benefit on the CPU.
+- compact without scan: this final implementation is a straightforward CPU implementation that simply iterates through the input array and assigns all nonzero elements to the output array.
+
+The following diagram compares performance across these implementations. Again, the x-axis is logarithmic.
+
+![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/Profiling_Page_3.png).
+In this case, we observe that the GPU implementation does outperform the CPU implementations. However, as discussed in the previous section, this cannot be credited to the `scan` operation, and must have more to do with steps 1. and 3. -- the parallel testing and assignment of each element in the input array to the output array.
+
+## Large numbers bug
+A strange bug that remains unresolved in this project is that our GPU algorithms simply would not run for arrays larger than 2^16. The following picture displays the result of running an array with 2^17 elements:
+![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/BugPNG.PNG)
+This appears to be a compiler error, since the program encounters no errors for any of the smaller arrays that we tested. One unfortunate consequence of this issue is that it was impossible to compare our GPU implementations with the CPU algorithms on very large arrays, where the GPU may have indeed had the advantage. We were able to compare the Thrust implementation of scan with the CPU version at sizes as large as 2^29. The following graph depicts the results:
+![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/Profiling_Page_1.png)
+It is interesting to note that the CPU _still_ outperforms even the optimized Thrust implementation for the GPU. Also, the Thrust implementation causes the same bug that we described earlier for arrays larger than 2^29. Again we reason that the poor performance of the GPU can be credited to the poor throughput of the GeForce GTX 1070.
+
+## blockSize optimizations
+On both the naive and efficient implementations, we experimented with different block sizes and record the results in the charts below:
+
+![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/Profiling_Page_5.png)
+![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/Profiling_Page_6.png)
