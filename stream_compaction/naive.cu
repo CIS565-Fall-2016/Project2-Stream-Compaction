@@ -6,6 +6,9 @@
 namespace StreamCompaction {
 namespace Naive {
 
+double last_runtime;
+int blkSize = 256;
+
 __global__ void kernScan(int n, int dPow, int *odata, const int *idata) {
   int k = blockIdx.x * blockDim.x + threadIdx.x;
   if (k >= n)
@@ -36,7 +39,9 @@ void scan(int n, int *odata, const int *idata) {
   cudaMemcpy(devData[0], idata, n*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemset(devData[1], 0, n*sizeof(int));
 
-  dim3 blkDim(256);
+  double t1 = clock();
+
+  dim3 blkDim(blkSize);
   dim3 blkCnt((n + blkDim.x - 1)/blkDim.x);
 
   int dst, src;
@@ -53,6 +58,10 @@ void scan(int n, int *odata, const int *idata) {
   dst = 1 - src;
   kernInclToExcl<<<blkCnt,blkDim>>>(n, devData[dst], devData[src]);
   cudaDeviceSynchronize();
+
+  double t2=clock();
+  last_runtime = 1.0E6 * (t2-t1) / CLOCKS_PER_SEC;
+
   cudaMemcpy(odata, devData[dst], n*sizeof(int), cudaMemcpyDeviceToHost);
   odata[0] = 0;
 

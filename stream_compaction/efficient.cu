@@ -6,6 +6,9 @@
 namespace StreamCompaction {
 namespace Efficient {
 
+double last_runtime;
+int blkSize = 256;
+
 // perform reduction
 __global__ void kernScanUp(int n, int dPow, int *data) {
   int k = blockIdx.x * blockDim.x + threadIdx.x;
@@ -14,7 +17,6 @@ __global__ void kernScanUp(int n, int dPow, int *data) {
 
   data[k + dPow - 1] += data[k + dPow/2 - 1];
 }
-
 
 // perform reduction
 __global__ void kernScanDown(int n, int dPow, int *data) {
@@ -62,17 +64,18 @@ static int getPot(int n) {
 static void devScanUtil(int n, int *devData) {
   int pot  = getPot(n);
 
-  dim3 blkDim(256);
-  dim3 blkCnt((pot + blkDim.x - 1)/blkDim.x);
+  dim3 blkDim(blkSize);
 
   int dPow = 2;
   while (dPow/2 < n) {
+    dim3 blkCnt((pot + blkDim.x - 1)/blkDim.x);
     kernScanUp<<<blkCnt,blkDim>>>(pot, dPow, devData);
     dPow *= 2;
   }
   cudaMemset(&devData[pot-1], 0, sizeof(int));
 
   while (dPow > 1) {
+    dim3 blkCnt((pot + blkDim.x - 1)/blkDim.x);
     kernScanDown<<<blkCnt,blkDim>>>(pot, dPow, devData);
     dPow /= 2;
   }
@@ -89,7 +92,10 @@ void scan(int n, int *odata, const int *idata) {
   cudaMemset(devData, 0, pot*sizeof(int));
   cudaMemcpy(devData, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 
+  double t1 = clock();
   devScanUtil(n, devData);
+  double t2 = clock();
+  last_runtime = 1.0E6 * (t2-t1) / CLOCKS_PER_SEC;
 
   cudaMemcpy(odata, devData, n*sizeof(int), cudaMemcpyDeviceToHost);
   cudaFree(devData);
@@ -112,15 +118,17 @@ int compact(int n, int *odata, const int *idata) {
   cudaMalloc((void**)&devData, n*sizeof(int));
   cudaMemcpy(devData, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 
-  dim3 blkDim(256);
+  dim3 blkDim(blkSize);
   dim3 blkCnt((n + blkDim.x - 1)/blkDim.x);
 
   // mark values to keep
   int *devKeep, *devScan;
   cudaMalloc((void**)&devKeep, pot*sizeof(int));
-  cudaMemset(devKeep, 0, pot*sizeof(int));
-  kernMark<<<blkCnt,blkDim>>>(n, devKeep, devData);
   cudaMalloc((void**)&devScan, pot*sizeof(int));
+  cudaMemset(devKeep, 0, pot*sizeof(int));
+
+  double t1 = clock();
+  kernMark<<<blkCnt,blkDim>>>(n, devKeep, devData);
   cudaMemcpy(devScan, devKeep, pot*sizeof(int), cudaMemcpyDeviceToDevice);
 
   // scan boolean array
@@ -132,6 +140,8 @@ int compact(int n, int *odata, const int *idata) {
   int *devOut;
   cudaMalloc((void**)&devOut, n*sizeof(int));
   kernScatter<<<blkCnt,blkDim>>>(n, devOut, devKeep, devScan, devData);
+  double t2 = clock();
+  last_runtime = 1.0E6 * (t2-t1) / CLOCKS_PER_SEC;
   cudaMemcpy(odata, devOut, nKeep*sizeof(int), cudaMemcpyDeviceToHost);
 
   cudaFree(devOut);

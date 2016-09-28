@@ -4,15 +4,22 @@
 namespace StreamCompaction {
 namespace CPU {
 
+double last_runtime;
+
 /**
  * CPU scan (prefix sum).
  */
 void scan(int n, int *odata, const int *idata) {
+    double t1 = clock();
+
     int t = 0;
     for (int i = 0; i < n; i++) {
       odata[i] = t;
       t += idata[i];
     }
+
+    double t2 = clock();
+    last_runtime = 1.0E6*(t2-t1)/CLOCKS_PER_SEC;
 }
 
 /**
@@ -21,6 +28,8 @@ void scan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
+    double t1 = clock();
+
     int oIdx = 0;
     for (int i = 0; i < n; i++) {
       if (idata[i] != 0) {
@@ -28,6 +37,9 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
         oIdx++;
       }
     }
+
+    double t2 = clock();
+    last_runtime = 1.0E6*(t2-t1)/CLOCKS_PER_SEC;
     return oIdx;
 }
 
@@ -37,6 +49,8 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithScan(int n, int *odata, const int *idata) {
+    double t1 = clock();
+
     int *keep = new int[n];
     for (int i = 0; i < n; i++) {
       keep[i] = (idata[i] != 0) ? 1 : 0;
@@ -52,6 +66,9 @@ int compactWithScan(int n, int *odata, const int *idata) {
       nKeep++;
       odata[keepScan[i]] = idata[i];
     }
+
+    double t2 = clock();
+    last_runtime = 1.0E6*(t2-t1)/CLOCKS_PER_SEC;
 
     delete keepScan;
     delete keep;
