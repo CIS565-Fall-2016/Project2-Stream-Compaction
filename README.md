@@ -11,6 +11,8 @@ CUDA Stream Compaction
 
 ![](images/1.PNG)
 
+![](images/7.PNG)
+
 Based on the figure and data above, regarding scanning, I found the bottleneck for GPU outperforms the GPU is around the arraysize of 2^16, after which the GPU sigificantly speed up than the CPU.
 The CPU shows its adavantage for small arraysize.
 
@@ -22,6 +24,7 @@ Based on the figure and data above, regarding compacting, I found the bottleneck
 The CPU still shows its adavantage for small arraysize.
 
 ![](images/4.PNG)
+![](images/8.PNG)
 
 * Optimization of blocksize:
 Experiments was conducted on various blocksizes from 32 to 1024 with exponential growth. Typically we observed the optimizal value of block size (256) which best 
@@ -32,3 +35,4 @@ used this parameter for the tuning of the blocksize.
 
 ![](images/6.PNG)
 
+* Extra credits
