@@ -3,6 +3,8 @@
 namespace StreamCompaction {
 namespace Efficient {
     void scan(int n, int *odata, const int *idata);
+    float timeKernUpsweep(int n, const int *idata);
+    float timeKernDownsweep(int n, const int *idata);
 
     int compact(int n, int *odata, const int *idata);
 }

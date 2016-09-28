@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include "common.h"
 #include "efficient.h"
+#include "stdio.h"
 
 namespace StreamCompaction {
     namespace Efficient {
@@ -104,13 +105,13 @@ namespace StreamCompaction {
             // TODO
             //printf("TODO\n");
 
-            dim3 blocks((n + blockSize - 1) / blockSize);
 
             int nold = n;
 
-            if (n % 2 == 0)
+            if (n % ilog2ceil(n) == 0)
             {
                 n = 1 << ilog2ceil(n);
+                dim3 blocks((n + blockSize - 1) / blockSize);
                 //setup(n, idata);
                 int* dev_scandata;
                 cudaMalloc((void**)&dev_scandata, n * sizeof(int));
@@ -125,7 +126,7 @@ namespace StreamCompaction {
                 cudaMemset(dev_scandata + (n - 1), 0, sizeof(int));
                 for (int d = ilog2ceil(n); d >= 0; d--)
                 {
-                    kerndownsweep << <blocks, blockSize >> >(n, d, dev_scandata);
+                    kerndownsweep << <blocks, blockSize >> >(n, d, dev_scandata);  
                 }
                 cudaMemcpy(odata, dev_scandata, sizeof(int) * n, cudaMemcpyDeviceToHost);
 
@@ -134,6 +135,7 @@ namespace StreamCompaction {
             else
             {
                 n = 1 << ilog2ceil(n);
+                dim3 blocks((n + blockSize - 1) / blockSize);
                 //setup(n, idata);
                 int* dev_scandata;
                 cudaMalloc((void**)&dev_scandata, n * sizeof(int));
@@ -145,6 +147,7 @@ namespace StreamCompaction {
                 }
 
                 cudaMemset(dev_scandata + (n - 1), 0, sizeof(int));
+
                 for (int d = ilog2ceil(n); d >= 0; d--)
                 {
                     kerndownsweep << <blocks, blockSize >> >(n, d, dev_scandata);
@@ -156,6 +159,64 @@ namespace StreamCompaction {
             //cleanup();
 
         }
+
+        
+        float timeKernUpsweep(int n, const int *idata)
+        {
+            int* dev_idata;
+            cudaMalloc((void**)&dev_idata, n * sizeof(int));
+
+            cudaMemcpy(dev_idata, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
+
+            dim3 blocks((n + blockSize - 1) / blockSize);
+
+            cudaEvent_t start, stop; cudaEventCreate(&start); cudaEventCreate(&stop); cudaEventRecord(start);
+
+            if (n % 2 == 0)
+            {
+                for (int d = 0; d <= ilog2ceil(n) - 1; d++)
+                {
+                    kernupsweep << <blocks, blockSize >> >(n, d, dev_idata);
+                }
+            }
+            cudaEventRecord(stop); cudaEventSynchronize(stop); float milliseconds = 0; cudaEventElapsedTime(&milliseconds, start, stop);
+            //printf("\nELAPSED TIME = %f\n", milliseconds);
+
+            cudaEventDestroy(start); cudaEventDestroy(stop);
+
+            cudaFree(dev_idata);
+
+            return milliseconds;
+        }
+
+        float timeKernDownsweep(int n, const int *idata)
+        {
+            int* dev_idata;
+            cudaMalloc((void**)&dev_idata, n * sizeof(int));
+
+            cudaMemcpy(dev_idata, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
+
+            dim3 blocks((n + blockSize - 1) / blockSize);
+
+            cudaEvent_t start, stop; cudaEventCreate(&start); cudaEventCreate(&stop); cudaEventRecord(start);
+
+            if (n % 2 == 0)
+            {
+                for (int d = 0; d <= ilog2ceil(n) - 1; d++)
+                {
+                    kerndownsweep << <blocks, blockSize >> >(n, d, dev_idata);
+                }
+            }
+            cudaEventRecord(stop); cudaEventSynchronize(stop); float milliseconds = 0; cudaEventElapsedTime(&milliseconds, start, stop);
+            //printf("\nELAPSED TIME = %f\n", milliseconds);
+
+            cudaEventDestroy(start); cudaEventDestroy(stop);
+
+            cudaFree(dev_idata);
+
+            return milliseconds;
+        }
+        
 
         /**
         * Performs stream compaction on idata, storing the result into odata.
@@ -169,12 +230,13 @@ namespace StreamCompaction {
         int compact(int n, int *odata, const int *idata) {
             // TODO
 
-            dim3 blocks((n + blockSize - 1) / blockSize);
+            //dim3 blocks((n + blockSize - 1) / blockSize);
             int count = 0;
 
-            if (n % 2 == 0)
+            if (n % ilog2ceil(n) == 0)
             {
                 n = 1 << ilog2ceil(n);
+                dim3 blocks((n + blockSize - 1) / blockSize);
 
                 //setupcompact(n, idata);
                 int* dev_idata;
@@ -196,7 +258,7 @@ namespace StreamCompaction {
                 cudaMemcpy(dev_idata, idata, sizeof(int)*n, cudaMemcpyHostToDevice);
                 cudaMemcpy(dev_odata, odata, sizeof(int)*n, cudaMemcpyHostToDevice);
 
-                StreamCompaction::Common::kernMapToBoolean << <blocks, blockSize >> > (n, dev_bools, dev_scandata);
+                StreamCompaction::Common::kernMapToBoolean << <blocks, blockSize >> > (n, dev_bools, dev_idata);
 
                 scan(n, dev_indices, dev_bools);
                 cudaMemcpy(bools, dev_bools, sizeof(int) * n, cudaMemcpyDeviceToHost);
@@ -233,6 +295,7 @@ namespace StreamCompaction {
             else
             {
                 n = 1 << ilog2ceil(n);
+                dim3 blocks((n + blockSize - 1) / blockSize);
 
                 //setupcompact(n, idata);
                 int* dev_idata;
@@ -254,7 +317,7 @@ namespace StreamCompaction {
                 cudaMemcpy(dev_idata, idata, sizeof(int)*n, cudaMemcpyHostToDevice);
                 cudaMemcpy(dev_odata, odata, sizeof(int)*n, cudaMemcpyHostToDevice);
 
-                StreamCompaction::Common::kernMapToBoolean << <blocks, blockSize >> > (n, dev_bools, dev_scandata);
+                StreamCompaction::Common::kernMapToBoolean << <blocks, blockSize >> > (n, dev_bools, dev_idata);
 
                 scan(n, dev_indices, dev_bools);
                 cudaMemcpy(bools, dev_bools, sizeof(int) * n, cudaMemcpyDeviceToHost);
@@ -265,7 +328,10 @@ namespace StreamCompaction {
                 cudaMemcpy(odata, dev_odata, sizeof(int)*n, cudaMemcpyDeviceToHost);
 
                 count = indices[n - 1] + bools[n - 1] - 1;
-
+                //for (int i = 0; i < n; i++)
+                //   printf("%d ", indices[i]);
+                //for (int i = 0; i < n; i++)
+                //   printf("%d ", bools[i]);
                 //cleanupcompact();
                 cudaFree(dev_idata);
                 cudaFree(dev_odata);
@@ -279,6 +345,5 @@ namespace StreamCompaction {
 
             return count;
         }
-
     }
 }
