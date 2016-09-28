@@ -84,6 +84,23 @@ As I did with the naive implementation, I optimized the thread count per block i
 
 ![](images/efficient_blocksize.png)
 
+### Thrust Implementation 
+
+Since we don't have the Thrust source code, its really quite hard to tell what precisely it is doing. However, the kernels which are repeated called are:
+1. Accumulate Tiles (memcopy?)
+2. Exclusive Scan
+3. Downsweep. This seems to take elemensts from a couple different algorithms we've seen. I would not be suprised if there is some hybrid algorithm implemented by Thrust. 
+
 ## Performance Analysis
+Interstingly enough, the CPU implementation completely blew all other implementations out of the water. Indeed, at the lower array sizes, I could hardly get a timing since the algorithm would complete execution before a they system clock would even tick. 
+
+As I alluded to earlier, I think much of the credit here is due to CPU caching. All the memory locations with which we need do deal are both temporally and spatially local, so each index in the array likely needs only a couple instructions to complete, and likely no disk waits. In fact, if the compiler is smart enough, it might even be holding the values we need in registers. Given a Hyperthredded Quad Core CPU running at 3.7 GHz, an array of length 2^15 would finish in quite close to no time at all- which is what we see here.
 
 ![](images/scan_times.png)
+
+On the other hand, we see our parallel algorthms lagging behind quite a biut. Nvidia's Thrust implementation is seen working quite well,but only for arrays of size not-power-of-two. Very strage. 
+
+Additionally, our naive implementation is seen crushing our work efficient implementation. I believe this is because the bottleneck here is memory access, which the work efficient implementation does rather a lot of (especially in the add/swap downsweep.) In general, I question how valuable "saving work" is on a GPU, particularly addition, since the devices are so heavily optimized for arithmetic.
+
+## Test Suite Output
+
