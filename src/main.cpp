@@ -19,7 +19,7 @@ using namespace std::chrono;
 void runTimings() {
 	
 	high_resolution_clock::time_point start, end;
-	for (int i = 15; i <= 27; i+=2) {
+	for (int i = 15; i <= 15; i+=2) {
 		const int SIZE = 1 << i;
 		int *a = new int[SIZE];
 		int *b = new int[SIZE];
@@ -158,9 +158,5 @@ void runTests() {
 
 int main(int argc, char* argv[]) {
 	runTests();
-	runTimings();
-
-	int i = 0;
-	scanf("%d", i);
-
+	//runTimings();
 }
