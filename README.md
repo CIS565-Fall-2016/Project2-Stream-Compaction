@@ -1,13 +1,25 @@
-CUDA Stream Compaction
-======================
+# University of Pennsylvania, CIS 565: GPU Programming and Architecture
+## Project 2 - Stream Compaction
+* Liang Peng
+* Tested on: Windows 10, i7-6700HQ @ 2.6GHz, 8GB, GTX 960M (Personal Computer)
 
-**University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 2**
+## Screenshots
+* Result
+<br>![](http://i.imgur.com/fDr2pRK.jpg)
 
-* (TODO) YOUR NAME HERE
-* Tested on: (TODO) Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+## Analysis
+* Time measurement with std::chrono
+<blockquote>
+high_resolution_clock::time_point t1;<br>
+kernel<<<..., ...>>>(...);<br>
+cudaDeviceSynchronize();<br>
+high_resolution_clock::time_point t2;<br>
+duration t = t1 = t2;<br>
+print t.count();<br>
+</blockquote>
 
-### (TODO: Your README)
+* Array size
+<br>![](http://i.imgur.com/fDr2pRK.jpg)
 
-Include analysis, etc. (Remember, this is public, so don't put
-anything here that you don't want to share with the world.)
-
+* Block size 
+<br>![](http://i.imgur.com/fDr2pRK.jpg)
