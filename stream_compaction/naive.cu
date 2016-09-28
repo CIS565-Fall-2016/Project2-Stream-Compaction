@@ -62,6 +62,7 @@ namespace StreamCompaction {
 			cudaEventSynchronize(end);
 			cudaEventElapsedTime(&diff, start, end);
 
+			//printf("GPU naive scan took %fms\n", diff);
 			return diff;
 		}
 
