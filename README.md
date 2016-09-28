@@ -25,5 +25,12 @@ This is an upgraded algorithm that allows in place computation without the extra
 #### Thrust
 Thrust is the fastest implementation out of all 4. From NSight, it appears to used shared memory and is very efficient as compared to using global memory in our case which is very expensive. A quick search through thrust's git repo shows that they have multiple versions of scan that works on partitioned memory per warp or block. They also have an implementation working on global memory. Algorithm-wise, they appear to be using a similar up/down sweep algorithm. They also seem to use pick their block size very carefully based on empirical testing. Here's a [link](https://github.com/thrust/thrust/blob/2ef13096187b40a35a71451d09e49b14074b0859/thrust/system/cuda/detail/scan.inl) to their repo.
 
+### Nsight Results
+#### Thrust
+![thrust](images/nsight_thrust.png)
+
+#### Work Efficient Implementation
+![work efficient](images/nsight_efficient.png)
+
 ### Test Results
 ![tests](images/testspassing.png)
