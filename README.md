@@ -14,14 +14,14 @@ This project's goal was to compare various methods for achieving [stream compact
 A major step of compaction is scanning. I tested a CPU implementation, a naive CUDA
 implementation, two efficient CUDA implementations, and the Thrust library's implementation.
 
-![Scan Comparison 1](images/times_blk_256.png "Scan Comparison 1")
+![Scan Comparison 1](images/times_blk256.png "Scan Comparison 1")
 
 Interestingly, the Thrust implementation fared the worst, though Nvidia's NSight profiler
 showed that Thrust was not actually using much GPU time. A likely explanation is that Thrust
 may be shuffling data or partitioning the work between CPU and GPU.
 
-![Scan Comparison 2, no thrust](images/times_blk_256_nothrust.png "Scan Comparison 2, no thrust")
-![Scan Comparison 2, no thrust](images/times_blk_256_nothrust_zoom.png "Scan Comparison 2, no thrust")
+![Scan Comparison 2, no thrust](images/times_blk256_nothrust.png "Scan Comparison 2, no thrust")
+![Scan Comparison 2, no thrust](images/times_blk256_nothrust_zoom.png "Scan Comparison 2, no thrust")
 
 Looking at the other implementations on their own shows that the GPU implementations are substantially
 faster than the CPU for large workloads, but somewhat slower on small ones. This makes sense, as for small loads,
