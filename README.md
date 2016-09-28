@@ -17,9 +17,15 @@ which don't match some criteria and replacing the "good" elements in their origi
 This algorithm will be useful in the future when dong ray-tracing, where once rays have escaped 
 the scene, we no longer need to process them and thus wish to elmiate them from our list.
 
+![Source: Nvidia GPU Gems 3](images/stream_compaction.jpg)
+
 This is equivalent to the python dictionary comprehension one-liner:
 
+~~~
+
 output_list = [ elt for elt in input_list if elt != 0 ]
+
+~~~
 
 While this process is easily done in an iterative fashion, we can also employ some parallel algorithms 
 to compute the compacted array more quickly. These parallel algorithms require that first a temporary boolean 
@@ -41,17 +47,17 @@ The CPU implementation functions in the most straightforward way possible. At ea
 
 The only optimization I was able to make here was that, instead of re-summing all input elements 0 through j-1 to compute 
 element j, I simply add input element j-1 to output element j-2. We will see later in performace analysis, however, that
-optimizations are inherit to the CPU implementation due to hardware features such as memory cacheing. 
-
-
-
+optimizations are inherit to the CPU implementation due to hardware features such as memory caching. 
 
 
 ### Naive Parallel Implementation
 
+![](images/naive_blocksize.png)
+
 ### Efficient Parallel Implementation 
 
+![](images/efficient_blocksize.png)
 
 ## Performance Analysis
 
-***PICTORAL DEPICTIONS OF ALGORITHMS DRAWN FROM CIS565 LECTURE NOTES***
+![](images/scan_times.png)
