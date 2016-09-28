@@ -1,8 +1,6 @@
 CUDA Stream Compaction
 ======================
 
-***PAGE UNDER CONSTRUCTION***
-
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 2**
 
 * Gabriel Naghi
