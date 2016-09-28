@@ -12,9 +12,11 @@
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
 #include "testing_helpers.hpp"
+#include <iostream>
+#include <chrono>
 
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 8;
+    const int SIZE = 1 << 15;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
@@ -43,7 +45,7 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
     StreamCompaction::Naive::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
@@ -75,6 +77,79 @@ int main(int argc, char* argv[]) {
     StreamCompaction::Thrust::scan(NPOT, c, a);
     //printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
+
+	printf("\n");
+	printf("****************************\n");
+	printf("** SCAN PERFORMANCE TESTS **\n");
+	printf("****************************\n");
+	uint32_t iterations = 100;
+	zeroArray(SIZE, c);
+	auto begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < iterations; ++i)
+	{
+		StreamCompaction::CPU::scan(SIZE, c, a);
+	}
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+	std::cout << "CPU POW SCAN TIME ELAPSED : " << (float)(duration / iterations) * 0.000001 << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < iterations; ++i)
+	{
+		StreamCompaction::CPU::scan(NPOT, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+	std::cout << "CPU NPOT SCAN TIME ELAPSED : " << (float)(duration / iterations) * 0.000001 << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	float timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		timer += StreamCompaction::Naive::scan(SIZE, c, a);
+	}
+	std::cout << "NAIVE POW SCAN TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		timer += StreamCompaction::Naive::scan(NPOT, c, a);
+	}
+	std::cout << "NAIVE NPOT SCAN TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		timer += StreamCompaction::Efficient::scan(SIZE, c, a);
+	}
+	std::cout << "EFFICIENT POW SCAN TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		timer += StreamCompaction::Efficient::scan(NPOT, c, a);
+	}
+	std::cout << "EFFICIENT NPOT SCAN TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		timer += StreamCompaction::Thrust::scan(SIZE, c, a);
+	}
+	std::cout << "THRUST POW SCAN TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		timer += StreamCompaction::Thrust::scan(NPOT, c, a);
+	}
+	std::cout << "THRUST NPOT SCAN TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
 
     printf("\n");
     printf("*****************************\n");
@@ -120,4 +195,55 @@ int main(int argc, char* argv[]) {
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+	printf("\n");
+	printf("*****************************************\n");
+	printf("** STREAM COMPACTION PERFORMANCE TESTS **\n");
+	printf("*****************************************\n");
+
+	zeroArray(SIZE, c);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < iterations; ++i)
+	{
+		StreamCompaction::CPU::compactWithoutScan(SIZE, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+	std::cout << "CPU COMPACT NOSCAN POW TIME ELAPSED : " << (float)(duration / iterations) * 0.000001 << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < iterations; ++i)
+	{
+		StreamCompaction::CPU::compactWithoutScan(NPOT, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+	std::cout << "CPU COMPACT NOSCAN NPOT TIME ELAPSED : " << (float)(duration / iterations) * 0.000001 << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < iterations; ++i)
+	{
+		StreamCompaction::CPU::compactWithScan(SIZE, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+	std::cout << "CPU COMPACT SCAN TIME ELAPSED : " << (float)(duration / iterations) * 0.000001 << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		StreamCompaction::Efficient::compact(SIZE, c, a, &timer);
+	}
+	std::cout << "EFFICIENT POW COMPACT TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
+
+	zeroArray(SIZE, c);
+	timer = 0.0f;
+	for (int i = 0; i < iterations; ++i)
+	{
+		StreamCompaction::Efficient::compact(NPOT, c, a, &timer);
+	}
+	std::cout << "EFFICIENT NPOT COMPACT TIME ELAPSED : " << timer / iterations << " milliseconds." << std::endl;
 }
