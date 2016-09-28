@@ -27,10 +27,10 @@ Thrust is the fastest implementation out of all 4. From NSight, it appears to us
 
 ### Nsight Results
 #### Thrust
-![thrust](images/nsight_thrust.png)
+![thrust](images/nsight_thrust.PNG)
 
 #### Work Efficient Implementation
-![work efficient](images/nsight_efficient.png)
+![work efficient](images/nsight_efficient.PNG)
 
 ### Test Results
 ![tests](images/testspassing.png)
