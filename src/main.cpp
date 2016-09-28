@@ -17,11 +17,11 @@
 #include <chrono>
 #include <iostream>
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 16;
+    const int SIZE = 1 << 20;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 	float milscs;
-	int nitercpu = 1000;
+	int nitercpu = 100;
 	
     // Scan tests
 

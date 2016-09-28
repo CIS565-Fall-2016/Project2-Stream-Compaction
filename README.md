@@ -48,69 +48,69 @@ we compare the sorting result with C++ built in sorting function to verify the c
 ****************
 ** SCAN TESTS **
 ****************
-    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  35   0 ]
+    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...   6   0 ]
 ==== cpu scan, power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
-time lapsed 0.131000 ms
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 25680538 25680544 ]
+time lapsed 2.110000 ms
 ==== cpu scan, non-power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604305 1604316 ]
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 25680508 25680512 ]
     passed
-time lapsed 0.130000 ms
+time lapsed 2.130000 ms
 ==== naive scan, power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 25680538 25680544 ]
     passed
-time lapsed 0.106496 ms
+time lapsed 1.296384 ms
 ==== naive scan, non-power-of-two ====
     [   0  38  57  95 132 137 184 199 234 234 246 249 249 ...   0   0 ]
     passed
-time lapsed 0.080352 ms
+time lapsed 1.291712 ms
 ==== work-efficient scan, power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 25680538 25680544 ]
     passed
-time lapsed 0.145792 ms
+time lapsed 1.671008 ms
 ==== work-efficient scan, non-power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604305 1604316 ]
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 25680508 25680512 ]
     passed
-time lapsed 0.146432 ms
+time lapsed 1.668096 ms
 ==== thrust scan, power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 25680538 25680544 ]
     passed
-time lapsed 0.036000 ms
+time lapsed 0.630000 ms
 ==== thrust scan, non-power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604305 1604316 ]
+    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 25680508 25680512 ]
     passed
-time lapsed 0.036000 ms
+time lapsed 0.620000 ms
 
 *****************************
 ** STREAM COMPACTION TESTS **
 *****************************
-    [   2   3   2   1   3   1   1   1   2   0   1   0   2 ...   1   0 ]
+    [   2   3   2   1   3   1   1   1   2   0   1   0   2 ...   0   0 ]
 ==== cpu compact without scan, power-of-two ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-time lapsed 0.191000 ms
+time lapsed 3.060000 ms
 ==== cpu compact without scan, non-power-of-two ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   3   1 ]
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-time lapsed 0.191000 ms
+time lapsed 3.110000 ms
 ==== cpu compact with scan ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-time lapsed 0.368000 ms
+time lapsed 9.810000 ms
 ==== work-efficient compact, power-of-two ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-time lapsed 0.585728 ms
+time lapsed 2.623488 ms
 ==== work-efficient compact, non-power-of-two ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   3   1 ]
+    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   2   2 ]
     passed
-time lapsed 0.549632 ms
+time lapsed 2.942464 ms
 
 *****************************
 ** RADIX SORT TESTS **
 *****************************
 ==== Array to be sorted power of 2 ====
-    [  38 119  38  37  55 197 165  85  50  12  53 100 142 ...  85   0 ]
+    [  38 119  38  37  55 197 165  85  50  12  53 100 142 ...  56   0 ]
 ==== RADIX SORT POT ====
 size of int is 32 bits
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 199 199 ]
@@ -118,7 +118,7 @@ size of int is 32 bits
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 199 199 ]
     passed
 ==== Array to be sorted not power of 2 ====
-    [  38 1719 1238 437 855 1797 365 285 450 612 1853 100 1142 ... 1085   0 ]
+    [  38 1719 1238 437 855 1797 365 285 450 612 1853 100 1142 ... 656   0 ]
 ==== RADIX SORT NPOT ====
 size of int is 32 bits
     [   0   0   0   0   0   0   0   0   0   0   0   0   0 ... 1999 1999 ]
