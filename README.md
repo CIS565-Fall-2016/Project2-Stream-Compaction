@@ -9,6 +9,56 @@ CUDA Stream Compaction
 
 # Project 2 - Stream Compaction
 This project's goal was to compare various methods for achieving [stream compaction](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).
+The test program was modified to take block size and array size as arguments, and ran tests for each algorithm on both
+power-of-two and non-power-of-two data. Test output was the following:
+```
+****************
+** SCAN TESTS **
+****************
+    [  33  36  27  15  43  35  36  42  49  21  12  27  40 ...   6   0 ]
+==== cpu scan, power-of-two ====
+    [   0  33  69  96 111 154 189 225 267 316 337 349 376 ... 12852633 12852639 ]
+==== cpu scan, non-power-of-two ====
+    [   0  33  69  96 111 154 189 225 267 316 337 349 376 ... 12852608 12852617 ]
+    passed
+==== naive scan, power-of-two ====
+    passed
+==== naive scan, non-power-of-two ====
+    passed
+==== work-efficient scan, power-of-two ====
+    passed
+==== work-efficient scan, non-power-of-two ====
+    passed
+==== real work-efficient scan, power-of-two ====
+    passed
+==== real work-efficient scan, non-power-of-two ====
+    passed
+==== thrust scan, power-of-two ====
+    passed
+==== thrust scan, non-power-of-two ====
+    passed
+
+*****************************
+** STREAM COMPACTION TESTS **
+*****************************
+    [   3   2   1   3   1   3   2   0   1   1   2   3   2 ...   0   0 ]
+==== cpu compact without scan, power-of-two ====
+    [   3   2   1   3   1   3   2   1   1   2   3   2   3 ...   1   3 ]
+    passed
+==== cpu compact without scan, non-power-of-two ====
+    [   3   2   1   3   1   3   2   1   1   2   3   2   3 ...   3   1 ]
+    passed
+==== cpu compact with scan ====
+    passed
+==== work-efficient compact, power-of-two ====
+    passed
+==== work-efficient compact, non-power-of-two ====
+    passed
+==== real work-efficient compact, power-of-two ====
+    passed
+==== real work-efficient compact, non-power-of-two ====
+    passed
+```
 
 # Analysis - Scanning
 A major step of compaction is scanning. I tested a CPU implementation, a naive CUDA
