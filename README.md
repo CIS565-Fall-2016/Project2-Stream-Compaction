@@ -29,7 +29,7 @@ output_list = [ elt for elt in input_list if elt != 0 ]
 
 While this process is easily done in an iterative fashion, we can also employ some parallel algorithms 
 to compute the compacted array more quickly. These parallel algorithms require that first a temporary boolean 
-mapping of the list must be created, which then undergoes an "exclusive scan". 
+mapping of the list must be created, which then undergoes an "exclusive scan". The result of the scan the represents the indices of elements in the output array, which occurs in a simple operation called "scatter."
 
 A "scan" (depicted below) is an operation that creates and ouput list such that for each index an input list, the output list 
 contains the sums of all elements preceeding it in the input list. The term "exclusive" means that the first 
@@ -68,9 +68,19 @@ This graph shows that a 256 blocksize has the lowest average runtime, so this is
 
 ### Efficient Parallel Implementation 
 
+The work-efficient scan implementation can be split into two pieces. 
+
+The first part, depicted below, is the "upsweep." Here, by using a binary tree representation of the array, we compute several intermidate vlaues at each leve
+
 ![](images/efficient_parallel_upsweep.tiff)
 
+Next, we carry out a "downsweep," which swaps some values and accumalates value in necessary locations in the array. 
+
 ![](images/efficient_parallel_downsweep.tiff)
+
+All in all, this algorithm does O(n) adds on the upsweep and O(n) adds on the downsweep, which together is stil O(n). 
+
+As I did with the naive implementation, I optimized the thread count per block in the efficient implementation. The test results below indicate that the shortest average runtime occurs at 512 threads per block. 
 
 ![](images/efficient_blocksize.png)
 
