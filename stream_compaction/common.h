@@ -26,6 +26,7 @@ inline int ilog2ceil(int x) {
 
 
 namespace StreamCompaction {
+	const int BLOCK_SIZE = 256;
 namespace Common {
     __global__ void kernMapToBoolean(int n, int *bools, const int *idata);
 

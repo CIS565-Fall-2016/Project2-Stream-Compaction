@@ -14,9 +14,14 @@
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 8;
+    const int SIZE = 1 << 23;
     const int NPOT = SIZE - 3;
-    int a[SIZE], b[SIZE], c[SIZE];
+    int *a, *b, *c;
+
+	// allocate memory for test data
+	a = new int [SIZE];
+	b = new int [SIZE];
+	c = new int [SIZE];
 
     // Scan tests
 
@@ -120,4 +125,9 @@ int main(int argc, char* argv[]) {
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
+
+	// free memory
+	delete [] a;
+	delete [] b;
+	delete [] c;
 }

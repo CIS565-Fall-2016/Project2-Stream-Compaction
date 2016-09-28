@@ -1,13 +1,27 @@
-CUDA Stream Compaction
-======================
+# University of Pennsylvania, CIS 565: GPU Programming and Architecture
+## Project 2 - Stream Compaction
+* Liang Peng
+* Tested on: Windows 10, i7-6700HQ @ 2.6GHz, 8GB, GTX 960M (Personal Computer)
 
-**University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 2**
+## Screenshots
+* Result
+<br><img src="img/Capture1.PNG" width="500"></img>
 
-* (TODO) YOUR NAME HERE
-* Tested on: (TODO) Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+## Analysis
+* Time measurement with std::chrono
+<blockquote>
+high_resolution_clock::time_point t1;<br>
+kernel<<<..., ...>>>(...);<br>
+cudaDeviceSynchronize();<br>
+high_resolution_clock::time_point t2;<br>
+duration t = t2 - t1;<br>
+print t.count();<br>
+</blockquote>
 
-### (TODO: Your README)
-
-Include analysis, etc. (Remember, this is public, so don't put
-anything here that you don't want to share with the world.)
-
+* Array size
+<br><img src="img/Capture2.PNG" width="500"></img>
+  * _Observation_ CPU implementation is always faster than GPU implementation, the reason might be there is considerable overhead in the GPU implementation. My speculation is that as the scan process goes to next level, number of idling threads increases, which can be optimized by removing idle threads before launching kernel for next level. With this approach, index for threads to access elements in array must be recalculated properly.
+  
+* Block size 
+<br><img src="img/Capture3.PNG" width="500"></img>
+  * _Observation_ As block size increases, time consumed to perform scan decreases and at some point stablizes. The reason is the analyzed in last project.
