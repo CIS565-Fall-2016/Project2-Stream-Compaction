@@ -6,14 +6,20 @@
 namespace StreamCompaction {
 namespace Efficient {
 
-__global__ void upSweep(int n, int d, int *data) {
+__global__ void upSweep(int n, int d, int *data, bool isRoot) {
 	int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-	
-	int prevOffset = d == 0 ? 1 : 2 << (d - 1);
-	int offset = prevOffset * 2;
+	if (index >= n) return;
 
-	if (index < n && index % offset == 0) {
-		data[index + offset - 1] += data[index + prevOffset - 1];
+	if (isRoot) {
+		data[n - 1] = 0;
+	}
+	else {
+		int prevOffset = d == 0 ? 1 : 2 << (d - 1);
+		int offset = prevOffset * 2;
+
+		if (index % offset == 0) {
+			data[index + offset - 1] += data[index + prevOffset - 1];
+		}
 	}
 }
 
@@ -33,7 +39,7 @@ __global__ void downSweep(int n, int d, int *data) {
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
-void scan(int n, int *odata, const int *idata) {
+float scan(int n, int *odata, const int *idata) {
 	int blockSize = 128;
 	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 	
@@ -44,41 +50,30 @@ void scan(int n, int *odata, const int *idata) {
 	checkCUDAError("cudaMalloc dev_data failed!");
 	cudaMemcpy(dev_data, idata, sizeof(int) * n, cudaMemcpyHostToDevice);
 
-	// Up-sweep
-	int numLevels = ilog2ceil(nearestPow) - 1;
-	for (int d = 0; d <= numLevels; d++) {
-		upSweep << <fullBlocksPerGrid, blockSize >> >(nearestPow, d, dev_data);
-	}
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
 
-	cudaMemcpy(odata, dev_data, sizeof(int) * nearestPow, cudaMemcpyDeviceToHost);
-	//printf("AFTER UPSWEEP: [\n");
-	//for (int i = 0; i < nearestPow; i++) {
-	//	printf("%d\n", odata[i]);
-	//}
-	//printf("]\n");
-	odata[nearestPow - 1] = 0;
-	cudaMemcpy(dev_data, odata, sizeof(int) * nearestPow, cudaMemcpyHostToDevice);
+	cudaEventRecord(start);
+	// Up-sweep
+	int numLevels = ilog2ceil(nearestPow);
+	for (int d = 0; d < numLevels; d++) {
+		upSweep << <fullBlocksPerGrid, blockSize >> >(nearestPow, d, dev_data, d == (numLevels - 1));
+	}
 
 	//Down-sweep
 	for (int d = numLevels; d >= 0; d--) {
-		//printf("LEVEL: %d\n", d);
-		//cudaMemcpy(odata, dev_data, sizeof(int) * nearestPow, cudaMemcpyDeviceToHost);
-		//printf("[ ");
-		//for (int i = 0; i < nearestPow; i++) {
-		//	printf("%d ", odata[i]);
-		//}
-		//printf("]\n");
 		downSweep << <fullBlocksPerGrid, blockSize >> >(nearestPow, d, dev_data);
 	}
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
 
 	cudaMemcpy(odata, dev_data, sizeof(int) * nearestPow, cudaMemcpyDeviceToHost);
-	//printf("AFTER DOWNSWEEP: [\n");
-	//for (int i = 0; i < nearestPow; i++) {
-	//	printf("%d\n", odata[i]);
-	//}
-	//printf("]\n");
 	
 	cudaFree(dev_data);
+	return milliseconds;
 }
 
 /**
@@ -90,7 +85,7 @@ void scan(int n, int *odata, const int *idata) {
  * @param idata  The array of elements to compact.
  * @returns      The number of elements remaining after compaction.
  */
-int compact(int n, int *odata, const int *idata) {
+int compact(int n, int *odata, const int *idata, float* timer) {
 	int blockSize = 128;
 	dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 
@@ -100,7 +95,6 @@ int compact(int n, int *odata, const int *idata) {
 	int* dev_odata;
 	int* dev_bools;
 	int* dev_indices;
-	int* bools;
 	int* indices;
 	
 	cudaMalloc((void**)&dev_idata, nearestPow * sizeof(int));
@@ -113,29 +107,42 @@ int compact(int n, int *odata, const int *idata) {
 
 	cudaMalloc((void**)&dev_bools, nearestPow * sizeof(int));
 	checkCUDAError("cudaMalloc dev_bools failed!");
-	bools = (int*)malloc(nearestPow * sizeof(int));
 
 	cudaMalloc((void**)&dev_indices, nearestPow * sizeof(int));
 	checkCUDAError("cudaMalloc dev_indices failed!");
 	indices = (int*)malloc(nearestPow * sizeof(int));
 
-	StreamCompaction::Common::kernMapToBoolean << <fullBlocksPerGrid, blockSize >> >(nearestPow, dev_bools, dev_idata);
-	cudaMemcpy(bools, dev_bools, sizeof(int) * nearestPow, cudaMemcpyDeviceToHost);
-	//printf("BOOLS: [\n");
-	//for (int i = 0; i < nearestPow; i++) {
-	//	printf("%d\n", bools[i]);
-	//}
-	//printf("]\n");
+	cudaEvent_t start, stop;
+	if (timer) {
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
 
-	scan(n, indices, bools);
-	//printf("INDICES: [\n");
-	//for (int i = 0; i < nearestPow; i++) {
-	//	printf("%d\n", indices[i]);
-	//}
-	//printf("]\n");
-	cudaMemcpy(dev_indices, indices, sizeof(int) * nearestPow, cudaMemcpyHostToDevice);
+		cudaEventRecord(start);
+	}
+
+	StreamCompaction::Common::kernMapToBoolean << <fullBlocksPerGrid, blockSize >> >(nearestPow, dev_bools, dev_idata);
+	cudaMemcpy(dev_indices, dev_bools, sizeof(int) * nearestPow, cudaMemcpyDeviceToDevice);
+
+	// Up-sweep
+	int numLevels = ilog2ceil(nearestPow);
+	for (int d = 0; d < numLevels; d++) {
+		upSweep << <fullBlocksPerGrid, blockSize >> >(nearestPow, d, dev_indices, d == (numLevels - 1));
+	}
+
+	//Down-sweep
+	for (int d = numLevels; d >= 0; d--) {
+		downSweep << <fullBlocksPerGrid, blockSize >> >(nearestPow, d, dev_indices);
+	}
 
 	StreamCompaction::Common::kernScatter << <fullBlocksPerGrid, blockSize >> >(nearestPow, dev_odata, dev_idata, dev_bools, dev_indices);
+	
+	if (timer) {
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		float milliseconds = 0;
+		cudaEventElapsedTime(&milliseconds, start, stop);
+		(*timer) += milliseconds;
+	}
 
 	cudaMemcpy(indices, dev_indices, sizeof(int) * nearestPow, cudaMemcpyDeviceToHost);
 	int j = nearestPow - 1;
@@ -143,19 +150,13 @@ int compact(int n, int *odata, const int *idata) {
 		j--;
 	} while (indices[j] == indices[j + 1]);
 	int compactLength = indices[j] + 1;
-	//printf("COMPACT LENGTH:%d\n", compactLength);
+
 	cudaMemcpy(odata, dev_odata, sizeof(int) * compactLength, cudaMemcpyDeviceToHost);
-	//printf("RESULT: [\n");
-	//for (int i = 0; i < compactLength; i++) {
-	//	printf("%d\n", odata[i]);
-	//}
-	//printf("]\n");
 
 	cudaFree(dev_idata);
 	cudaFree(dev_odata);
 	cudaFree(dev_bools);
 	cudaFree(dev_indices);
-	free(bools);
 	free(indices);
 
 	return compactLength;
