@@ -27,10 +27,16 @@ Thrust is the fastest implementation out of all 4. From NSight, it appears to us
 
 ### Nsight Results
 #### Thrust
+Row 1: Accumulate Tiles
+Row 2: Exclusive Scan
+Row 3: Downsweep
 ![thrust](images/nsight_thrust.PNG)
-
 #### Work Efficient Implementation
 ![work efficient](images/nsight_efficient.PNG)
+
+#### Discussion
+This is obtained on a sample input of 2^15 sized array.
+Here we see thrust explicitly using dynamic shared memory. It has very efficient timings and high occupancy for Accumulate Tiles (as well as low register usage), but lower occupancy (and higher register usage) for the other two invocations. I think this is because it manages to schedule the sweeping functions in a way such that it only needs to launch a single kernel. It uses one launch for every operation as compared to the Work Efficient implementation where we see it launching 128, 64, 32, etc. kernels for each iteration of the loop. There's a lot of latency in-between the kernel launches. Despite this, each kernel invocation has a perfect occupancy percentage (yay! this means that our counting hack worked) and very low register usage. However, because it is sequential in launching the downsweep iterations and then the upsweep iterations, we take a hit in runtime. This on top shared memory usage makes thrust very fast. If we can maintain our high occupancy and low register usage, but manage to squeeze all of the kernal launches into a single one, we would be in great shape.
 
 ### Test Results
 ![tests](images/testspassing.png)
