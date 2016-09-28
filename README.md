@@ -61,5 +61,7 @@ It is interesting to note that the CPU _still_ outperforms even the optimized Th
 ## blockSize optimizations
 On both the naive and efficient implementations, we experimented with different block sizes and record the results in the charts below:
 
+![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/Profiling_Page_4.png)
 ![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/Profiling_Page_5.png)
-![alt text] (https://github.com/lobachevzky/Project2-Stream-Compaction/blob/master/Profiling_Page_6.png)
+
+Because of these experiments, we ran all of the earlier experiments using block sizes of 256.
