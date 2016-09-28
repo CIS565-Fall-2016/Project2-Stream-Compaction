@@ -8,8 +8,14 @@ namespace CPU {
  * CPU scan (prefix sum).
  */
 void scan(int n, int *odata, const int *idata) {
-    // TODO
-    printf("TODO\n");
+	if (n <= 0) {
+		return;
+	}
+	odata[0] = 0;
+	for (int i = 1; i < n; i++) {
+		odata[i] = odata[i - 1] + idata[i - 1];
+	}
+
 }
 
 /**
@@ -18,8 +24,13 @@ void scan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
-    // TODO
-    return -1;
+	int k = 0;
+	for (int i = 0; i < n; i++) {
+		if (idata[i]) {
+			odata[k++] = idata[i];
+		}
+	}
+	return k;
 }
 
 /**
@@ -28,8 +39,25 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithScan(int n, int *odata, const int *idata) {
-    // TODO
-    return -1;
+	int *scanResults = new int[n];
+
+	// mapping boolean function
+	for (int i = 0; i < n; i++) {
+		odata[i] = idata[i] != 0;
+	}
+
+	//scan
+	scan(n, scanResults, odata);
+	
+	//compaction
+	int k = 0;
+	for (int i = 0; i < n; i++) {
+		if (idata[i]) {
+			k++;
+			odata[scanResults[i]] = idata[i];
+		}
+	}
+	return k;
 }
 
 }
