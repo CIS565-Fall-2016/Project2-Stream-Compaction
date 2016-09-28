@@ -54,9 +54,15 @@ optimizations are inherit to the CPU implementation due to hardware features suc
 
 ### Naive Parallel Implementation
 
+![](images/naive_parallel.tiff)
+
 ![](images/naive_blocksize.png)
 
 ### Efficient Parallel Implementation 
+
+![](images/efficient_parallel_upsweep.tiff)
+
+![](images/efficient_parallel_downsweep.tiff)
 
 ![](images/efficient_blocksize.png)
 
