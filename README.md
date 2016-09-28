@@ -8,12 +8,13 @@ CUDA Stream Compaction
 
  
 * Compare all of these GPU Scan implementations (Naive, Work-Efficient, and Thrust) to the serial CPU version of Scan. Plot a graph of the comparison (with array size on the independent axis).
+(The following are the results for timing vs. varing arraysize with blocksize=128)
 
 ![](images/1.PNG)
 
 ![](images/7.PNG)
 
-Based on the figure and data above, regarding scanning, I found the bottleneck for GPU outperforms the GPU is around the arraysize of 2^16, after which the GPU sigificantly speed up than the CPU.
+Based on the figure and data above, regarding scanning, I found the breakpoint for GPU outperforms the GPU is around the arraysize of 2^16, after which the GPU sigificantly speed up than the CPU.
 The CPU shows its adavantage for small arraysize.
 
 ![](images/2.PNG)
@@ -22,15 +23,25 @@ The CPU shows its adavantage for small arraysize.
 
 ![](images/8.PNG)
 
-Based on the figure and data above, regarding compacting, I found the bottleneck for GPU outperforms the GPU is between the arraysize of 2^16 and 2^20, after which the GPU sigificantly speed up than the CPU.
+Based on the figure and data above, regarding compacting, I found the breakpoint for GPU outperforms the GPU is between the arraysize of 2^16 and 2^20, after which the GPU sigificantly speed up than the CPU.
 The CPU still shows its adavantage for small arraysize.
+
+# Regarding "bottlenecks" :
+
+Firstly we didn't observe significant improvement from Naive GPU scanning to Efficient Scanning, one possible reasoning that might shed light on this is the 
+increasing number of sleeping threads as the levels of the balance tree grows higher.
+
+The memory transfer between CPU and GPU also slows down the performance, one possible way to alleviate this problem might be increasing the data size which reduces the
+percentage of such overhead in the meanwhile.
+
+The switching between the upsweeping and downsweeping trigerrs new kernels to be established, which could be more efficient if the kernels could be reused.
 
 ![](images/4.PNG)
 
 
 * Optimization of blocksize:
 Experiments was conducted on various blocksizes from 32 to 1024 with exponential growth. Typically we observed the optimizal value of block size (256) which best 
-balance the optimal value of scan time as well as compact time for GPU. Since earlier we observed the array size of 2^16 is around the point of "bottleneck", we 
+balance the optimal value of scan time as well as compact time for GPU. Since earlier we observed the array size of 2^16 is around the "turning poit", we 
 used this parameter for the tuning of the blocksize.
 
 ![](images/5.PNG)
