@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#define blockSize 128
+#define blockSize 1024
 #define FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define checkCUDAError(msg) checkCUDAErrorFn(msg, FILENAME, __LINE__)
 

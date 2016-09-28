@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 		StreamCompaction::CPU::scan(SIZE, b, a);
 	}
 	auto end = std::chrono::high_resolution_clock::now(); 
-	milscs = (float)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() /1000000/ (float)nitercpu;
+	milscs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()  / (float)nitercpu;
     printArray(SIZE, b, true);
 	printf("time lapsed %f ms\n", milscs);
 
@@ -62,14 +62,14 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
 	milscs = StreamCompaction::Naive::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+	printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("naive scan, non-power-of-two");
 	milscs = StreamCompaction::Naive::scan(NPOT, c, a);
-    //printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(NPOT, b, c);
 	printf("time lapsed %f ms\n", milscs);
 	
@@ -77,29 +77,39 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, power-of-two");
     milscs = StreamCompaction::Efficient::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);	 
 	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, non-power-of-two");
     milscs = StreamCompaction::Efficient::scan(NPOT, c, a);
-    //printArray(NPOT, c, true);
+    printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
 	printf("time lapsed %f ms\n", milscs);
 
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, power-of-two");
-    milscs = StreamCompaction::Thrust::scan(SIZE, c, a);
-    //printArray(SIZE, c, true);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < nitercpu; i++){
+		StreamCompaction::Thrust::scan(SIZE, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	milscs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / nitercpu;
+    printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("thrust scan, non-power-of-two");
-    milscs = StreamCompaction::Thrust::scan(NPOT, c, a);
-    //printArray(NPOT, c, true);
+	begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < nitercpu; i++){
+		StreamCompaction::Thrust::scan(NPOT, c, a);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	milscs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / nitercpu;
+    printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
 	printf("time lapsed %f ms\n", milscs);
 
@@ -157,14 +167,14 @@ int main(int argc, char* argv[]) {
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, power-of-two");
 	count = StreamCompaction::Efficient::compact(SIZE, c, a, milscs);
-    //printArray(count, c, true);
+    printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
 	printf("time lapsed %f ms\n", milscs);
 
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, non-power-of-two");
 	count = StreamCompaction::Efficient::compact(NPOT, c, a, milscs);
-    //printArray(count, c, true);
+    printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
 	printf("time lapsed %f ms\n", milscs);
 
@@ -179,7 +189,7 @@ int main(int argc, char* argv[]) {
 	zeroArray(SIZE, b);
     printDesc("RADIX SORT POT");
 	int msb=31;
-	//printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
+	printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
     StreamCompaction::RadixSort::sort(SIZE, b, a, msb); 
     printArray(SIZE, b, true);
 
@@ -196,7 +206,7 @@ int main(int argc, char* argv[]) {
 	zeroArray(SIZE, b);
 	zeroArray(SIZE, c);
     printDesc("RADIX SORT NPOT"); 
-	//printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
+	printf("size of int is %d bits\n", sizeof(int)*CHAR_BIT);
     StreamCompaction::RadixSort::sort(NPOT, b, a, msb); 
 	printArray(NPOT, b, true);
 
