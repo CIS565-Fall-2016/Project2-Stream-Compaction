@@ -70,8 +70,8 @@ namespace ParallelRadixSort
 			throw std::InvalidArgument();
 		}
 
-		int segSize = StreamCompaction::Efficient::computeSegmentSize(2 * n);
-		const size_t kDevArraySizeInByte = StreamCompaction::Efficient::computeActualMemSize<T>(2 * n);
+		int segSize = StreamCompaction::Efficient4::computeSegmentSize(2 * n);
+		const size_t kDevArraySizeInByte = StreamCompaction::Efficient4::computeActualMemSize(2 * n);
 
 		T *idata_dev = 0;
 		T *odata_dev = 0;
@@ -102,12 +102,11 @@ namespace ParallelRadixSort
 		{
 			if (!(bitMask & mask)) continue; // do not consider this bit
 
-			kernClassify << <numBlocks, threadsPerBlock >> >(n, mask, noyes_bools_dev, noyes_bools_dev + n, idata_dev);
+			kernClassify<<<numBlocks, threadsPerBlock>>>(n, mask, noyes_bools_dev, noyes_bools_dev + n, idata_dev);
 
-			StreamCompaction::Efficient::scanHelper(segSize, 2 * n,
-				reinterpret_cast<int *>(indices_dev), reinterpret_cast<int *>(noyes_bools_dev));
+			StreamCompaction::Efficient4::scanHelper(2 * n, indices_dev, noyes_bools_dev);
 
-			kernScatter << <numBlocks, threadsPerBlock >> >(n, noyes_bools_dev, indices_dev, indices_dev + n, odata_dev, idata_dev);
+			kernScatter<<<numBlocks, threadsPerBlock>>>(n, noyes_bools_dev, indices_dev, indices_dev + n, odata_dev, idata_dev);
 
 			if (lsb) mask <<= 1; else mask >>= 1;
 

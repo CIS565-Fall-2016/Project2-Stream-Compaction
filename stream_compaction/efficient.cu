@@ -522,29 +522,9 @@ namespace StreamCompaction {
 			return total;
 		}
 
-		float scan(int n, unsigned *odata, const unsigned *idata)
+		void scanHelper(int n, unsigned *d_odata, unsigned *d_idata)
 		{
 			using Efficient::alignedSize;
-
-			if (n <= 0 || !odata || !idata)
-			{
-				throw std::exception("Efficient4::scan");
-			}
-
-			cudaEvent_t start, end;
-			cudaEventCreate(&start);
-			cudaEventCreate(&end);
-
-			size_t kDevBuffSize = computeActualMemSize(n);
-			unsigned *d_idata, *d_odata;
-			
-			cudaMalloc(&d_idata, kDevBuffSize);
-			cudaMalloc(&d_odata, kDevBuffSize);
-			cudaMemset(d_idata, 0, kDevBuffSize);
-			cudaMemset(d_odata, 0, kDevBuffSize);
-			cudaMemcpy(d_idata, idata, n * sizeof(unsigned), cudaMemcpyHostToDevice);
-
-			cudaEventRecord(start);
 
 			int segSize = computeSegmentSize(n);
 			int numSegs = NUM_SEG(n, segSize);
@@ -593,19 +573,102 @@ namespace StreamCompaction {
 
 				perSegmentAdd<<<numSegs, (segSize >> 2)>>>(reinterpret_cast<uint4 *>(d_dst), d_buf);
 			}
+		}
 
-			cudaEventRecord(end);
-			cudaEventSynchronize(end);
+		float scan(int n, unsigned *odata, const unsigned *idata)
+		{
+			if (n <= 0 || !odata || !idata)
+			{
+				throw std::exception("StreamCompaction::Efficient4::scan");
+			}
+
+			Common::MyCudaTimer timer;
+
+			size_t kDevBuffSize = computeActualMemSize(n);
+			unsigned *d_idata, *d_odata;
+			
+			cudaMalloc(&d_idata, kDevBuffSize);
+			cudaMalloc(&d_odata, kDevBuffSize);
+			cudaMemset(d_idata, 0, kDevBuffSize);
+			//cudaMemset(d_odata, 0, kDevBuffSize);
+			cudaMemcpy(d_idata, idata, n * sizeof(unsigned), cudaMemcpyHostToDevice);
+
+			timer.start();
+
+			scanHelper(n, d_odata, d_idata);
+
+			timer.stop();
 
 			cudaMemcpy(odata, d_odata, n * sizeof(unsigned), cudaMemcpyDeviceToHost);
 			cudaFree(d_idata);
 			cudaFree(d_odata);
 
-			float execTime = 0.f;
-			cudaEventElapsedTime(&execTime, start, end);
-			cudaEventDestroy(start);
-			cudaEventDestroy(end);
-			return execTime;
+			return timer.duration();
+		}
+
+
+		int compact(int n, unsigned *odata, const unsigned *idata, float *pExecTime)
+		{
+			if (n <= 0 || !odata || !idata || odata == idata)
+			{
+				throw std::exception("StreamCompaction::Efficient4::compact");
+			}
+
+			using StreamCompaction::Common::kernMapToBoolean;
+			using StreamCompaction::Common::kernScatter;
+
+			Common::MyCudaTimer timer;
+
+			unsigned *idata_dev = 0;
+			unsigned *odata_dev = 0;
+			unsigned *bools_dev = 0;
+			unsigned *indices_dev = 0;
+
+			int segSize = computeSegmentSize(n);
+			const size_t kBoolsSizeInByte = computeActualMemSize(n);
+			const size_t kIndicesSizeInByte = kBoolsSizeInByte;
+
+			cudaMalloc(&idata_dev, n * sizeof(unsigned));
+			cudaMalloc(&bools_dev, kBoolsSizeInByte);
+			cudaMalloc(&indices_dev, kIndicesSizeInByte);
+
+			cudaMemcpy(idata_dev, idata, n * sizeof(unsigned), cudaMemcpyHostToDevice);
+			cudaMemset(bools_dev, 0, kBoolsSizeInByte);
+
+			const int threadsPerBlock = 256;
+			int numBlocks = (n + threadsPerBlock - 1) / threadsPerBlock;
+
+			timer.start();
+
+			kernMapToBoolean<<<numBlocks, threadsPerBlock>>>(
+				n,
+				reinterpret_cast<int *>(bools_dev),
+				reinterpret_cast<int *>(idata_dev));
+
+			scanHelper(n, indices_dev, bools_dev);
+
+			int numElemRemained;
+			cudaMemcpy(&numElemRemained, indices_dev + (n - 1), sizeof(unsigned), cudaMemcpyDeviceToHost);
+			numElemRemained += idata[n - 1] ? 1 : 0;
+			cudaMalloc(&odata_dev, numElemRemained * sizeof(unsigned));
+
+			kernScatter<<<numBlocks, threadsPerBlock>>>(
+				n,
+				reinterpret_cast<int *>(odata_dev),
+				reinterpret_cast<int *>(idata_dev),
+				reinterpret_cast<int *>(bools_dev),
+				reinterpret_cast<int *>(indices_dev));
+
+			timer.stop();
+			*pExecTime = timer.duration();
+
+			cudaMemcpy(odata, odata_dev, numElemRemained * sizeof(int), cudaMemcpyDeviceToHost);
+			cudaFree(idata_dev);
+			cudaFree(odata_dev);
+			cudaFree(bools_dev);
+			cudaFree(indices_dev);
+
+			return numElemRemained;
 		}
 	}
 }

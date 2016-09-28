@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <exception>
 
 #define FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define checkCUDAError(msg) checkCUDAErrorFn(msg, FILENAME, __LINE__)
@@ -31,5 +32,65 @@ namespace Common {
 
     __global__ void kernScatter(int n, int *odata,
             const int *idata, const int *bools, const int *indices);
+
+	class MyCudaTimer
+	{
+	public:
+		MyCudaTimer() : elapsedTimeMs(0.f), isActive(false)
+		{
+			cudaEventCreate(&begin);
+			cudaEventCreate(&end);
+		}
+
+		virtual ~MyCudaTimer()
+		{
+			cudaEventDestroy(begin);
+			cudaEventDestroy(end);
+		}
+
+		void start()
+		{
+			if (!isActive)
+			{
+				cudaEventRecord(begin);
+				isActive = true;
+			}
+		}
+
+		void stop()
+		{
+			if (isActive) cudaEventRecord(end);
+			isActive = false;
+		}
+
+		void restart()
+		{
+			stop();
+			clear();
+			start();
+		}
+
+		void clear()
+		{
+			cudaEventSynchronize(end);
+			elapsedTimeMs = 0.f;
+		}
+
+		float duration()
+		{
+			float et;
+
+			cudaEventSynchronize(end);
+			cudaEventElapsedTime(&et, begin, end);
+			elapsedTimeMs += et;
+
+			return elapsedTimeMs;
+		}
+
+	private:
+		cudaEvent_t begin, end;
+		float elapsedTimeMs;
+		bool isActive;
+	};
 }
 }

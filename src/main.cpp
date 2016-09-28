@@ -255,6 +255,8 @@ int main(int argc, char* argv[]) {
     printf("*****************************\n");
 
     // Compaction tests
+	//clock_t start;
+	//clock_t end;
 
     genArray(SIZE - 1, a, 4);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
@@ -319,6 +321,38 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < TEST_GROUP_SIZE; ++i)
 	{
 		count = StreamCompaction::Efficient::compact(NPOT, c, a, &et);
+		if (i != 0) accumExecTime += et;
+	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / (TEST_GROUP_SIZE - 1) << "ms\n";
+	printArray(count, c, true);
+	printCmpLenResult(count, expectedNPOT, b, c);
+
+	accumExecTime = 0.f;
+	zeroArray(SIZE, c);
+	printDesc("batch compact, power-of-two");
+	for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+	{
+		count = StreamCompaction::Efficient4::compact(
+			SIZE,
+			reinterpret_cast<unsigned *>(c),
+			reinterpret_cast<unsigned *>(a),
+			&et);
+		if (i != 0) accumExecTime += et;
+	}
+	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / (TEST_GROUP_SIZE - 1) << "ms\n";
+	printArray(count, c, true);
+	printCmpLenResult(count, expectedCount, b, c);
+
+	accumExecTime = 0.f;
+	zeroArray(SIZE, c);
+	printDesc("batch compact, non-power-of-two");
+	for (int i = 0; i < TEST_GROUP_SIZE; ++i)
+	{
+		count = StreamCompaction::Efficient4::compact(
+			NPOT,
+			reinterpret_cast<unsigned *>(c),
+			reinterpret_cast<unsigned *>(a),
+			&et);
 		if (i != 0) accumExecTime += et;
 	}
 	std::cout << "    Execution Time: " << std::fixed << std::setprecision(2) << accumExecTime / (TEST_GROUP_SIZE - 1) << "ms\n";

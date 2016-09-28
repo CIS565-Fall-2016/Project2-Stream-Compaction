@@ -80,5 +80,13 @@ namespace StreamCompaction
 	namespace Efficient4
 	{
 		float scan(int n, unsigned *odata, const unsigned *idata);
+
+		int compact(int n, unsigned *odata, const unsigned *idata, float *pExecTime);
+
+		int computeSegmentSize(int n);
+
+		size_t computeActualMemSize(int n);
+
+		void scanHelper(int n, unsigned *d_odata, unsigned *d_idata);
 	}
 }

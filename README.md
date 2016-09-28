@@ -48,24 +48,24 @@ CUDA Stream Compaction
   
   ![](img/sc_perf2.png)
 
-  | Array Size | Efficient | CPU (no scan) | CPU (with scan) |
-  | ---        | ---       | ---           | --- |
-  | 2^8  | 0.09 | 0.00 | 0.00 |
-  | 2^15 | 0.16 | 0.09 | 0.20 |
-  | 2^20 | 3.78 | 2.70 | 6.03 |
-  | 2^25 | 72.91 | 85.98 | 196.08 |
-  | 2^26 | 143.49 | 174.08 | 391.90 |
+  | Array Size | Efficient | CPU (no scan) | CPU (with scan) | Batch |
+  | ---        | ---       | ---           | ---             | ---   |
+  | 2^8        | 0.09      | 0.00          | 0.00            | 0.11  |
+  | 2^15       | 0.16      | 0.09          | 0.20            | 0.15  |
+  | 2^20       | 3.78      | 2.70          | 6.03            | 1.61  |
+  | 2^25       | 72.91     | 85.98         | 196.08          | 42.37 |
+  | 2^26       | 143.49    | 174.08        | 391.90          | 81.53 |
   
   * Radix sort
   
   ![](img/rs_perf.png)
 
-  | Array Size | Efficient | Thrust |
+  | Array Size | Batch | Thrust |
   | ---        | ---       | --- |
-  | 2^8  | 0.52 | 0.58 |
-  | 2^15 | 4.37 | 0.34 |
-  | 2^20 | 109.27 | 5.80 |
-  | 2^25 | 3642.84 | 116.92 |
+  | 2^8  | 0.42 | 0.58 |
+  | 2^15 | 2.44 | 0.34 |
+  | 2^20 | 47.35 | 5.80 |
+  | 2^25 | 1468.98 | 116.92 |
 
 * Performance Bottlenecks
   * CUDA runtime APIs for memory manipulation (e.g. cudaMalloc, cudaMemcpy, cudaFree) are super expensive
