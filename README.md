@@ -17,7 +17,9 @@ which don't match some criteria and replacing the "good" elements in their origi
 This algorithm will be useful in the future when dong ray-tracing, where once rays have escaped 
 the scene, we no longer need to process them and thus wish to elmiate them from our list.
 
-![](images/stream_compaction.jpg)*Source: Nvidia GPU Gems 3*
+![](images/stream_compaction.jpg)
+
+*Source: Nvidia GPU Gems 3*
 
 This is equivalent to the python dictionary comprehension one-liner:
 
@@ -36,7 +38,9 @@ contains the sums of all elements preceeding it in the input list. The term "exc
 element of the output array is always 0, and thus the last element of the input array is excluded. This contrasts 
 with an "inclusive" scan, which begins with the first element of the input array.
 
-![](images/scan.tiff)*Source: CIS565 Lecture Slides*
+![](images/scan.tiff)
+
+*Source: CIS565 Lecture Slides*
 
 It is here that we can divide our algorithms into naive and efficientimplementations. For comparison's sake, 
 the scan method was also implemented as a CPU function.
@@ -54,7 +58,9 @@ optimizations are inherit to the CPU implementation due to hardware features suc
 
 ### Naive Parallel Implementation
 
-![](images/naive_parallel.tiff)*Source: CIS565 Lecture Slides*
+![](images/naive_parallel.tiff)
+
+*Source: CIS565 Lecture Slides*
 
 As depicted above, the Naive parallel implmentation computes several pairwise adds for each level in 0 to lg n. 
 
@@ -103,7 +109,8 @@ On the other hand, we see our parallel algorthms lagging behind quite a biut. Nv
 Additionally, our naive implementation is seen crushing our work efficient implementation. I believe this is because the bottleneck here is memory access, which the work efficient implementation does rather a lot of (especially in the add/swap downsweep.) In general, I question how valuable "saving work" is on a GPU, particularly addition, since the devices are so heavily optimized for arithmetic.
 
 ## Test Suite Output
-```$ ./cis565_stream_compaction_test.exe
+~~~
+$ ./cis565_stream_compaction_test.exe
 
 ****************
 ** SCAN TESTS **
@@ -144,4 +151,4 @@ Additionally, our naive implementation is seen crushing our work efficient imple
     passed
 ==== work-efficient compact, non-power-of-two ====
     passed
-```
+~~~
