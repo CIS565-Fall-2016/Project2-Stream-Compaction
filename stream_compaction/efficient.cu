@@ -5,7 +5,7 @@
 
 namespace StreamCompaction {
 namespace Efficient {
-#define blockSize 128
+
 // TODO: __global__
 __global__ void upSweep(int offset, int n,   int *idata){
 	int index = threadIdx.x + blockIdx.x*blockDim.x;

@@ -6,7 +6,7 @@
 
 namespace StreamCompaction {
 	namespace RadixSort {
-#define blockSize 128
+
 
 		//int getNbit(int input, int nth){
 		//	return (input >> nth) & 1;
