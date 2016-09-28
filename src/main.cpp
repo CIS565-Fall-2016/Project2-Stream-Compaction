@@ -14,7 +14,7 @@
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 20;
+    const int SIZE = 1 << 23;
     const int NPOT = SIZE - 3;
     int *a, *b, *c;
 

@@ -1,5 +1,10 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <chrono>
+using namespace std::chrono;
+#include <iostream>
+using std::cout;
+using std::endl;
 #include "common.h"
 #include "efficient.h"
 
@@ -78,8 +83,17 @@ void scan(int n, int *odata, const int *idata) {
 	cudaMemcpy((void*)dev_data, (const void*)idata, sizeof(int) * n,
 			cudaMemcpyHostToDevice);
 
+	// tic
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 	// do scan
 	scanOnGPU(n, dev_data);
+
+	// toc
+	cudaDeviceSynchronize();
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	duration<int, std::milli> t12 = duration_cast<duration<int, std::milli>>(t2 - t1);
+	cout << "----------Time consumed: " << t12.count() << " ms----------" << endl;
 
 	// copy result to host
 	cudaMemcpy((void*)odata, (const void*)dev_data, sizeof(int) * n,
