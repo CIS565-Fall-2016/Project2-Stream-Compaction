@@ -82,62 +82,62 @@ See Output.
 
 ## Output
 
-****************
-** SCAN TESTS **
-****************
-    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  35   0 ]
-==== cpu scan, power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
-==== cpu scan, non-power-of-two ====
-    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604305 1604316 ]
-    passed
-==== naive scan, power-of-two ====
-    passed
-==== naive scan, non-power-of-two ====
-    passed
-==== work-efficient scan, power-of-two ====
-    passed
-==== work-efficient scan, non-power-of-two ====
-    passed
-==== thrust scan, power-of-two ====
-    passed
-==== thrust scan, non-power-of-two ====
-    passed
-
-*****************************
-** STREAM COMPACTION TESTS **
-*****************************
-    [   2   3   2   1   3   1   1   1   2   0   1   0   2 ...   1   0 ]
-==== cpu compact without scan, power-of-two ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
-    passed
-==== cpu compact without scan, non-power-of-two ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   3   1 ]
-    passed
-==== cpu compact with scan ====
-    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
-    passed
-==== work-efficient compact, power-of-two ====
-    passed
-==== work-efficient compact, non-power-of-two ====
-    passed
-==== work-efficient compact, power-of-two, last non-zero ====
-    passed
-==== work-efficient compact, power-of-two, last zero ====
-    passed
-==== work-efficient compact, test on special case 1 ====
-    passed
-==== work-efficient compact, test on special case 2 ====
-    passed
-==== cpu compact without scan, test on special case 1 ====
-    passed
-==== radix sort, test on special case ====
-    [   0   5  -2   6   3   7  -5   2   7   1 ]
-  sorted:
-    [  -5  -2   0   1   2   3   5   6   7   7 ]
-    passed
-==== radix sort, test ====
-    [  38 7719 1238 2437 8855 1797 8365 2285 450 612 5853 8100 1142 ... 5085 6505 ]
-  sorted:
-    [   0   0   0   0   0   0   0   1   1   1   1   1   1 ... 9999 9999 ]
-    passed
+	****************
+	** SCAN TESTS **
+	****************
+	    [  38  19  38  37   5  47  15  35   0  12   3   0  42 ...  35   0 ]
+	==== cpu scan, power-of-two ====
+	    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604374 1604409 ]
+	==== cpu scan, non-power-of-two ====
+	    [   0  38  57  95 132 137 184 199 234 234 246 249 249 ... 1604305 1604316 ]
+	    passed
+	==== naive scan, power-of-two ====
+	    passed
+	==== naive scan, non-power-of-two ====
+	    passed
+	==== work-efficient scan, power-of-two ====
+	    passed
+	==== work-efficient scan, non-power-of-two ====
+	    passed
+	==== thrust scan, power-of-two ====
+	    passed
+	==== thrust scan, non-power-of-two ====
+	    passed
+	
+	*****************************
+	** STREAM COMPACTION TESTS **
+	*****************************
+	    [   2   3   2   1   3   1   1   1   2   0   1   0   2 ...   1   0 ]
+	==== cpu compact without scan, power-of-two ====
+	    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
+	    passed
+	==== cpu compact without scan, non-power-of-two ====
+	    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   3   1 ]
+	    passed
+	==== cpu compact with scan ====
+	    [   2   3   2   1   3   1   1   1   2   1   2   1   1 ...   1   1 ]
+	    passed
+	==== work-efficient compact, power-of-two ====
+	    passed
+	==== work-efficient compact, non-power-of-two ====
+	    passed
+	==== work-efficient compact, power-of-two, last non-zero ====
+	    passed
+	==== work-efficient compact, power-of-two, last zero ====
+	    passed
+	==== work-efficient compact, test on special case 1 ====
+	    passed
+	==== work-efficient compact, test on special case 2 ====
+	    passed
+	==== cpu compact without scan, test on special case 1 ====
+	    passed
+	==== radix sort, test on special case ====
+	    [   0   5  -2   6   3   7  -5   2   7   1 ]
+	  sorted:
+	    [  -5  -2   0   1   2   3   5   6   7   7 ]
+	    passed
+	==== radix sort, test ====
+	    [  38 7719 1238 2437 8855 1797 8365 2285 450 612 5853 8100 1142 ... 5085 6505 ]
+	  sorted:
+	    [   0   0   0   0   0   0   0   1   1   1   1   1   1 ... 9999 9999 ]
+	    passed
