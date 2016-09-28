@@ -36,7 +36,7 @@ namespace StreamCompaction {
 		}
 
 		int bufferToPow2(int n) {
-			return pow(2, ceil(log2(n))); // n rounded up to the nearest power of 2 
+			return pow(2, ceil(log2(n))); // n rounded up to the nearest power of 2
 		}
 
 		void dev_scan(int n, int *dev_odata, int *dev_idata) {
@@ -151,7 +151,7 @@ namespace StreamCompaction {
 			// enough blocks to allocate one thread to each array element
 			int numBlocks = (n / blockSize) + 1;
 
-			// get array of booleans determining whether 
+			// get array of booleans determining whether
 			Common::kernMapToBoolean << <numBlocks, blockSize >> > (n, dev_bools, dev_idata);
 			cudaMemcpy(dev_pingPong, dev_bools, n * sizeof(int), cudaMemcpyDeviceToDevice);
 
