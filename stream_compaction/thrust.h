@@ -2,6 +2,6 @@
 
 namespace StreamCompaction {
 namespace Thrust {
-    void scan(int n, int *odata, const int *idata);
+    double scan(int n, int *odata, const int *idata);
 }
 }
