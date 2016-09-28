@@ -24,4 +24,4 @@ print t.count();<br>
   
 * Block size 
 <br><img src="img/Capture3.PNG" width="500"></img>
-  * __Observation__ As block size increases, time consumed to perform scan decreases and at some point stablizes. The reason is the analyzed in last project.
+  * _Observation_ As block size increases, time consumed to perform scan decreases and at some point stablizes. The reason is the analyzed in last project.
