@@ -25,28 +25,44 @@ namespace StreamCompaction {
 		/**
 		 * Performs prefix-sum (aka scan) on idata, storing the result into odata.
 		 */
-		void scan(int n, int *odata, const int *idata) {
+		float scan(int n, int *odata, const int *idata, int blockSize) {
 			// TODO : finished
-			int blockSize(128);
+			// record time
+			float diff(0);
+			cudaEvent_t start, end;
+			cudaEventCreate(&start);
+			cudaEventCreate(&end);
+			cudaEventRecord(start, 0);
+
 			dim3 fullBlocksPerGrid((n + blockSize - 1) / blockSize);
 
 			int *tmp_data, *tmp_data2;
 			cudaMalloc((void**)&tmp_data, n * sizeof(int));
 			cudaMalloc((void**)&tmp_data2, n * sizeof(int));
-			cudaMemcpy(tmp_data, idata, n * sizeof(int), cudaMemcpyHostToDevice);
-
+			cudaMemset(tmp_data2, 0, n * sizeof(int));
+			cudaMemset(tmp_data, 0, n * sizeof(int));
+			cudaMemcpy(tmp_data+1, idata, (n-1) * sizeof(int), cudaMemcpyHostToDevice);
 			int loop_times = ilog2ceil(n);
 			int start_idx = 1;
-			for (int i = 1; i <= loop_times; ++i)
+			for (int i = 0; i < loop_times; ++i)
 			{
 				kernScan<<<fullBlocksPerGrid, blockSize>>>(n, start_idx, tmp_data2, tmp_data);
 				int *tmp_pt = tmp_data;
 				tmp_data = tmp_data2;
-				tmp_data2 = tmp_data;
+				tmp_data2 = tmp_pt;
 				start_idx *= 2;
 			}
 
 			cudaMemcpy(odata, tmp_data, n * sizeof(int), cudaMemcpyDeviceToHost);
+			cudaFree(tmp_data);
+			cudaFree(tmp_data2);
+
+			cudaEventRecord(end, 0);
+			cudaEventSynchronize(start);
+			cudaEventSynchronize(end);
+			cudaEventElapsedTime(&diff, start, end);
+
+			return diff;
 		}
 
 	}
