@@ -50,6 +50,7 @@ I followed the algorithm in the slides, and implemented a radix sort method base
 * Roughly optimize the block sizes of each of your implementations for minimal
   run time on your GPU.
   * (You shouldn't compare unoptimized implementations to each other!)
+
 See Performance Analysis.
 
 * Compare all of these GPU Scan implementations (Naive, Work-Efficient, and
@@ -67,17 +68,20 @@ See Performance Analysis.
     allocation, memory copy), take a look at the Nsight timeline for its
     execution. Your analysis here doesn't have to be detailed, since you aren't
     even looking at the code for the implementation.
+
 See Performance Analysis.
 
 * Write a brief explanation of the phenomena you see here.
   * Can you find the performance bottlenecks? Is it memory I/O? Computation? Is
     it different for each implementation?
+
 One problem with "naive" efficient GPU scan is that there are too many threads wasted(after being checked that their index mod interval is not zero). One way of improving this is to assign the index as the divided result of the original index by the interval, and compute back the actual index later in that thread. With this improvement, we can save a lot of useless works done by threads, and note that waste grows exponentially with the number of elements in stream in the original implementation.
 
 * Paste the output of the test program into a triple-backtick block in your
   README.
   * If you add your own tests (e.g. for radix sort or to test additional corner
     cases), be sure to mention it explicitly.
+
 See Output.
 
 ## Output
