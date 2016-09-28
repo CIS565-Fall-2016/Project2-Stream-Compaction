@@ -16,3 +16,7 @@ For this project we compare several implementations of two fundamental GPU algor
 We implemented three versions of `scan`:
 
 - CPU scan: this implementation does not use the GPU. Instead it simply iterated through the input array on the CPU accumulating sums and writing them to the output array on the way.
+
+- Naive scan: this implementation adds the elements of the input array in by iterating over the array and adding elements next to each other at different strides. In other words, on the first iteration, the algorithm adds all elements that are directly adjacent. On the second iteration, the algorithm adds elements that are separated by a stride of two. On the third, elements are added at a stride of four. Strides continue to double until only one addition is performed. The following picture depicts this process:
+
+
