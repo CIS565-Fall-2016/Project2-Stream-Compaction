@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdlib>
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 
 template<typename T>
 int cmpArrays(int n, T *a, T *b) {
@@ -59,3 +62,34 @@ void printArray(int n, int *a, bool abridged = false) {
     printf("]\n");
 }
 
+template <class T>
+void testSorted(int n, const T *data, bool lessThan = true)
+{
+	if (n <= 0 || !data)
+	{
+		printf("    testSorted: Error: Invalid argument(s)\n");
+		return;
+	}
+
+	for (int i = 0; i < n - 1; ++i)
+	{
+		if ((lessThan && (data[i] > data[i + 1])) ||
+			(!lessThan && (data[i] < data[i + 1])))
+		{
+			printf("    Failed: Element %d %s Element %d\n", i, lessThan ? ">" : "<", i + 1);
+			return;
+		}
+	}
+
+	printf("    passed\n");
+}
+
+void printGPUInfo(int device)
+{
+	cudaDeviceProp deviceProp;
+
+	cudaGetDeviceProperties(&deviceProp, device);
+
+	std::cout << '\n'
+		<< deviceProp.name << " [sm_" << deviceProp.major << deviceProp.minor << "]\n";
+}
