@@ -1,6 +1,8 @@
 set(SOURCE_FILES
     "common.h"
     "common.cu"
+    "timer.h"
+    "timer.cu"
     "cpu.h"
     "cpu.cu"
     "naive.h"
@@ -9,9 +11,11 @@ set(SOURCE_FILES
     "efficient.cu"
     "thrust.h"
     "thrust.cu"
+    "radix_sort.h"
+    "radix_sort.cu"
     )
 
 cuda_add_library(stream_compaction
     ${SOURCE_FILES}
-    OPTIONS -arch=sm_20
+    OPTIONS -arch=sm_50
     )
